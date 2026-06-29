@@ -1,6 +1,8 @@
+
 "use client";
 
 import { useRef, useState } from "react";
+import { API_URL } from "@/lib/api";
 
 export default function CompressPDF() {
 
@@ -10,6 +12,34 @@ export default function CompressPDF() {
 
   const [loading, setLoading] = useState(false);
 
+  const MAX_FILE_SIZE = 15 * 1024 * 1024; //15 MB
+
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+
+    if (!e.target.files?.length) return;
+
+    const selectedFile = e.target.files[0];
+
+    if (selectedFile.size > MAX_FILE_SIZE) {
+
+      alert(
+        `"${selectedFile.name}" is larger than 15 MB.\n\nMaximum allowed file size is 15 MB.`
+      );
+
+      e.target.value = "";
+
+      setFile(null);
+
+      return;
+
+    }
+
+    setFile(selectedFile);
+
+  };
+
   const handleCompress = async () => {
 
     if (!file) {
@@ -17,27 +47,33 @@ export default function CompressPDF() {
       return;
     }
 
-    const formData = new FormData();
-
-    formData.append("file", file);
-
     setLoading(true);
 
     try {
 
-      const res = await fetch(
-        "http://127.0.0.1:8000/compress-pdf",
+      const formData = new FormData();
+
+      formData.append("file", file);
+
+      const response = await fetch(
+        `${API_URL}/compress-pdf`,
         {
           method: "POST",
           body: formData,
         }
       );
 
-      if (!res.ok) {
-        throw new Error("Compression failed");
+      if (!response.ok) {
+
+        const error = await response.json();
+
+        throw new Error(
+          error.detail || "Compression failed."
+        );
+
       }
 
-      const blob = await res.blob();
+      const blob = await response.blob();
 
       const url = window.URL.createObjectURL(blob);
 
@@ -57,33 +93,38 @@ export default function CompressPDF() {
 
       alert("Compressed PDF downloaded successfully!");
 
-    } catch (error) {
+    } catch (error: any) {
 
       console.error(error);
 
-      alert("Error compressing PDF.");
+      alert(
+        error.message ||
+        "Unable to connect to backend."
+      );
+
+    } finally {
+
+      setLoading(false);
 
     }
-
-    setLoading(false);
 
   };
 
   return (
 
-    <main className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
+    <main className="min-h-screen bg-gray-100 flex flex-col items-center justify-center px-6">
 
       <h1 className="text-4xl font-bold mb-4">
         Compress PDF
       </h1>
 
-      <p className="mb-8">
-        Reduce PDF file size while maintaining quality.
+      <p className="mb-8 text-gray-600">
+        Reduce PDF size while maintaining quality.
       </p>
 
       <button
         onClick={() => inputRef.current?.click()}
-        className="bg-red-600 text-white px-6 py-3 rounded-lg"
+        className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition"
       >
         Select PDF
       </button>
@@ -93,50 +134,32 @@ export default function CompressPDF() {
         accept=".pdf"
         ref={inputRef}
         className="hidden"
-        onChange={(e) => {
-
-          const selectedFile = e.target.files?.[0];
-
-          if (!selectedFile) return;
-
-          const MAX_SIZE = 15 * 1024 * 1024; // 15 MB
-
-          if (selectedFile.size > MAX_SIZE) {
-
-            alert(
-              "❌ Maximum file size is 15 MB.\n\nPlease select a smaller PDF."
-            );
-
-            e.target.value = "";
-
-            setFile(null);
-
-            return;
-
-          }
-
-          setFile(selectedFile);
-
-        }}
+        onChange={handleFileChange}
       />
 
       {file && (
 
-        <>
+        <div className="mt-8 w-full max-w-lg bg-white rounded-xl shadow p-6">
 
-          <p className="mt-5 font-medium">
+          <h3 className="font-bold mb-3">
+            Selected File
+          </h3>
+
+          <div className="border rounded p-2">
             {file.name}
-          </p>
+          </div>
 
           <button
             onClick={handleCompress}
             disabled={loading}
-            className="mt-5 bg-green-600 text-white px-6 py-3 rounded-lg disabled:bg-gray-400"
+            className="mt-6 w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-500 text-white py-3 rounded-lg transition"
           >
-            {loading ? "Compressing..." : "Compress PDF"}
+            {loading
+              ? "Compressing..."
+              : "Compress PDF"}
           </button>
 
-        </>
+        </div>
 
       )}
 
@@ -145,3 +168,4 @@ export default function CompressPDF() {
   );
 
 }
+

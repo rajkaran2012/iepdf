@@ -1,10 +1,14 @@
+import os
+import shutil
+import zipfile
+import platform
+
 from fastapi import APIRouter, UploadFile, File, BackgroundTasks
 from fastapi.responses import FileResponse
 from pdf2image import convert_from_path
+
 from utils import validate_upload, delete_file
-import shutil
-import os
-import zipfile
+from config import POPPLER_PATH
 
 router = APIRouter()
 
@@ -14,7 +18,6 @@ async def pdf_to_jpg(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...)
 ):
-
     # Validate uploaded PDF
     await validate_upload(file)
 
@@ -24,19 +27,20 @@ async def pdf_to_jpg(
     with open(pdf_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    poppler = r"C:\poppler\Library\bin"
-
-    images = convert_from_path(
-        pdf_path,
-        poppler_path=poppler
-    )
+    # Windows uses local Poppler
+    if platform.system() == "Windows":
+        images = convert_from_path(
+            pdf_path,
+            poppler_path=POPPLER_PATH
+        )
+    else:
+        # Linux (Render)
+        images = convert_from_path(pdf_path)
 
     zip_name = "jpg_pages.zip"
 
     with zipfile.ZipFile(zip_name, "w") as zipf:
-
         for i, image in enumerate(images):
-
             img_name = f"page_{i+1}.jpg"
 
             image.save(img_name, "JPEG")
@@ -45,14 +49,11 @@ async def pdf_to_jpg(
 
             os.remove(img_name)
 
-    # Close images
     for image in images:
         image.close()
 
-    # Delete uploaded PDF
     os.remove(pdf_path)
 
-    # Delete ZIP after download
     background_tasks.add_task(delete_file, zip_name)
 
     return FileResponse(

@@ -1,26 +1,103 @@
 @import "tailwindcss";
 
+/* ==========================================
+   iePDF Design System
+========================================== */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand Colors */
+  --primary: #E53935;
+  --primary-dark: #C62828;
+
+  /* Backgrounds */
+  --background: #F8FAFC;
+  --card: #FFFFFF;
+
+  /* Text */
+  --foreground: #111827;
+  --text-light: #6B7280;
+
+  /* Status */
+  --success: #16A34A;
+  --border: #E5E7EB;
 }
+
+/* Tailwind Theme Variables */
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+
+  --color-card: var(--card);
+  --color-success: var(--success);
+  --color-border: var(--border);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+/* Optional Dark Mode */
+
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0F172A;
+    --card: #1E293B;
+    --foreground: #F8FAFC;
+    --text-light: #CBD5E1;
+
+    --primary: #EF5350;
+    --primary-dark: #E53935;
+
+    --success: #22C55E;
+    --border: #334155;
   }
+}
+
+/* ==========================================
+   Global Styles
+========================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+
+  margin: 0;
+  padding: 0;
+
+  min-height: 100vh;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+/* ==========================================
+   Notification Progress Animation
+========================================== */
+
+@keyframes progress {
+  from {
+    width: 100%;
+  }
+
+  to {
+    width: 0%;
+  }
+}
+
+.animate-progress {
+  animation-name: progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
 }

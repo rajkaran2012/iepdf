@@ -5,3 +5,7 @@ pdf2image
 Pillow
 python-multipart
 python-dotenv
+uvicorn
+pypdf==6.14.2
+cryptography
+python-multipart

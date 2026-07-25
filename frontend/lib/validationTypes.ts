@@ -1,5 +1,16 @@
 // =====================================================
-// Validation Types
+// Tool Types
+// =====================================================
+
+export type ToolType =
+  | "merge"
+  | "split"
+  | "compress"
+  | "pdf-to-jpg"
+  | "jpg-to-pdf";
+
+// =====================================================
+// Validation Codes
 // =====================================================
 
 export type ValidationCode =
@@ -15,8 +26,25 @@ export type ValidationCode =
   | "NETWORK_ERROR"
   | "SERVER_ERROR";
 
+// =====================================================
+// Validation Models
+// =====================================================
+
+export interface ValidationFile {
+  name: string;
+  size: number;
+  type: string;
+}
+
+export interface ValidationTool {
+  id: ToolType;
+  name: string;
+}
+
 export interface ValidationResult {
   success: boolean;
+
+  tool?: ValidationTool;
 
   code?: ValidationCode;
 
@@ -24,15 +52,25 @@ export interface ValidationResult {
 
   message?: string;
 
+  file?: ValidationFile;
+
   fileName?: string;
 
   fileSize?: number;
 }
 
+// =====================================================
+// Password Protected Files
+// =====================================================
+
 export interface PasswordProtectedFile {
   name: string;
   size: number;
 }
+
+// =====================================================
+// Toast
+// =====================================================
 
 export interface ToastMessage {
   id: string;

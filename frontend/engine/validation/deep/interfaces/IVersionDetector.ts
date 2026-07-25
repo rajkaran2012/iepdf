@@ -9,17 +9,11 @@
  * =============================================================================
  */
 
-import type { IDeepDetector } from "./IDeepDetector";
+import type { VersionDetectionResult }
+from "../models/VersionDetectionResult";
 
-export interface VersionDetectionResult {
-
-    readonly validVersion: boolean;
-
-    readonly detectedVersion?: string;
-
-    readonly reason?: string;
-
-}
+import type { IDeepDetector }
+from "./IDeepDetector";
 
 export interface IVersionDetector
 extends IDeepDetector<VersionDetectionResult> {

@@ -9,17 +9,11 @@
  * =============================================================================
  */
 
-import type { IDeepDetector } from "./IDeepDetector";
+import type { HeaderDetectionResult }
+from "../models/HeaderDetectionResult";
 
-export interface HeaderDetectionResult {
-
-    readonly validHeader: boolean;
-
-    readonly detectedHeader?: string;
-
-    readonly reason?: string;
-
-}
+import type { IDeepDetector }
+from "./IDeepDetector";
 
 export interface IHeaderDetector
 extends IDeepDetector<HeaderDetectionResult> {

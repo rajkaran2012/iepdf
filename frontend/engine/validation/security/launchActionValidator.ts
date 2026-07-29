@@ -81,7 +81,7 @@ extends BaseValidator {
                 context.file
             );
 
-        if (result.hasLaunchAction) {
+        if (result.hasLaunchActions) {
 
             return this.createFailureResult(
                 startedAt,

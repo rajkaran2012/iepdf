@@ -88,7 +88,7 @@ return {
         javaScriptResult.hasJavaScript,
 
     hasLaunchAction:
-        launchActionResult.hasLaunchAction,
+        launchActionResult.hasLaunchActions,
 
     hasEmbeddedFiles:
         embeddedFileResult.hasEmbeddedFiles,

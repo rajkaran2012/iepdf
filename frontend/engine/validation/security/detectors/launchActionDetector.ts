@@ -40,7 +40,7 @@ export class LaunchActionDetector implements ILaunchActionDetector {
             const openAction = await document.getOpenAction();
 
             return {
-                hasLaunchAction: openAction !== null
+                hasLaunchActions: openAction !== null
             };
 
         } finally {

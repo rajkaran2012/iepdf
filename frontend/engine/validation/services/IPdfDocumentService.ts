@@ -28,6 +28,7 @@ export interface IPdfDocumentService {
 
     isOpen(): boolean;
 
+    getParsedDocument(): ParsedPdfDocument;
     getDocument(): PDFDocumentProxy;
 
     isEncrypted(): Promise<boolean>;

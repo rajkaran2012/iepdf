@@ -5,24 +5,17 @@
  *
  * File       : ILaunchActionDetector.ts
  * Module     : Security Interfaces
- *
- * -----------------------------------------------------------------------------
- * Purpose
- * -----------------------------------------------------------------------------
- * Detects launch/open actions embedded inside PDF documents.
  * =============================================================================
  */
 
+import type { ISecurityDetector } from "./ISecurityDetector";
+
 export interface LaunchActionDetectionResult {
 
-    hasLaunchAction: boolean;
+    readonly hasLaunchActions: boolean;
 
 }
 
-export interface ILaunchActionDetector {
-
-    detect(
-        file: File
-    ): Promise<LaunchActionDetectionResult>;
-
+export interface ILaunchActionDetector
+    extends ISecurityDetector<LaunchActionDetectionResult> {
 }

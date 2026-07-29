@@ -1,7 +1,8 @@
 "use client";
 
-import { API_URL } from "@/lib/api";
 import { useRef, useState } from "react";
+import { BrowserPdfAnalyzer } from "@/engine/analysis/BrowserPdfAnalyzer";
+import { BrowserMergeProcessor } from "@/engine/processing/processors/BrowserMergeProcessor";
 
 import ToolLayout from "@/components/layout/ToolLayout";
 import MergeWorkspace from "@/components/MergeWorkspace";
@@ -12,29 +13,22 @@ export default function MergePDF() {
   
   const [workspaceFiles, setWorkspaceFiles] = useState<any[]>([]);
   const [showWorkspace, setShowWorkspace] = useState(false);
-  const [passwords, setPasswords] = useState<Record<string, string>>({});
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   
   const handlePasswordChange = (
-  filename: string,
-  password: string
+    filename: string,
+    password: string
 ) => {
 
-  setPasswords((prev) => ({
-    ...prev,
-    [filename]: password,
-  }));
-
-  setWorkspaceFiles((prev) =>
-    prev.map((file) =>
-      file.filename === filename
-        ? {
-            ...file,
-            password,
-          }
-        : file
-    )
-  );
+    setWorkspaceFiles(prev =>
+        prev.map(file =>
+            file.filename === filename
+                ? {
+                    ...file,
+                    password,
+                }
+                : file
+        )
+    );
 
 };
 
@@ -64,50 +58,50 @@ export default function MergePDF() {
 };
     const handleUnlockMerge = async () => {
 
-  console.log("Unlock Merge Started");
+    try {
 
-  const formData = new FormData();
+        const processor =
+            new BrowserMergeProcessor();
 
-  selectedFiles.forEach((file) => {
-  formData.append("files", file);
-});
+        const result =
+            await processor.process({
 
-  formData.append(
-    "passwords",
-    JSON.stringify(passwords)
-  );
+                files: workspaceFiles,
 
-  formData.append(
-    "skipped",
-    JSON.stringify(
-      workspaceFiles
-        .filter((file) => file.skipped)
-        .map((file) => file.id)
-    )
-  );
+            });
 
- try {
+        if (!result.success || !result.outputFile) {
 
-  console.log("Passwords State:");
-  console.log(passwords);
+            console.error(result.error);
 
-  const response = await fetch(
-    `${API_URL}/merge-pdf/unlock`,
-    {
-      method: "POST",
-      body: formData,
+            return;
+
+        }
+
+        const url =
+            URL.createObjectURL(result.outputFile);
+
+        const link =
+            document.createElement("a");
+
+        link.href = url;
+
+        link.download =
+            result.outputFile.name;
+
+        document.body.appendChild(link);
+
+        link.click();
+
+        link.remove();
+
+        URL.revokeObjectURL(url);
+
+    } catch (error) {
+
+        console.error(error);
+
     }
-  );
-
-  const result = await response.json();
-
-  console.log(result);
-
-} catch (error) {
-
-  console.error(error);
-
-}
 
 };
   const handleSelectFiles = () => {
@@ -117,39 +111,44 @@ export default function MergePDF() {
   fileInputRef.current?.click();
 };
 
-  const handleFileChange = async (
-  e: React.ChangeEvent<HTMLInputElement>
+const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
 ) => {
 
-  if (!e.target.files) return;
+    const files = Array.from(event.target.files ?? []);
 
-  const files = Array.from(e.target.files);
+    if (files.length === 0) {
+        return;
+    }
 
-  setSelectedFiles(files);
+    const analyzer = new BrowserPdfAnalyzer();
 
-  const formData = new FormData();
+    const analysis =
+        await analyzer.analyzeMany(files);
 
-files.forEach((file) => {
-  formData.append("files", file);
-});
+    const workspace = analysis.map(
+        (result, index) => ({
 
-try {
-  const response = await fetch(`${API_URL}/merge-pdf/scan`, {
-    method: "POST",
-    body: formData,
-  });
+            ...result,
 
-  const result = await response.json();
+            // Original browser File
+            file: files[index],
 
-  console.log("Scan Result:", result);
-  setWorkspaceFiles(result.files);
-  setShowWorkspace(true);
+            // Workspace state
+            password: "",
+            showPassword: false,
+            skipped: false,
 
-} catch (error) {
-  console.error("Scan Error:", error);
-}
+        })
+    );
 
-  };
+    setWorkspaceFiles(workspace);
+
+    setShowWorkspace(true);
+
+};
+
+
   console.log("Workspace Files:", workspaceFiles);
   console.log("Show Workspace:", showWorkspace);
 

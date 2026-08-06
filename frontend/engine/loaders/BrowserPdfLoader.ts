@@ -1,3 +1,5 @@
+
+import { BrowserPdfUnlockAdapter } from "@/engine/unlock/adapter/BrowserPdfUnlockAdapter";
 import { BrowserPdfUnlocker } from "@/engine/unlock/BrowserPdfUnlocker";
 import { BrowserPdfDocument } from "@/engine/pdf/BrowserPdfDocument";
 
@@ -11,6 +13,9 @@ export class BrowserPdfLoader {
     private readonly unlocker =
         new BrowserPdfUnlocker();
 
+    private readonly unlockAdapter =
+        new BrowserPdfUnlockAdapter();
+
     public async load(
         file: File,
         password?: string
@@ -22,7 +27,23 @@ export class BrowserPdfLoader {
             /**
              * Read file.
              */
-            const buffer = await file.arrayBuffer();
+           
+            let buffer: ArrayBuffer;
+
+              if (password) {
+
+                buffer =
+        await this.unlockAdapter.createUnlockedBytes(
+            file
+        );
+
+}
+else {
+
+    buffer =
+        await file.arrayBuffer();
+
+}
 
 /**
  * Password verification

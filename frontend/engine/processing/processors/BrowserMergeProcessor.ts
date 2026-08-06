@@ -17,13 +17,14 @@
  * ✓ Browser-first processing
  * ✓ Skip skipped files
  * ✓ Skip corrupted files
- * ✓ Open encrypted PDFs using user passwords
+ * ✓ Delegate PDF loading to BrowserPdfLoader
  * ✓ Merge only successfully loaded PDFs
  * ✓ Return a browser File
  * =============================================================================
  */
 
 import { BrowserPdfDocument } from "@/engine/pdf/BrowserPdfDocument";
+import { BrowserPdfLoader } from "@/engine/loaders/BrowserPdfLoader";
 
 import { BasePdfProcessor } from "./BasePdfProcessor";
 
@@ -32,6 +33,8 @@ import type { ProcessingResult } from "../results/ProcessingResult";
 import type { WorkspaceFile } from "../WorkspaceFile";
 
 export class BrowserMergeProcessor extends BasePdfProcessor {
+
+    private readonly loader = new BrowserPdfLoader();
 
     protected override async processCore(
         context: ProcessingContext
@@ -66,7 +69,9 @@ export class BrowserMergeProcessor extends BasePdfProcessor {
                 );
 
             if (merged) {
+
                 mergedCount++;
+
             }
 
         }
@@ -75,8 +80,7 @@ export class BrowserMergeProcessor extends BasePdfProcessor {
 
             return {
                 success: false,
-                error:
-                    "Unable to merge any PDF files."
+                error: "Unable to merge any PDF files."
             };
 
         }
@@ -87,11 +91,8 @@ export class BrowserMergeProcessor extends BasePdfProcessor {
             );
 
         return {
-
             success: true,
-
             outputFile
-
         };
 
     }
@@ -106,19 +107,26 @@ export class BrowserMergeProcessor extends BasePdfProcessor {
 
         try {
 
-            const source =
-                new BrowserPdfDocument();
-
-            const buffer =
-                await workspaceFile.file.arrayBuffer();
-
-            await source.load(
-                buffer,
+            const result = await this.loader.load(
+                workspaceFile.file,
                 workspaceFile.password || undefined
             );
 
+            if (
+                !result.success ||
+                result.document === null
+            ) {
+
+                console.warn(
+                    `Unable to load "${workspaceFile.filename}": ${result.message}`
+                );
+
+                return false;
+
+            }
+
             await destination.appendDocument(
-                source
+                result.document
             );
 
             return true;

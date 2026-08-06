@@ -27,7 +27,6 @@ import type { ParsedPdfDocument } from "../models/ParsedPdfDocument";
 
 import {
     getDocument,
-    PasswordException,
     type PDFDocumentLoadingTask,
     type PDFDocumentProxy
 } from "pdfjs-dist";
@@ -60,18 +59,23 @@ export class PdfDocumentService implements IPdfDocumentService {
 
         } catch (error: unknown) {
 
-            if (error instanceof PasswordException) {
+    if (
+        typeof error === "object" &&
+        error !== null &&
+        "name" in error &&
+        (error as { name: string }).name === "PasswordException"
+    ) {
 
-                this.encrypted = true;
-                this.document = null;
+        this.encrypted = true;
+        this.document = null;
 
-                return;
+        return;
 
-            }
+    }
 
-            throw error;
+    throw error;
 
-        }
+}
 
     }
 
@@ -152,11 +156,9 @@ export class PdfDocumentService implements IPdfDocumentService {
 
 public getParsedDocument(): ParsedPdfDocument {
 
-    const document = this.getDocument();
-
-    return {
-        document
-    };
+    throw new Error(
+        "getParsedDocument() is not implemented for the current ParsedPdfDocument model."
+    );
 
 }
 

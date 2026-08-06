@@ -20,19 +20,15 @@ export class BrowserPdfDocument implements IPdfDocument {
 
     /**
      * Loads a PDF from memory.
-     * Supports both normal and password-protected PDFs.
+     *
+     * Note:
+     * Password-protected PDFs will be handled by BrowserPdfLoader.
      */
     public async load(
-        data: ArrayBuffer,
-        password?: string
+        data: ArrayBuffer
     ): Promise<void> {
 
-        this.document = await PDFDocument.load(
-            data,
-            {
-                password,
-            }
-        );
+        this.document = await PDFDocument.load(data);
 
     }
 
@@ -50,20 +46,18 @@ export class BrowserPdfDocument implements IPdfDocument {
      */
     public async save(): Promise<Uint8Array> {
 
-        this.ensureLoaded();
+        const document = this.ensureLoaded();
 
-        return await this.document.save();
+        return await document.save();
 
     }
 
     /**
-     * Total pages.
+     * Returns the total number of pages.
      */
     public getPageCount(): number {
 
-        this.ensureLoaded();
-
-        return this.document.getPageCount();
+        return this.ensureLoaded().getPageCount();
 
     }
 
@@ -72,46 +66,46 @@ export class BrowserPdfDocument implements IPdfDocument {
      */
     public getPageIndices(): readonly number[] {
 
-        this.ensureLoaded();
+        const document = this.ensureLoaded();
 
         return Array.from(
-            { length: this.document.getPageCount() },
+            { length: document.getPageCount() },
             (_, index) => index
         );
 
     }
 
     /**
-     * Copies specific pages from another BrowserPdfDocument.
+     * Copies specific pages from another document.
      */
     public async copyPages(
         source: BrowserPdfDocument,
         pageIndices: readonly number[]
     ): Promise<void> {
 
-        this.ensureLoaded();
+        const document = this.ensureLoaded();
 
-        const pages = await this.document.copyPages(
+        const pages = await document.copyPages(
             source.getInternalDocument(),
             [...pageIndices]
         );
 
         for (const page of pages) {
 
-            this.document.addPage(page);
+            document.addPage(page);
 
         }
 
     }
 
     /**
-     * Appends an entire PDF.
+     * Appends another PDF document.
      */
     public async appendDocument(
         source: IPdfDocument
     ): Promise<void> {
 
-        this.ensureLoaded();
+        const document = this.ensureLoaded();
 
         if (!(source instanceof BrowserPdfDocument)) {
 
@@ -121,21 +115,21 @@ export class BrowserPdfDocument implements IPdfDocument {
 
         }
 
-        const copiedPages = await this.document.copyPages(
+        const copiedPages = await document.copyPages(
             source.getInternalDocument(),
             [...source.getPageIndices()]
         );
 
         for (const page of copiedPages) {
 
-            this.document.addPage(page);
+            document.addPage(page);
 
         }
 
     }
 
     /**
-     * Converts the PDF into a browser File.
+     * Converts the document into a browser File.
      */
     public async toFile(
         fileName: string
@@ -163,20 +157,14 @@ export class BrowserPdfDocument implements IPdfDocument {
      */
     public getInternalDocument(): PDFDocument {
 
-        this.ensureLoaded();
-
-        return this.document;
+        return this.ensureLoaded();
 
     }
 
     /**
-     * Throws if no PDF has been loaded.
+     * Returns the loaded document or throws if none exists.
      */
-    private ensureLoaded(): asserts this is {
-
-        document: PDFDocument;
-
-    } {
+    private ensureLoaded(): PDFDocument {
 
         if (this.document === null) {
 
@@ -185,6 +173,8 @@ export class BrowserPdfDocument implements IPdfDocument {
             );
 
         }
+
+        return this.document;
 
     }
 

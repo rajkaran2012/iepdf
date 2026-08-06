@@ -15,17 +15,17 @@ export default function MergePDF() {
   const [showWorkspace, setShowWorkspace] = useState(false);
   
   const handlePasswordChange = (
-    filename: string,
+    id: string,
     password: string
 ) => {
 
-    setWorkspaceFiles(prev =>
-        prev.map(file =>
-            file.filename === filename
+    setWorkspaceFiles((prev) =>
+        prev.map((file) =>
+            file.id === id
                 ? {
-                    ...file,
-                    password,
-                }
+                      ...file,
+                      password,
+                  }
                 : file
         )
     );
@@ -55,6 +55,32 @@ export default function MergePDF() {
         : file
     )
   );
+};
+
+const handleRemoveFile = (id: string) => {
+
+    setWorkspaceFiles((previous) => {
+
+        const updated = previous.filter(
+            (file) => file.id !== id
+        );
+
+        if (updated.length === 0) {
+
+            setShowWorkspace(false);
+
+            if (fileInputRef.current) {
+
+                fileInputRef.current.value = "";
+
+            }
+
+        }
+
+        return updated;
+
+    });
+
 };
     const handleUnlockMerge = async () => {
 
@@ -176,12 +202,13 @@ const handleFileChange = async (
           Select PDF Files
         </button>
 		{showWorkspace && (
-  <MergeWorkspace
-  files={workspaceFiles}
-  onPasswordChange={handlePasswordChange}
-  onTogglePassword={handleTogglePassword}
-  onSkipFile={handleSkipFile}
-  onUnlockMerge={handleUnlockMerge}
+ <MergeWorkspace
+    files={workspaceFiles}
+    onPasswordChange={handlePasswordChange}
+    onTogglePassword={handleTogglePassword}
+    onSkipFile={handleSkipFile}
+    onRemoveFile={handleRemoveFile}
+    onUnlockMerge={handleUnlockMerge}
 />
 )}
 

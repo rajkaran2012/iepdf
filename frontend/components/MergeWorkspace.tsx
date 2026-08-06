@@ -1,334 +1,452 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useMemo } from "react";
 
+const PdfThumbnail = dynamic(
+    () => import("@/components/pdf/PdfThumbnail"),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="flex h-48 w-36 items-center justify-center rounded-xl border bg-gray-100 text-sm text-gray-500">
+                Loading Preview...
+            </div>
+        ),
+    }
+);
+
 export interface PDFFile {
-  id: string;
-  filename: string;
-  extension: string;
-  size: number;
-  pages: number;
 
-  status: string;
+    id: string;
 
-  encrypted: boolean;
-  corrupted: boolean;
+    file: File;
 
-  password?: string;
-  showPassword?: boolean;
-  skipped?: boolean;
+    filename: string;
 
-  message?: string;
+    extension: string;
+
+    size: number;
+
+    pages: number;
+
+    status: string;
+
+    encrypted: boolean;
+
+    corrupted: boolean;
+
+    password?: string;
+
+    showPassword?: boolean;
+
+    skipped?: boolean;
+
+    message?: string;
+
 }
 
 interface Props {
-  files: PDFFile[];
 
-  onPasswordChange: (
-    id: string,
-    password: string
-  ) => void;
+    files: PDFFile[];
 
-  onTogglePassword: (
-    id: string
-  ) => void;
+    onPasswordChange: (
+        id: string,
+        password: string
+    ) => void;
 
-  onSkipFile: (
-    id: string
-  ) => void;
+    onTogglePassword: (
+        id: string
+    ) => void;
 
-  onUnlockMerge: () => void;
+    onSkipFile: (
+        id: string
+    ) => void;
+
+    onRemoveFile: (
+        id: string
+    ) => void;
+
+    onUnlockMerge: () => void;
+
 }
 
 export default function MergeWorkspace({
-  files,
-  onPasswordChange,
-  onTogglePassword,
-  onSkipFile,
-  onUnlockMerge,
+
+    files,
+
+    onPasswordChange,
+
+    onTogglePassword,
+
+    onSkipFile,
+
+    onRemoveFile,
+
+    onUnlockMerge,
+
 }: Props) {
 
-  const summary = useMemo(() => {
+    const summary = useMemo(() => {
 
-    let ready = 0;
-    let protectedFiles = 0;
-    let skipped = 0;
-    let corrupted = 0;
+        let ready = 0;
+        let protectedFiles = 0;
+        let skipped = 0;
+        let corrupted = 0;
 
-    files.forEach((file) => {
+        files.forEach((file) => {
 
-      if (file.skipped) {
-        skipped++;
-        return;
-      }
+            if (file.skipped) {
 
-      if (file.status === "ready") {
-        ready++;
-      }
+                skipped++;
 
-      if (file.status === "password_required") {
-        protectedFiles++;
-      }
+                return;
 
-      if (file.status === "corrupted") {
-        corrupted++;
-      }
+            }
 
-    });
+            switch (file.status) {
 
-    return {
-      total: files.length,
-      ready,
-      protectedFiles,
-      skipped,
-      corrupted,
-    };
+                case "ready":
 
-  }, [files]);
+                    ready++;
 
-  return (
+                    break;
 
-    <div className="mt-10 w-full max-w-6xl rounded-3xl border border-gray-200 bg-white shadow-xl">
+                case "password_required":
 
-      {/* =========================
-          HEADER
-      ========================== */}
+                    protectedFiles++;
 
-      <div className="border-b px-8 py-6">
+                    break;
+
+                case "corrupted":
+
+                    corrupted++;
+
+                    break;
+
+            }
+
+        });
+
+        return {
+
+            total: files.length,
+
+            ready,
+
+            protectedFiles,
+
+            skipped,
+
+            corrupted,
+
+        };
+
+    }, [files]);
+
+   return (
+
+<div className="mt-10 w-full max-w-6xl rounded-3xl border border-gray-200 bg-white shadow-xl">
+
+    {/* =========================
+        HEADER
+    ========================== */}
+
+    <div className="border-b px-8 py-6">
 
         <h2 className="text-3xl font-bold">
-          Merge Workspace
+            Merge Workspace
         </h2>
 
         <p className="mt-2 text-gray-500">
-          Review every PDF before merging.
+            Review every PDF before merging.
         </p>
 
-      </div>
-
-      {/* =========================
-            FILE LIST
-      ========================== */}
-
-      <div className="divide-y">
-{files.map((file) => (
-
-  <div
-    key={file.id}
-    className="flex items-start justify-between px-8 py-6"
-  >
-
-    {/* Left Side */}
-
-    <div className="flex-1">
-
-      <h3 className="text-lg font-semibold">
-        {file.filename}
-      </h3>
-
-      <p className="mt-1 text-sm text-gray-500">
-        {file.pages} Pages • {(file.size / 1024 / 1024).toFixed(2)} MB
-      </p>
-
     </div>
 
-    {/* Right Side */}
+    {/* =========================
+        FILE LIST
+    ========================== */}
 
-    <div className="flex w-80 flex-col items-end gap-3">
+    <div className="divide-y">
 
-      {/* Skipped */}
+        {files.map((file) => (
 
-      {file.skipped && (
+            <div
+                key={file.id}
+                className="flex items-start justify-between gap-6 px-8 py-6"
+            >
 
-        <span className="rounded-full bg-gray-200 px-4 py-2 font-semibold text-gray-700">
+                {/* LEFT */}
 
-          ⏭ Skipped
+                <div className="flex flex-1 gap-6">
 
-        </span>
+                    <PdfThumbnail
+                        file={file.file}
+                        locked={file.status === "password_required"}
+                    />
 
-      )}
+                    <div className="flex flex-col">
 
-      {/* Ready */}
+                        <h3 className="break-all text-lg font-semibold">
 
-      {!file.skipped &&
-        file.status === "ready" && (
+                            {file.filename}
 
-        <span className="rounded-full bg-green-100 px-4 py-2 font-semibold text-green-700">
+                        </h3>
 
-          ✅ Ready
+                        <p className="mt-2 text-sm text-gray-500">
 
-        </span>
+                            {file.pages} Pages • {(file.size / 1024 / 1024).toFixed(2)} MB
 
-      )}
+                        </p>
 
-      {/* Corrupted */}
+                        {file.message && (
 
-      {!file.skipped &&
-        file.status === "corrupted" && (
+                            <p className="mt-3 text-sm text-red-600">
 
-        <span className="rounded-full bg-red-100 px-4 py-2 font-semibold text-red-700">
+                                {file.message}
 
-          ❌ Corrupted
+                            </p>
 
-        </span>
+                        )}
 
-      )}
+                    </div>
 
-      {/* Password Required */}
+                </div>
 
-      {file.status === "password_required" && (
+                {/* RIGHT */}
 
-        <div className="flex w-full flex-col items-end gap-3">
+                <div className="flex w-80 flex-col items-end gap-4">
 
-          {!file.skipped && (
+                    {file.skipped && (
 
-            <>
+                        <span className="rounded-full bg-gray-200 px-4 py-2 font-semibold text-gray-700">
 
-              <span className="rounded-full bg-yellow-100 px-4 py-2 font-semibold text-yellow-700">
+                            ⏭ Skipped
 
-                🔒 Password Required
+                        </span>
 
-              </span>
+                    )}
 
-              <input
-                type={file.showPassword ? "text" : "password"}
-                value={file.password || ""}
-                placeholder="Enter PDF Password"
-                onChange={(e) =>
-                  onPasswordChange(
-                    file.filename,
-                    e.target.value
-                  )
-                }
-                className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
-              />
+                    {!file.skipped && file.status === "ready" && (
 
-              <button
-                type="button"
-                onClick={() =>
-                  onTogglePassword(file.id)
-                }
-                className="text-sm font-medium text-blue-600 hover:text-blue-800"
-              >
-                👁{" "}
-                {file.showPassword
-                  ? "Hide Password"
-                  : "Show Password"}
-              </button>
+                        <span className="rounded-full bg-green-100 px-4 py-2 font-semibold text-green-700">
 
-            </>
+                            ✅ Ready
 
-          )}
+                        </span>
 
-          <button
-            type="button"
-            onClick={() =>
-              onSkipFile(file.id)
-            }
-            className={`text-sm font-semibold ${
-              file.skipped
-                ? "text-green-600 hover:text-green-800"
-                : "text-red-600 hover:text-red-800"
-            }`}
-          >
-            {file.skipped
-              ? "↩ Restore File"
-              : "⏭ Skip File"}
-          </button>
+                    )}
 
-        </div>
+                    {!file.skipped && file.status === "corrupted" && (
 
-      )}
+                        <span className="rounded-full bg-red-100 px-4 py-2 font-semibold text-red-700">
+
+                            ❌ Corrupted
+
+                        </span>
+
+                    )}
+
+                    {file.status === "password_required" && !file.skipped && (
+
+                        <div className="flex w-full flex-col items-end gap-3">
+
+                            <span className="rounded-full bg-yellow-100 px-4 py-2 font-semibold text-yellow-700">
+
+                                🔒 Password Required
+
+                            </span>
+
+                            <input
+                                type={
+                                   file.showPassword
+                                      ? "text"
+                                   : "password"
+                                }
+                              value={file.password || ""}
+                             placeholder="Enter password to unlock preview and merge"
+                             autoComplete="off"
+                             spellCheck={false}
+                             onChange={(e) =>
+                             onPasswordChange(
+                             file.id,
+                            e.target.value
+        )
+    }
+    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+    aria-label="PDF Password"
+/>
+
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    onTogglePassword(file.id)
+                                }
+                                className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                            >
+
+                                👁 {file.showPassword
+                                    ? "Hide Password"
+                                    : "Show Password"}
+
+                            </button>
+
+                        </div>
+
+                    )}
+
+                    {/* Common Actions */}
+
+                    <div className="flex gap-2">
+
+                        <button
+                            type="button"
+                            onClick={() => onSkipFile(file.id)}
+                            className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                                file.skipped
+                                    ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            }`}
+                        >
+
+                            {file.skipped
+                                ? "↩ Restore"
+                                : "⏭ Skip"}
+
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => onRemoveFile(file.id)}
+                            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
+                        >
+
+                            🗑 Remove
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        ))}
 
     </div>
+    {/* =========================
+        SUMMARY
+    ========================== */}
 
-  </div>
-
-))}
-
-      </div>
-
-      {/* =========================
-            SUMMARY
-      ========================== */}
-
-      <div className="border-t bg-gray-50 px-8 py-8">
+    <div className="border-t bg-gray-50 px-8 py-8">
 
         <div className="grid grid-cols-5 gap-6">
 
-          <div className="rounded-2xl bg-white p-5 text-center shadow-sm">
-            <div className="text-3xl font-bold">
-              {summary.total}
+            <div className="rounded-2xl bg-white p-5 text-center shadow-sm">
+
+                <div className="text-3xl font-bold">
+
+                    {summary.total}
+
+                </div>
+
+                <div className="mt-2 text-gray-500">
+
+                    Total
+
+                </div>
+
             </div>
 
-            <div className="mt-2 text-gray-500">
-              Total
-            </div>
-          </div>
+            <div className="rounded-2xl bg-white p-5 text-center shadow-sm">
 
-          <div className="rounded-2xl bg-white p-5 text-center shadow-sm">
-            <div className="text-3xl font-bold text-green-600">
-              {summary.ready}
-            </div>
+                <div className="text-3xl font-bold text-green-600">
 
-            <div className="mt-2 text-gray-500">
-              Ready
-            </div>
-          </div>
+                    {summary.ready}
 
-          <div className="rounded-2xl bg-white p-5 text-center shadow-sm">
-            <div className="text-3xl font-bold text-yellow-600">
-              {summary.protectedFiles}
+                </div>
+
+                <div className="mt-2 text-gray-500">
+
+                    Ready
+
+                </div>
+
             </div>
 
-            <div className="mt-2 text-gray-500">
-              Protected
-            </div>
-          </div>
+            <div className="rounded-2xl bg-white p-5 text-center shadow-sm">
 
-          <div className="rounded-2xl bg-white p-5 text-center shadow-sm">
-            <div className="text-3xl font-bold text-blue-600">
-              {summary.skipped}
-            </div>
+                <div className="text-3xl font-bold text-yellow-600">
 
-            <div className="mt-2 text-gray-500">
-              Skipped
-            </div>
-          </div>
+                    {summary.protectedFiles}
 
-          <div className="rounded-2xl bg-white p-5 text-center shadow-sm">
-            <div className="text-3xl font-bold text-red-600">
-              {summary.corrupted}
+                </div>
+
+                <div className="mt-2 text-gray-500">
+
+                    Protected
+
+                </div>
+
             </div>
 
-            <div className="mt-2 text-gray-500">
-              Corrupted
+            <div className="rounded-2xl bg-white p-5 text-center shadow-sm">
+
+                <div className="text-3xl font-bold text-blue-600">
+
+                    {summary.skipped}
+
+                </div>
+
+                <div className="mt-2 text-gray-500">
+
+                    Skipped
+
+                </div>
+
             </div>
-          </div>
+
+            <div className="rounded-2xl bg-white p-5 text-center shadow-sm">
+
+                <div className="text-3xl font-bold text-red-600">
+
+                    {summary.corrupted}
+
+                </div>
+
+                <div className="mt-2 text-gray-500">
+
+                    Corrupted
+
+                </div>
+
+            </div>
 
         </div>
 
         <div className="mt-8 flex justify-center">
 
-          <button
-          type="button"
-          disabled={summary.ready === 0}
-          onClick={onUnlockMerge}
-          className={`rounded-2xl px-10 py-4 text-lg font-semibold text-white transition ${
-          summary.ready === 0
-          ? "cursor-not-allowed bg-gray-400"
-          : "bg-blue-600 hover:bg-blue-700"
-  }`}
->
-  🔓 Unlock & Merge
-</button>
+            <button
+                type="button"
+                disabled={summary.ready === 0}
+                onClick={onUnlockMerge}
+                className={`rounded-2xl px-10 py-4 text-lg font-semibold text-white transition ${
+                    summary.ready === 0
+                        ? "cursor-not-allowed bg-gray-400"
+                        : "bg-blue-600 hover:bg-blue-700"
+                }`}
+            >
+
+                🔓 Unlock & Merge
+
+            </button>
 
         </div>
 
-      </div>
-
     </div>
 
-  );
+</div>
+
+);
 
 }

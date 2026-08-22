@@ -5,38 +5,96 @@
  *
  * File       : IPdfDocumentService.ts
  * Module     : Validation Services
- * Layer      : Service Contract
+ * Layer      : Interface
  *
  * -----------------------------------------------------------------------------
  * Purpose
  * -----------------------------------------------------------------------------
- * Defines the contract for accessing a PDF document.
+ * Defines the contract for centralized PDF document access.
  *
- * This interface abstracts the underlying PDF library.
- * Validators and detectors MUST depend only on this contract.
+ * This file MUST contain only the service contract.
+ *
+ * It MUST NOT:
+ *
+ * - Import pdfjs-dist at runtime
+ * - Open PDF files
+ * - Parse PDF files
+ * - Contain validation logic
+ * - Contain browser implementation details
  * =============================================================================
  */
 
-import type { PDFDocumentProxy } from "pdfjs-dist";
 import type { ParsedPdfDocument } from "../models/ParsedPdfDocument";
+
+import type { PDFDocumentProxy } from "pdfjs-dist";
 
 export interface IPdfDocumentService {
 
-    open(file: File): Promise<void>;
+    /**
+     * =========================================================================
+     * Opens a PDF document.
+     * =========================================================================
+     */
+    open(
+        file: File
+    ): Promise<void>;
 
+    /**
+     * =========================================================================
+     * Closes the currently opened PDF document.
+     * =========================================================================
+     */
     close(): Promise<void>;
 
+    /**
+     * =========================================================================
+     * Returns true when a PDF document is currently open.
+     * =========================================================================
+     */
     isOpen(): boolean;
 
-    getParsedDocument(): ParsedPdfDocument;
+    /**
+     * =========================================================================
+     * Returns the currently opened PDF.js document.
+     * =========================================================================
+     */
     getDocument(): PDFDocumentProxy;
 
+    /**
+     * =========================================================================
+     * Returns whether the currently opened PDF is encrypted.
+     * =========================================================================
+     */
     isEncrypted(): Promise<boolean>;
 
+    /**
+     * =========================================================================
+     * Returns the number of pages in the currently opened PDF.
+     * =========================================================================
+     */
     getPageCount(): Promise<number>;
 
+    /**
+     * =========================================================================
+     * Returns PDF metadata.
+     * =========================================================================
+     */
     getMetadata(): Promise<Record<string, unknown>>;
 
+    /**
+     * =========================================================================
+     * Returns PDF document information.
+     * =========================================================================
+     */
     getDocumentInfo(): Promise<Record<string, unknown>>;
+
+    /**
+     * =========================================================================
+     * Returns the parsed PDF document.
+     *
+     * Reserved for Deep Validation.
+     * =========================================================================
+     */
+    getParsedDocument(): ParsedPdfDocument;
 
 }

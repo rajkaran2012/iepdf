@@ -1,4 +1,4 @@
-/**
+﻿/**
  * =============================================================================
  * iePDF Unlock Engine
  * =============================================================================
@@ -7,36 +7,40 @@
  * Module     : Unlock
  * Layer      : Adapter
  *
- * -----------------------------------------------------------------------------
  * Purpose
- * -----------------------------------------------------------------------------
- * Converts a successfully verified encrypted PDF into bytes that can be
- * consumed by the document processing pipeline.
- *
- * This class contains NO UI logic.
- * This class contains NO merge logic.
+ * -------
+ * Converts a password-protected PDF into browser PDF bytes through the
+ * configured unlock provider.
  * =============================================================================
  */
 
+import type { IUnlockProvider }
+    from "../providers/IUnlockProvider";
+
+import type { UnlockedPdfResult }
+    from "../UnlockedPdfResult";
+
 export class BrowserPdfUnlockAdapter {
 
+    public constructor(
+        private readonly unlockProvider:
+            IUnlockProvider
+    ) {
+    }
+
     /**
-     * Creates unlocked PDF bytes.
-     *
-     * Stage 1
-     * -------
-     * Currently returns the original bytes.
-     *
-     * Stage 2
-     * -------
-     * This method will later integrate the selected browser PDF
-     * implementation capable of producing unlocked bytes.
+     * Creates browser-ready PDF bytes and preserves the actual source
+     * encryption state.
      */
     public async createUnlockedBytes(
-        file: File
-    ): Promise<ArrayBuffer> {
+        file: File,
+        password: string
+    ): Promise<UnlockedPdfResult> {
 
-        return await file.arrayBuffer();
+        return await this.unlockProvider.unlock(
+            file,
+            password
+        );
 
     }
 

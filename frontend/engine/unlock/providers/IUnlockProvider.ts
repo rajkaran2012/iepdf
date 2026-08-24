@@ -1,4 +1,4 @@
-/**
+﻿/**
  * =============================================================================
  * iePDF Unlock Engine
  * =============================================================================
@@ -6,32 +6,21 @@
  * File       : IUnlockProvider.ts
  * Module     : Unlock
  * Layer      : Provider Contract
- *
- * -----------------------------------------------------------------------------
- * Purpose
- * -----------------------------------------------------------------------------
- * Defines the contract for browser unlock providers.
- *
- * Different implementations can later support:
- *
- * • Commercial SDK
- * • Enterprise SDK
- * • Future Open Source implementation
- *
- * BrowserPdfUnlockAdapter depends ONLY on this interface.
  * =============================================================================
  */
+
+import type { UnlockedPdfResult }
+    from "../UnlockedPdfResult";
 
 export interface IUnlockProvider {
 
     /**
-     * Unlocks an encrypted PDF.
-     *
-     * Returns unlocked PDF bytes.
+     * Unlocks an encrypted PDF and returns the resulting PDF bytes together
+     * with the actual encryption state of the source PDF.
      */
     unlock(
         file: File,
         password: string
-    ): Promise<ArrayBuffer>;
+    ): Promise<UnlockedPdfResult>;
 
 }

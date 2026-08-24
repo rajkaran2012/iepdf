@@ -1,4 +1,4 @@
-/**
+﻿/**
  * =============================================================================
  * iePDF Processing Engine
  * =============================================================================
@@ -7,30 +7,76 @@
  * Module     : Processing
  * Layer      : Base Processor
  *
- * -----------------------------------------------------------------------------
+ * =============================================================================
  * Purpose
- * -----------------------------------------------------------------------------
- * Provides the common execution pipeline for all PDF processors.
+ * =============================================================================
  *
- * Responsibilities:
- *   • Execute the processing pipeline
- *   • Invoke validation hook
- *   • Handle expected and unexpected exceptions
- *   • Ensure cleanup
- *   • Return a standardized ProcessingResult
+ * Provides the mandatory execution boundary for every PDF processor.
  *
- * Child processors should only implement processCore().
+ * Processing order:
+ *
+ *     Processing Request
+ *            |
+ *            v
+ *     Canonical Validation Gateway
+ *            |
+ *       +----+----+
+ *       |         |
+ *      FAIL      PASS
+ *       |         |
+ *       v         v
+ *     STOP    processCore()
+ *
+ * Every concrete processor inherits this boundary.
+ *
+ * =============================================================================
+ * Security Model
+ * =============================================================================
+ *
+ * FAIL CLOSED.
+ *
+ * A processor MUST NOT execute processCore() unless the canonical
+ * Validation Gateway explicitly authorizes processing.
+ *
+ * Application processors MUST NOT directly access:
+ *
+ * - ValidationPipeline
+ * - BoundaryValidatorRegistry
+ * - SecurityValidatorRegistry
+ * - DeepValidatorRegistry
+ *
+ * The ValidationGateway is the single application-facing validation boundary.
+ *
  * =============================================================================
  */
 
-import type { IPdfProcessor } from "../IPdfProcessor";
-import type { ProcessingContext } from "../ProcessingContext";
-import type { ProcessingResult } from "../results/ProcessingResult";
+import type {
+    IPdfProcessor
+} from "../IPdfProcessor";
 
-export abstract class BasePdfProcessor implements IPdfProcessor {
+import type {
+    ProcessingContext
+} from "../ProcessingContext";
+
+import type {
+    ProcessingResult
+} from "../results/ProcessingResult";
+
+import {
+    validationGateway
+} from "../../validation/gateway/ValidationGateway";
+
+
+export abstract class BasePdfProcessor
+    implements IPdfProcessor {
+
 
     /**
-     * Executes the processing pipeline.
+     * =========================================================================
+     * Executes the complete processing boundary.
+     * =========================================================================
+     *
+     * Validation ALWAYS occurs before processCore().
      */
     public async process(
         context: ProcessingContext
@@ -38,72 +84,316 @@ export abstract class BasePdfProcessor implements IPdfProcessor {
 
         try {
 
-            await this.validate(context);
+            /**
+             * ================================================================
+             * Mandatory Canonical Validation
+             * ================================================================
+             */
+            await this.validate(
+                context
+            );
 
-            return await this.processCore(context);
 
-        } catch (error) {
+            /**
+             * ================================================================
+             * Processing
+             * ================================================================
+             *
+             * This point is reachable ONLY when the canonical Validation
+             * Gateway has returned passed === true.
+             */
+            return await this.processCore(
+                context
+            );
 
-            return this.createFailureResult(error);
+        }
+        catch (
+            error: unknown
+        ) {
 
-        } finally {
+            /**
+             * ================================================================
+             * Fail Closed
+             * ================================================================
+             *
+             * Any validation or processing exception becomes a controlled
+             * processing failure.
+             */
+            return this.createFailureResult(
+                error
+            );
 
-            await this.cleanup(context);
+        }
+        finally {
+
+            /**
+             * ================================================================
+             * Guaranteed Cleanup
+             * ================================================================
+             */
+            await this.cleanup(
+                context
+            );
 
         }
 
     }
 
+
     /**
-     * Validation hook.
+     * =========================================================================
+     * Canonical Validation Boundary
+     * =========================================================================
      *
-     * Child classes may override if additional validation is required.
+     * IMPORTANT:
+     *
+     * This class intentionally does NOT construct ValidationPipeline.
+     *
+     * All application validation goes through:
+     *
+     *     validationGateway
+     *
+     * The Gateway owns:
+     *
+     *     Boundary
+     *     Security
+     *     Deep
+     *
+     * and produces the final processing authorization decision.
      */
     protected async validate(
-        _context: ProcessingContext
+        context: ProcessingContext
     ): Promise<void> {
 
-        // Validation Engine integration will be added here.
+        /**
+         * ================================================================
+         * Select workspace files eligible for validation.
+         * ================================================================
+         */
+        const workspaceFiles =
+            context.files.filter(
+                file =>
+                    !file.skipped
+            );
+
+
+        /**
+         * ================================================================
+         * Fail Closed — No Files
+         * ================================================================
+         */
+        if (
+            workspaceFiles.length === 0
+        ) {
+
+            throw new Error(
+                "No files available for validation."
+            );
+
+        }
+
+
+        /**
+         * ================================================================
+         * Browser File Collection
+         * ================================================================
+         */
+        const browserFiles =
+            workspaceFiles.map(
+                file =>
+                    file.file
+            );
+
+
+        /**
+         * ================================================================
+         * Validate Every Processable File
+         * ================================================================
+         *
+         * Every file must independently receive authorization.
+         *
+         * A single failure blocks the complete processing operation.
+         */
+        for (
+            const workspaceFile
+            of workspaceFiles
+        ) {
+
+            let gatewayResult;
+
+            try {
+
+                /**
+                 * ============================================================
+                 * SINGLE VALIDATION ENTRY POINT
+                 * ============================================================
+                 */
+                gatewayResult =
+                    await validationGateway.validate(
+                        browserFiles,
+                        workspaceFile.file,
+                        context.toolType
+                    );
+
+            }
+            catch (
+                _error: unknown
+            ) {
+
+                /**
+                 * ============================================================
+                 * FAIL CLOSED
+                 * ============================================================
+                 *
+                 * The Gateway itself should already fail closed.
+                 *
+                 * This catch protects this processing boundary if an
+                 * unexpected exception nevertheless escapes the Gateway.
+                 */
+                throw new Error(
+                    `Validation failed for "${workspaceFile.filename}".`
+                );
+
+            }
+
+
+            /**
+             * ================================================================
+             * Gateway Authorization
+             * ================================================================
+             *
+             * There is exactly ONE authorization decision:
+             *
+             *     gatewayResult.passed
+             *
+             * No processor is allowed to reinterpret individual validation
+             * results as permission to process.
+             */
+            if (
+                gatewayResult.passed !== true
+            ) {
+
+                /**
+                 * Never expose internal validation diagnostics here.
+                 *
+                 * The Gateway deliberately fails closed with an empty result
+                 * collection for unexpected internal failures.
+                 */
+                const failedResult =
+                    gatewayResult.results.find(
+                        result =>
+                            result.passed === false
+                    );
+
+
+                if (
+                    failedResult &&
+                    failedResult.message.length > 0
+                ) {
+
+                    throw new Error(
+                        failedResult.message
+                    );
+
+                }
+
+
+                throw new Error(
+                    `Validation failed for "${workspaceFile.filename}".`
+                );
+
+            }
+
+        }
 
     }
 
+
     /**
-     * Processing implementation.
+     * =========================================================================
+     * Processing Implementation
+     * =========================================================================
      *
-     * Every processor must implement its own business logic.
+     * Concrete processors implement their actual PDF operation here.
+     *
+     * IMPORTANT:
+     *
+     * processCore() must never be called directly by external callers.
+     *
+     * It is reached through process(), which enforces the canonical Gateway
+     * authorization first.
      */
     protected abstract processCore(
         context: ProcessingContext
     ): Promise<ProcessingResult>;
 
+
     /**
-     * Cleanup hook.
+     * =========================================================================
+     * Cleanup Hook
+     * =========================================================================
      *
-     * Override only when resources must be released.
+     * Concrete processors may override this when resources need to be
+     * released.
      */
     protected async cleanup(
         _context: ProcessingContext
     ): Promise<void> {
 
-        // Default: nothing to clean.
+        /**
+         * Default implementation intentionally performs no operation.
+         */
 
     }
 
+
     /**
-     * Creates a standardized failure result.
+     * =========================================================================
+     * Standardized Failure Result
+     * =========================================================================
+     *
+     * User-facing errors must not expose:
+     *
+     * - stack traces
+     * - internal object structures
+     * - PDFium internals
+     * - parser internals
+     * - filesystem information
+     * - secrets
+     * - implementation details
      */
     protected createFailureResult(
         error: unknown
     ): ProcessingResult {
+
+        /**
+         * Controlled application errors may be returned.
+         *
+         * Internal exceptions are deliberately replaced by a generic message.
+         */
+        if (
+            error instanceof Error &&
+            error.message.length > 0
+        ) {
+
+            return {
+
+                success: false,
+
+                error:
+                    error.message
+
+            };
+
+        }
+
 
         return {
 
             success: false,
 
             error:
-                error instanceof Error
-                    ? error.message
-                    : "An unexpected processing error occurred."
+                "An unexpected processing error occurred."
 
         };
 

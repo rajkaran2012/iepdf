@@ -15,13 +15,18 @@
  *
  * This class NEVER merges PDFs.
  * It ONLY verifies passwords.
+ *
+ * -----------------------------------------------------------------------------
+ * Architecture
+ * -----------------------------------------------------------------------------
+ * PDF.js is loaded dynamically at runtime.
+ *
+ * This is intentional.
+ *
+ * It prevents PDF.js browser APIs such as DOMMatrix from being evaluated
+ * during Next.js server-side rendering / prerendering.
  * =============================================================================
  */
-
-import {
-    getDocument,
-    PasswordResponses,
-} from "pdfjs-dist";
 
 import type { PDFDocumentLoadingTask } from "pdfjs-dist";
 
@@ -29,26 +34,52 @@ import type { UnlockResult } from "./UnlockResult";
 
 export class PasswordVerifier {
 
+    /**
+     * =========================================================================
+     * Verify PDF Password
+     * =========================================================================
+     */
     public async verify(
         file: File,
         password: string
     ): Promise<UnlockResult> {
 
-        const bytes = await file.arrayBuffer();
+        const bytes =
+            await file.arrayBuffer();
 
-        let loadingTask: PDFDocumentLoadingTask | null = null;
+        let loadingTask:
+            PDFDocumentLoadingTask | null = null;
 
         try {
 
-            loadingTask = getDocument({
+            /**
+             * =================================================================
+             * Load PDF.js only at runtime.
+             *
+             * IMPORTANT:
+             * Do NOT move this import to the top of this file.
+             *
+             * PDF.js depends on browser APIs such as DOMMatrix.
+             * Dynamic loading keeps it out of the Next.js server
+             * prerendering path.
+             * =================================================================
+             */
+            const {
+                getDocument,
+                PasswordResponses,
+            } = await import("pdfjs-dist");
 
-                data: bytes,
+            loadingTask =
+                getDocument({
 
-                password,
+                    data: bytes,
 
-            });
+                    password,
 
-            const pdf = await loadingTask.promise;
+                });
+
+            const pdf =
+                await loadingTask.promise;
 
             await pdf.destroy();
 
@@ -69,6 +100,11 @@ export class PasswordVerifier {
         }
         catch (error: unknown) {
 
+            /**
+             * ================================================================
+             * PDF.js password errors
+             * ================================================================
+             */
             if (
                 typeof error === "object" &&
                 error !== null &&
@@ -78,8 +114,11 @@ export class PasswordVerifier {
                 const code =
                     (error as { code: number }).code;
 
+                /**
+                 * Incorrect password.
+                 */
                 if (
-                    code === PasswordResponses.INCORRECT_PASSWORD
+                    code === 2
                 ) {
 
                     return {
@@ -92,14 +131,18 @@ export class PasswordVerifier {
 
                         document: null,
 
-                        message: "Incorrect password.",
+                        message:
+                            "Incorrect password.",
 
                     };
 
                 }
 
+                /**
+                 * Password required.
+                 */
                 if (
-                    code === PasswordResponses.NEED_PASSWORD
+                    code === 1
                 ) {
 
                     return {
@@ -112,7 +155,8 @@ export class PasswordVerifier {
 
                         document: null,
 
-                        message: "Password required.",
+                        message:
+                            "Password required.",
 
                     };
 
@@ -120,6 +164,11 @@ export class PasswordVerifier {
 
             }
 
+            /**
+             * ================================================================
+             * Unknown PDF.js / PDF error
+             * ================================================================
+             */
             return {
 
                 success: false,
@@ -140,9 +189,23 @@ export class PasswordVerifier {
         }
         finally {
 
+            /**
+             * ================================================================
+             * Ensure PDF.js loading task is destroyed.
+             * ================================================================
+             */
             if (loadingTask) {
 
-                loadingTask.destroy();
+                try {
+
+                    await loadingTask.destroy();
+
+                }
+                catch {
+
+                    // Ignore cleanup errors.
+
+                }
 
             }
 

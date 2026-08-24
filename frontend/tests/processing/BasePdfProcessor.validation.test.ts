@@ -1,4 +1,4 @@
-/**
+﻿/**
  * =============================================================================
  * iePDF Processing Engine
  * =============================================================================
@@ -14,11 +14,11 @@
  * Verifies the mandatory processing authorization boundary:
  *
  *     BasePdfProcessor
- *             ↓
+ *             â†“
  *     validationGateway
- *             ↓
+ *             â†“
  *       authorization
- *             ↓
+ *             â†“
  *       processCore()
  *
  * Security invariants:
@@ -239,7 +239,7 @@ function createGatewayResult(
  * =============================================================================
  */
 describe(
-    "BasePdfProcessor — Canonical Validation Gateway",
+    "BasePdfProcessor â€” Canonical Validation Gateway",
     () => {
 
         let validateSpy:
@@ -615,7 +615,7 @@ describe(
 
                     public readonly cleanupMock =
                         vi.fn(
-                            async () => {
+                            async (_context: ProcessingContext) => {
                                 // Intentionally empty.
                             }
                         );
@@ -676,7 +676,7 @@ describe(
 
                     public readonly cleanupMock =
                         vi.fn(
-                            async () => {
+                            async (_context: ProcessingContext) => {
                                 // Intentionally empty.
                             }
                         );

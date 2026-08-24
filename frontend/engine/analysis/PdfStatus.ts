@@ -2,4 +2,5 @@ export type PdfStatus =
   | "scanning"
   | "ready"
   | "password_required"
-  | "corrupted";
+  | "corrupted"
+  | "invalid";

@@ -71,8 +71,13 @@ export class PdfDocumentService implements IPdfDocumentService {
          * Never move this import to the top of this file.
          */
         const {
-            getDocument
+            getDocument,
+            GlobalWorkerOptions,
+            version,
         } = await import("pdfjs-dist/legacy/build/pdf.mjs");
+
+        GlobalWorkerOptions.workerSrc =
+            `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
 
         this.loadingTask =
             getDocument({

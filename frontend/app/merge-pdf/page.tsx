@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { BrowserPdfAnalyzer } from "@/engine/analysis/BrowserPdfAnalyzer";
 import { BrowserMergeProcessor } from "@/engine/processing/processors/BrowserMergeProcessor";
+import { BrowserPdfUnlockService } from "@/engine/unlock/BrowserPdfUnlockService";
 
 import ToolLayout from "@/components/layout/ToolLayout";
 import MergeWorkspace from "@/components/MergeWorkspace";
@@ -32,6 +33,111 @@ export default function MergePDF() {
 
 };
 
+  const handlePasswordBlur = async (
+    id: string
+  ) => {
+
+    const targetFile =
+      workspaceFiles.find(
+        (file) => file.id === id
+      );
+
+    if (!targetFile) {
+      return;
+    }
+
+    const password =
+      targetFile.password?.trim();
+
+    if (!password) {
+      return;
+    }
+
+    if (
+      targetFile.status !==
+      "password_required"
+    ) {
+      return;
+    }
+
+    try {
+
+      const unlockService =
+        new BrowserPdfUnlockService();
+
+      const result =
+        await unlockService.unlock(
+          targetFile.file,
+          password
+        );
+
+      const unlockedFile =
+        new File(
+          [result.bytes],
+          targetFile.filename,
+          {
+            type: "application/pdf"
+          }
+        );
+
+      setWorkspaceFiles((previous) =>
+        previous.map((file) =>
+          file.id === id
+            ? {
+                ...file,
+
+                file:
+                  unlockedFile,
+
+                size:
+                  unlockedFile.size,
+
+                status:
+                  "ready",
+
+                encrypted:
+                  result.encrypted,
+
+                corrupted:
+                  false,
+
+                message:
+                  "Password accepted. PDF is ready for merge.",
+              }
+            : file
+        )
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Password unlock failed:",
+        error
+      );
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to unlock PDF.";
+
+      setWorkspaceFiles((previous) =>
+        previous.map((file) =>
+          file.id === id
+            ? {
+                ...file,
+
+                status:
+                  "password_required",
+
+                message,
+            }
+          : file
+        )
+      );
+
+    }
+
+  };
   const handleTogglePassword = (id: string) => {
     setWorkspaceFiles((prev) =>
       prev.map((file) =>
@@ -94,6 +200,8 @@ const handleRemoveFile = (id: string) => {
 
                 files: workspaceFiles,
 
+                toolType: "merge",
+
             });
 
         if (!result.success || !result.outputFile) {
@@ -122,6 +230,16 @@ const handleRemoveFile = (id: string) => {
         link.remove();
 
         URL.revokeObjectURL(url);
+
+        setWorkspaceFiles([]);
+
+        setShowWorkspace(false);
+
+        if (fileInputRef.current) {
+
+            fileInputRef.current.value = "";
+
+        }
 
     } catch (error) {
 
@@ -205,6 +323,7 @@ const handleFileChange = async (
  <MergeWorkspace
     files={workspaceFiles}
     onPasswordChange={handlePasswordChange}
+    onPasswordBlur={handlePasswordBlur}
     onTogglePassword={handleTogglePassword}
     onSkipFile={handleSkipFile}
     onRemoveFile={handleRemoveFile}

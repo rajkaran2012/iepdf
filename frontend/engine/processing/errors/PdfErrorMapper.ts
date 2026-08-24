@@ -1,4 +1,4 @@
-/**
+﻿/**
  * =============================================================================
  * iePDF Processing Engine
  * =============================================================================
@@ -7,12 +7,11 @@
  * Module  : Processing
  *
  * Purpose
- * -----------------------------------------------------------------------------
- * Converts JavaScript / library exceptions into standardized PdfErrorCode values.
+ * ---------------------------------------------------------------------------
+ * Converts JavaScript / library exceptions into standardized PdfErrorCode
+ * values.
  *
- * NOTE:
- * This is the ONLY place in the processing engine that should inspect
- * exception messages.
+ * This is the centralized exception-to-error-code mapping boundary.
  * =============================================================================
  */
 
@@ -20,9 +19,6 @@ import { PdfErrorCode } from "./PdfErrorCode";
 
 export class PdfErrorMapper {
 
-    /**
-     * Maps an unknown exception to a standardized PdfErrorCode.
-     */
     public static map(
         error: unknown
     ): PdfErrorCode {
@@ -33,15 +29,43 @@ export class PdfErrorMapper {
 
         }
 
-        const message = error.message.toLowerCase();
+        const message =
+            error.message.toLowerCase().trim();
 
-        if (message.includes("password")) {
+        /**
+         * ================================================================
+         * INVALID PASSWORD
+         * ================================================================
+         *
+         * IMPORTANT:
+         * This rule MUST appear before INVALID_PDF because:
+         *
+         * "Invalid PDF password."
+         *
+         * contains both:
+         *
+         * - "invalid pdf"
+         * - "password"
+         */
+        if (
+            message.includes("invalid password") ||
+            message.includes("invalid pdf password") ||
+            message.includes("incorrect password") ||
+            message.includes("wrong password")
+        ) {
 
-            return PdfErrorCode.PASSWORD_REQUIRED;
+            return PdfErrorCode.INVALID_PASSWORD;
 
         }
 
+        /**
+         * ================================================================
+         * PASSWORD REQUIRED
+         * ================================================================
+         */
         if (
+            message.includes("password required") ||
+            message.includes("password is required") ||
             message.includes("encrypted")
         ) {
 
@@ -49,6 +73,11 @@ export class PdfErrorMapper {
 
         }
 
+        /**
+         * ================================================================
+         * INVALID PDF
+         * ================================================================
+         */
         if (
             message.includes("invalid pdf")
         ) {
@@ -57,19 +86,29 @@ export class PdfErrorMapper {
 
         }
 
-        if (
-            message.includes("failed")
-        ) {
-
-            return PdfErrorCode.LOAD_FAILED;
-
-        }
-
+        /**
+         * ================================================================
+         * CORRUPTED PDF
+         * ================================================================
+         */
         if (
             message.includes("corrupt")
         ) {
 
             return PdfErrorCode.CORRUPTED_PDF;
+
+        }
+
+        /**
+         * ================================================================
+         * GENERIC LOAD FAILURE
+         * ================================================================
+         */
+        if (
+            message.includes("failed")
+        ) {
+
+            return PdfErrorCode.LOAD_FAILED;
 
         }
 

@@ -76,8 +76,22 @@ export class PdfDocumentService implements IPdfDocumentService {
             version,
         } = await import("pdfjs-dist/legacy/build/pdf.mjs");
 
-        GlobalWorkerOptions.workerSrc =
-            `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
+        /*
+         * Browser:
+         * Use the PDF.js worker through the browser.
+         *
+         * Vitest / Node:
+         * Do not configure an HTTPS worker URL. PDF.js will use
+         * its non-browser fallback path.
+         */
+        if (
+            typeof window !== "undefined"
+        ) {
+
+            GlobalWorkerOptions.workerSrc =
+                `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
+
+        }
 
         this.loadingTask =
             getDocument({

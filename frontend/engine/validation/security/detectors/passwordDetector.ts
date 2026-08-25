@@ -2,15 +2,6 @@
  * =============================================================================
  * iePDF Validation Engine
  * =============================================================================
- *
- * File       : passwordDetector.ts
- * Module     : Security Detectors
- *
- * -----------------------------------------------------------------------------
- * Purpose
- * -----------------------------------------------------------------------------
- * Detects whether a PDF is password protected.
- * =============================================================================
  */
 
 import type {
@@ -35,13 +26,14 @@ export class PasswordDetector implements IPasswordDetector {
 
         try {
 
-            const encrypted = await this.pdfDocumentService.isEncrypted();
+            const encrypted =
+                await this.pdfDocumentService.isEncrypted();
 
             return {
                 isPasswordProtected: encrypted,
                 isEncrypted: encrypted,
                 encryptionType: undefined
-};  
+            };
 
         } finally {
 

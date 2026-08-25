@@ -38,7 +38,9 @@ import {
 } from "@/engine/validation/pipeline/validationPipeline";
 
 import {
+    ValidationErrorCode,
     ValidationGate,
+    ValidationRule,
     ValidationStatus,
 } from "@/engine/validation/pipeline/validationTypes";
 
@@ -60,18 +62,11 @@ function createValidPdf(): File {
     /*
      * Minimal structurally valid PDF.
      *
-     * This fixture contains:
-     * - PDF header
-     * - Catalog
-     * - Pages tree
-     * - Page object
-     * - Content stream
-     * - Cross-reference table
-     * - Trailer
-     *
-     * It is intentionally unencrypted and contains no active content.
+     * XRef offsets are calculated dynamically so that startxref
+     * always points to the actual byte position of the XRef table.
      */
-    const pdf =
+
+    let pdf =
         "%PDF-1.4\n" +
         "1 0 obj\n" +
         "<< /Type /Catalog /Pages 2 0 R >>\n" +
@@ -86,7 +81,12 @@ function createValidPdf(): File {
         "<< /Length 0 >>\n" +
         "stream\n" +
         "endstream\n" +
-        "endobj\n" +
+        "endobj\n";
+
+    const xrefOffset =
+        pdf.length;
+
+    pdf +=
         "xref\n" +
         "0 5\n" +
         "0000000000 65535 f \n" +
@@ -97,7 +97,7 @@ function createValidPdf(): File {
         "trailer\n" +
         "<< /Size 5 /Root 1 0 R >>\n" +
         "startxref\n" +
-        "265\n" +
+        `${xrefOffset}\n` +
         "%%EOF\n";
 
     return new File(
@@ -109,7 +109,6 @@ function createValidPdf(): File {
     );
 
 }
-
 function createInvalidMagicPdf(): File {
 
     return new File(
@@ -240,7 +239,7 @@ function failedResults(
  */
 
 describe(
-    "Complete Validation Pipeline — Boundary → Security → Deep",
+    "Complete Validation Pipeline Ã¢â‚¬â€ Boundary Ã¢â€ â€™ Security Ã¢â€ â€™ Deep",
     () => {
 
         /**
@@ -378,7 +377,7 @@ describe(
          * =====================================================================
          */
         it(
-            "returns gates in canonical Boundary → Security → Deep order",
+            "returns gates in canonical Boundary Ã¢â€ â€™ Security Ã¢â€ â€™ Deep order",
             async () => {
 
                 const pipeline =
@@ -495,7 +494,7 @@ describe(
 
         /**
          * =====================================================================
-         * 7. FAIL CLOSED — BOUNDARY
+         * 7. FAIL CLOSED Ã¢â‚¬â€ BOUNDARY
          * =====================================================================
          */
         it(
@@ -581,6 +580,75 @@ describe(
 
         /**
          * =====================================================================
+        /**
+         * =====================================================================
+         * 8B. XREF DEEP VALIDATION
+         * =====================================================================
+         */
+        it(
+            "detects a valid XRef structure in Deep validation",
+            async () => {
+
+                const pipeline =
+                    new ValidationPipeline();
+
+                const file =
+                    createValidPdf();
+
+                const results =
+                    await pipeline.execute(
+                        [file],
+                        file,
+                        "split"
+                    );
+
+                const deepResults =
+                    results.filter(
+                        (result) =>
+                            result.gate ===
+                            ValidationGate.DEEP
+                    );
+
+                console.log(
+                    "XREF DEEP RESULTS:",
+                    deepResults.filter(
+                        (result) =>
+                            result.rule === ValidationRule.XREF
+                    )
+                );
+                expect(
+                    deepResults.length
+                ).toBeGreaterThan(0);
+
+                expect(
+                    deepResults.some(
+                        (result) =>
+                            result.rule ===
+                            ValidationRule.XREF
+                    )
+                ).toBe(true);
+
+                const xrefResult =
+                    deepResults.find(
+                        (result) =>
+                            result.rule ===
+                            ValidationRule.XREF
+                    );
+
+                console.log(
+                    "XREF RESULT:",
+                    JSON.stringify(xrefResult, null, 2)
+                );
+
+                expect(
+                    xrefResult
+                ).toBeDefined();
+
+}
+        );
+
+
+        /**
          * 9. RESULT IMMUTABILITY
          * =====================================================================
          */

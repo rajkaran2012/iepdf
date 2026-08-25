@@ -1,4 +1,4 @@
-/**
+﻿/**
  * =============================================================================
  * iePDF Validation Engine
  * =============================================================================
@@ -17,6 +17,7 @@
  *
  * 1. Header
  * 2. Version
+ * 3. XRef
  *
  * This registry:
  *
@@ -51,6 +52,10 @@ import {
     VersionValidator
 } from "../versionValidator";
 
+import {
+    XrefValidator
+} from "./xrefValidator";
+
 
 export class DeepValidatorRegistry {
 
@@ -58,8 +63,6 @@ export class DeepValidatorRegistry {
      * =========================================================================
      * Header detector dependency
      * =========================================================================
-     *
-     * HeaderValidator requires an IHeaderDetector.
      */
     private static readonly headerDetector =
         new HeaderDetector();
@@ -72,10 +75,7 @@ export class DeepValidatorRegistry {
      *
      * Execution order:
      *
-     * Header → Version
-     *
-     * VersionValidator currently owns its stateless VersionDetector internally,
-     * therefore no VersionDetector dependency is injected here.
+     * Header → Version → XRef
      */
     private static readonly validators:
         readonly IValidator[] =
@@ -86,6 +86,8 @@ export class DeepValidatorRegistry {
             ),
 
             new VersionValidator(),
+
+            new XrefValidator(),
 
         ]);
 

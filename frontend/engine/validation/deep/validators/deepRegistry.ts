@@ -1,4 +1,4 @@
-﻿/**
+/**
  * =============================================================================
  * iePDF Validation Engine
  * =============================================================================
@@ -18,6 +18,7 @@
  * 1. Header
  * 2. Version
  * 3. XRef
+ * 4. Trailer
  *
  * This registry:
  *
@@ -56,6 +57,10 @@ import {
     XrefValidator
 } from "./xrefValidator";
 
+import {
+    TrailerValidator
+} from "./trailerValidator";
+
 
 export class DeepValidatorRegistry {
 
@@ -75,7 +80,7 @@ export class DeepValidatorRegistry {
      *
      * Execution order:
      *
-     * Header → Version → XRef
+     * Header → Version → XRef → Trailer
      */
     private static readonly validators:
         readonly IValidator[] =
@@ -88,6 +93,8 @@ export class DeepValidatorRegistry {
             new VersionValidator(),
 
             new XrefValidator(),
+
+            new TrailerValidator(),
 
         ]);
 

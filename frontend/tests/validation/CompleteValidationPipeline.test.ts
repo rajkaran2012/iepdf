@@ -1,4 +1,4 @@
-﻿/**
+/**
  * =============================================================================
  * iePDF Validation Engine
  * =============================================================================
@@ -647,6 +647,65 @@ describe(
 }
         );
 
+
+        /**
+         * =====================================================================
+         * 8C. TRAILER DEEP VALIDATION
+         * =====================================================================
+         */
+        it(
+            "detects a valid Trailer structure in Deep validation",
+            async () => {
+
+                const pipeline =
+                    new ValidationPipeline();
+
+                const file =
+                    createValidPdf();
+
+                const results =
+                    await pipeline.execute(
+                        [file],
+                        file,
+                        "split"
+                    );
+
+                const deepResults =
+                    results.filter(
+                        (result) =>
+                            result.gate ===
+                            ValidationGate.DEEP
+                    );
+
+                const trailerResult =
+                    deepResults.find(
+                        (result) =>
+                            result.rule ===
+                            ValidationRule.TRAILER
+                    );
+
+                expect(
+                    trailerResult
+                ).toBeDefined();
+
+                expect(
+                    trailerResult?.status
+                ).toBe(
+                    ValidationStatus.PASSED
+                );
+
+                expect(
+                    trailerResult?.passed
+                ).toBe(true);
+
+                expect(
+                    trailerResult?.errorCode
+                ).toBe(
+                    ValidationErrorCode.NONE
+                );
+
+            }
+        );
 
         /**
          * 9. RESULT IMMUTABILITY

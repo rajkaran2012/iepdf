@@ -708,6 +708,125 @@ describe(
         );
 
         /**
+         * =====================================================================
+         * 8D. OBJECT TREE DEEP VALIDATION
+         * =====================================================================
+         */
+        it(
+            "detects a valid Object Tree structure in Deep validation",
+            async () => {
+
+                const pipeline =
+                    new ValidationPipeline();
+
+                const file =
+                    createValidPdf();
+
+                const results =
+                    await pipeline.execute(
+                        [file],
+                        file,
+                        "split"
+                    );
+
+                const deepResults =
+                    results.filter(
+                        (result) =>
+                            result.gate ===
+                            ValidationGate.DEEP
+                    );
+
+                const objectTreeResult =
+                    deepResults.find(
+                        (result) =>
+                            result.rule ===
+                            ValidationRule.OBJECT_TREE
+                    );
+
+                expect(
+                    objectTreeResult
+                ).toBeDefined();
+
+                expect(
+                    objectTreeResult?.status
+                ).toBe(
+                    ValidationStatus.PASSED
+                );
+
+                expect(
+                    objectTreeResult?.passed
+                ).toBe(true);
+
+                expect(
+                    objectTreeResult?.errorCode
+                ).toBe(
+                    ValidationErrorCode.NONE
+                );
+
+            }
+        );
+
+
+        /**
+         * =====================================================================
+         * 8E. PAGE TREE DEEP VALIDATION
+         * =====================================================================
+         */
+        it(
+            "detects a valid Page Tree structure in Deep validation",
+            async () => {
+
+                const pipeline =
+                    new ValidationPipeline();
+
+                const file =
+                    createValidPdf();
+
+                const results =
+                    await pipeline.execute(
+                        [file],
+                        file,
+                        "split"
+                    );
+
+                const deepResults =
+                    results.filter(
+                        (result) =>
+                            result.gate ===
+                            ValidationGate.DEEP
+                    );
+
+                const pageTreeResult =
+                    deepResults.find(
+                        (result) =>
+                            result.rule ===
+                            ValidationRule.PAGE_TREE
+                    );
+
+                expect(
+                    pageTreeResult
+                ).toBeDefined();
+
+                expect(
+                    pageTreeResult?.status
+                ).toBe(
+                    ValidationStatus.PASSED
+                );
+
+                expect(
+                    pageTreeResult?.passed
+                ).toBe(true);
+
+                expect(
+                    pageTreeResult?.errorCode
+                ).toBe(
+                    ValidationErrorCode.NONE
+                );
+
+            }
+        );
+
+        /**
          * 9. RESULT IMMUTABILITY
          * =====================================================================
          */

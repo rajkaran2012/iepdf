@@ -61,6 +61,14 @@ import {
     TrailerValidator
 } from "./trailerValidator";
 
+import {
+    ObjectTreeValidator
+} from "./objectTreeValidator";
+
+import {
+    PageTreeValidator
+} from "./pageTreeValidator";
+
 
 export class DeepValidatorRegistry {
 
@@ -95,6 +103,10 @@ export class DeepValidatorRegistry {
             new XrefValidator(),
 
             new TrailerValidator(),
+
+            new ObjectTreeValidator(),
+
+            new PageTreeValidator(),
 
         ]);
 

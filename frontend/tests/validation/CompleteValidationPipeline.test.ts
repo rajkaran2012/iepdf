@@ -109,6 +109,190 @@ function createValidPdf(): File {
     );
 
 }
+/**
+ * =============================================================================
+ * Valid PDF containing a Font resource.
+ * =============================================================================
+ */
+function createValidFontPdf(): File {
+
+    let pdf =
+        "%PDF-1.4\n" +
+        "1 0 obj\n" +
+        "<< /Type /Catalog /Pages 2 0 R >>\n" +
+        "endobj\n" +
+        "2 0 obj\n" +
+        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>\n" +
+        "endobj\n" +
+        "3 0 obj\n" +
+        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>\n" +
+        "endobj\n" +
+        "4 0 obj\n" +
+        "<< /Length 0 >>\n" +
+        "stream\n" +
+        "endstream\n" +
+        "endobj\n" +
+        "5 0 obj\n" +
+        "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\n" +
+        "endobj\n";
+
+    const xrefOffset =
+        pdf.length;
+
+    pdf +=
+        "xref\n" +
+        "0 6\n" +
+        "0000000000 65535 f \n" +
+        "0000000009 00000 n \n" +
+        "0000000058 00000 n \n" +
+        "0000000115 00000 n \n" +
+        "0000000000 00000 n \n" +
+        "0000000000 00000 n \n" +
+        "trailer\n" +
+        "<< /Size 6 /Root 1 0 R >>\n" +
+        "startxref\n" +
+        `${xrefOffset}\n` +
+        "%%EOF\n";
+
+    return new File(
+        [pdf],
+        "integration-valid-font.pdf",
+        {
+            type: "application/pdf",
+        }
+    );
+
+}
+/**
+ * =============================================================================
+ * Valid PDF containing an XMP Metadata resource.
+ * =============================================================================
+ */
+function createValidMetadataPdf(): File {
+
+    let pdf =
+        "%PDF-1.4\n" +
+        "1 0 obj\n" +
+        "<< /Type /Catalog /Pages 2 0 R /Metadata 5 0 R >>\n" +
+        "endobj\n" +
+        "2 0 obj\n" +
+        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>\n" +
+        "endobj\n" +
+        "3 0 obj\n" +
+        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R >>\n" +
+        "endobj\n" +
+        "4 0 obj\n" +
+        "<< /Length 0 >>\n" +
+        "stream\n" +
+        "endstream\n" +
+        "endobj\n" +
+        "5 0 obj\n" +
+        "<< /Type /Metadata /Subtype /XML /Length 11 >>\n" +
+        "stream\n" +
+        "<x:xmpmeta>\n" +
+        "endstream\n" +
+        "endobj\n";
+
+    const xrefOffset =
+        pdf.length;
+
+    pdf +=
+        "xref\n" +
+        "0 6\n" +
+        "0000000000 65535 f \n" +
+        "0000000009 00000 n \n" +
+        "0000000058 00000 n \n" +
+        "0000000000 00000 n \n" +
+        "0000000000 00000 n \n" +
+        "0000000000 00000 n \n" +
+        "trailer\n" +
+        "<< /Size 6 /Root 1 0 R >>\n" +
+        "startxref\n" +
+        `${xrefOffset}\n` +
+        "%%EOF\n";
+
+    return new File(
+        [pdf],
+        "integration-valid-metadata.pdf",
+        {
+            type: "application/pdf",
+        }
+    );
+
+}
+/**
+ * =============================================================================
+ * Valid PDF containing a two-revision incremental update.
+ * =============================================================================
+ */
+function createValidIncrementalUpdatePdf(): File {
+
+    /*
+     * Revision 1.
+     */
+    let pdf =
+        "%PDF-1.4\n" +
+        "1 0 obj\n" +
+        "<< /Type /Catalog /Pages 2 0 R >>\n" +
+        "endobj\n" +
+        "2 0 obj\n" +
+        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>\n" +
+        "endobj\n" +
+        "3 0 obj\n" +
+        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>\n" +
+        "endobj\n";
+
+    const firstXrefOffset =
+        pdf.length;
+
+    pdf +=
+        "xref\n" +
+        "0 4\n" +
+        "0000000000 65535 f \n" +
+        "0000000009 00000 n \n" +
+        "0000000058 00000 n \n" +
+        "0000000115 00000 n \n" +
+        "trailer\n" +
+        "<< /Size 4 /Root 1 0 R >>\n" +
+        "startxref\n" +
+        `${firstXrefOffset}\n` +
+        "%%EOF\n";
+
+    /*
+     * Revision 2.
+     *
+     * The second trailer points back to the first XRef through /Prev.
+     */
+    const secondObjectOffset =
+        pdf.length;
+
+    pdf +=
+        "4 0 obj\n" +
+        "<< /Producer (iePDF Incremental Test) >>\n" +
+        "endobj\n";
+
+    const secondXrefOffset =
+        pdf.length;
+
+    pdf +=
+        "xref\n" +
+        "4 1\n" +
+        `${String(secondObjectOffset).padStart(10, "0")} 00000 n \n` +
+        "trailer\n" +
+        `<< /Size 5 /Root 1 0 R /Prev ${firstXrefOffset} >>\n` +
+        "startxref\n" +
+        `${secondXrefOffset}\n` +
+        "%%EOF\n";
+
+    return new File(
+        [pdf],
+        "integration-valid-incremental-update.pdf",
+        {
+            type: "application/pdf",
+        }
+    );
+
+}
 function createInvalidMagicPdf(): File {
 
     return new File(
@@ -819,6 +1003,186 @@ describe(
 
                 expect(
                     pageTreeResult?.errorCode
+                ).toBe(
+                    ValidationErrorCode.NONE
+                );
+
+            }
+        );
+
+
+        /**
+         * =====================================================================
+         * 8F. FONT DEEP VALIDATION
+         * =====================================================================
+         */
+        it(
+            "detects a valid Font structure in Deep validation",
+            async () => {
+
+                const pipeline =
+                    new ValidationPipeline();
+
+                const file =
+                    createValidFontPdf();
+
+                const results =
+                    await pipeline.execute(
+                        [file],
+                        file,
+                        "split"
+                    );
+
+                const deepResults =
+                    results.filter(
+                        (result) =>
+                            result.gate ===
+                            ValidationGate.DEEP
+                    );
+
+                const fontResult =
+                    deepResults.find(
+                        (result) =>
+                            result.rule ===
+                            ValidationRule.FONT
+                    );
+
+                expect(
+                    fontResult
+                ).toBeDefined();
+
+                expect(
+                    fontResult?.status
+                ).toBe(
+                    ValidationStatus.PASSED
+                );
+
+                expect(
+                    fontResult?.passed
+                ).toBe(true);
+
+                expect(
+                    fontResult?.errorCode
+                ).toBe(
+                    ValidationErrorCode.NONE
+                );
+
+            }
+        );
+
+
+        /**
+         * =====================================================================
+         * 8G. METADATA DEEP VALIDATION
+         * =====================================================================
+         */
+        it(
+            "detects a valid Metadata structure in Deep validation",
+            async () => {
+
+                const pipeline =
+                    new ValidationPipeline();
+
+                const file =
+                    createValidMetadataPdf();
+
+                const results =
+                    await pipeline.execute(
+                        [file],
+                        file,
+                        "split"
+                    );
+
+                const deepResults =
+                    results.filter(
+                        (result) =>
+                            result.gate ===
+                            ValidationGate.DEEP
+                    );
+
+                const metadataResult =
+                    deepResults.find(
+                        (result) =>
+                            result.rule ===
+                            ValidationRule.METADATA
+                    );
+
+                expect(
+                    metadataResult
+                ).toBeDefined();
+
+                expect(
+                    metadataResult?.status
+                ).toBe(
+                    ValidationStatus.PASSED
+                );
+
+                expect(
+                    metadataResult?.passed
+                ).toBe(true);
+
+                expect(
+                    metadataResult?.errorCode
+                ).toBe(
+                    ValidationErrorCode.NONE
+                );
+
+            }
+        );
+
+
+        /**
+         * =====================================================================
+         * 8H. INCREMENTAL UPDATE DEEP VALIDATION
+         * =====================================================================
+         */
+        it(
+            "detects a valid Incremental Update structure in Deep validation",
+            async () => {
+
+                const pipeline =
+                    new ValidationPipeline();
+
+                const file =
+                    createValidIncrementalUpdatePdf();
+
+                const results =
+                    await pipeline.execute(
+                        [file],
+                        file,
+                        "split"
+                    );
+
+                const deepResults =
+                    results.filter(
+                        (result) =>
+                            result.gate ===
+                            ValidationGate.DEEP
+                    );
+
+                const incrementalResult =
+                    deepResults.find(
+                        (result) =>
+                            result.rule ===
+                            ValidationRule.INCREMENTAL_UPDATE
+                    );
+
+                expect(
+                    incrementalResult
+                ).toBeDefined();
+
+                expect(
+                    incrementalResult?.status
+                ).toBe(
+                    ValidationStatus.PASSED
+                );
+
+                expect(
+                    incrementalResult?.passed
+                ).toBe(true);
+
+                expect(
+                    incrementalResult?.errorCode
                 ).toBe(
                     ValidationErrorCode.NONE
                 );

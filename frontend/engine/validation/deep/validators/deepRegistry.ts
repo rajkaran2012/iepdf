@@ -69,6 +69,18 @@ import {
     PageTreeValidator
 } from "./pageTreeValidator";
 
+import {
+    FontValidator
+} from "./fontValidator";
+
+import {
+    MetadataValidator
+} from "./metadataValidator";
+
+import {
+    IncrementalUpdateValidator
+} from "./incrementalUpdateValidator";
+
 
 export class DeepValidatorRegistry {
 
@@ -107,6 +119,12 @@ export class DeepValidatorRegistry {
             new ObjectTreeValidator(),
 
             new PageTreeValidator(),
+
+            new FontValidator(),
+
+            new MetadataValidator(),
+
+            new IncrementalUpdateValidator(),
 
         ]);
 

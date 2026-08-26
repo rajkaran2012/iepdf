@@ -1129,6 +1129,64 @@ describe(
 
             }
         );
+        /**
+         * =====================================================================
+         * 8G. INCREMENTAL UPDATE — NORMAL PDF
+         * =====================================================================
+         */
+        it(
+            "accepts a normal single-revision PDF without /Prev",
+            async () => {
+
+                const pipeline =
+                    new ValidationPipeline();
+
+                const file =
+                    createValidPdf();
+
+                const results =
+                    await pipeline.execute(
+                        [file],
+                        file,
+                        "split"
+                    );
+
+                const deepResults =
+                    results.filter(
+                        (result) =>
+                            result.gate ===
+                            ValidationGate.DEEP
+                    );
+
+                const incrementalResult =
+                    deepResults.find(
+                        (result) =>
+                            result.rule ===
+                            ValidationRule.INCREMENTAL_UPDATE
+                    );
+
+                expect(
+                    incrementalResult
+                ).toBeDefined();
+
+                expect(
+                    incrementalResult?.status
+                ).toBe(
+                    ValidationStatus.PASSED
+                );
+
+                expect(
+                    incrementalResult?.passed
+                ).toBe(true);
+
+                expect(
+                    incrementalResult?.errorCode
+                ).toBe(
+                    ValidationErrorCode.NONE
+                );
+
+            }
+        );
 
 
         /**

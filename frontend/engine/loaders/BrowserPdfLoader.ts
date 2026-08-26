@@ -1,4 +1,4 @@
-﻿import { BrowserPdfUnlockAdapter } from "@/engine/unlock/adapter/BrowserPdfUnlockAdapter";
+import { BrowserPdfUnlockAdapter } from "@/engine/unlock/adapter/BrowserPdfUnlockAdapter";
 import { BrowserPdfDocument } from "@/engine/pdf/BrowserPdfDocument";
 
 import { PdfiumProtectedPdfEngine } from "@/engine/protected/pdfium/PdfiumProtectedPdfEngine";
@@ -33,20 +33,16 @@ export class BrowserPdfLoader {
 
         try {
 
-            let buffer: ArrayBuffer;
-
-            let encrypted = false;
-
-            let passwordAccepted = false;
-
             const suppliedPassword =
                 typeof password === "string" &&
                 password.trim().length > 0;
 
-            /**
+            /*
              * ================================================================
              * PASSWORD SUPPLIED
              * ================================================================
+             *
+             * Password handling deliberately remains on the PDFium path.
              */
             if (suppliedPassword) {
 
@@ -56,124 +52,59 @@ export class BrowserPdfLoader {
                         password!.trim()
                     );
 
-                buffer =
+                const buffer =
                     unlockResult.bytes;
 
-                encrypted =
+                const encrypted =
                     unlockResult.encrypted;
 
-                /**
-                 * A password was successfully processed by the provider.
-                 *
-                 * For an encrypted PDF it was accepted.
-                 *
-                 * For an unencrypted PDF no password was actually required.
-                 */
-                passwordAccepted =
-                    encrypted;
+                const document =
+                    new BrowserPdfDocument();
 
-            }
-            /**
-             * ================================================================
-             * NO PASSWORD
-             * ================================================================
-             */
-            else {
+                await document.load(
+                    buffer
+                );
 
-                const openResult =
-                    await this.protectedPdfEngine.open(
-                        file
-                    );
+                return {
 
-                if (
-                    openResult.status ===
-                    ProtectedPdfStatus.PASSWORD_REQUIRED
-                ) {
+                    success: true,
 
-                    return {
+                    document,
 
-                        success: false,
+                    pageCount:
+                        document.getPageCount(),
 
-                        document: null,
+                    encrypted,
 
-                        pageCount: 0,
+                    passwordRequired: false,
 
-                        encrypted: true,
+                    passwordAccepted:
+                        encrypted,
 
-                        passwordRequired: true,
+                    errorCode:
+                        PdfErrorCode.NONE,
 
-                        passwordAccepted: false,
+                    message:
+                        null
 
-                        errorCode:
-                            PdfErrorCode.PASSWORD_REQUIRED,
-
-                        message:
-                            openResult.message ??
-                            "Password is required."
-
-                    };
-
-                }
-
-                if (
-                    openResult.status !==
-                    ProtectedPdfStatus.OPENED
-                ) {
-
-                    return {
-
-                        success: false,
-
-                        document: null,
-
-                        pageCount: 0,
-
-                        encrypted: false,
-
-                        passwordRequired: false,
-
-                        passwordAccepted: false,
-
-                        errorCode:
-                            PdfErrorCode.LOAD_FAILED,
-
-                        message:
-                            openResult.message ??
-                            "Unable to open PDF."
-
-                    };
-
-                }
-
-                /**
-                 * PDFium successfully opened the document without a password.
-                 *
-                 * Therefore the source PDF is not password-protected.
-                 */
-                encrypted = false;
-
-                passwordAccepted = false;
-
-                if (
-                    openResult.document !== null
-                ) {
-
-                    await this.protectedPdfEngine.close(
-                        openResult.document
-                    );
-
-                }
-
-                buffer =
-                    await file.arrayBuffer();
+                };
 
             }
 
-            /**
+            /*
              * ================================================================
-             * BASIC PDF HEADER VALIDATION
+             * NORMAL BROWSER-FIRST LOAD
              * ================================================================
+             *
+             * IMPORTANT:
+             *
+             * Do NOT initialize PDFium here.
+             *
+             * Normal PDFs should be handled directly by pdf-lib.
              */
+            const buffer =
+                await file.arrayBuffer();
+
             const header =
                 new TextDecoder()
                     .decode(
@@ -190,7 +121,7 @@ export class BrowserPdfLoader {
 
                     pageCount: 0,
 
-                    encrypted,
+                    encrypted: false,
 
                     passwordRequired: false,
 
@@ -206,40 +137,204 @@ export class BrowserPdfLoader {
 
             }
 
-            /**
-             * ================================================================
-             * LOAD THROUGH BROWSER PDF DOCUMENT
-             * ================================================================
-             */
             const document =
                 new BrowserPdfDocument();
 
-            await document.load(
-                buffer
-            );
+            try {
 
-            return {
+                await document.load(
+                    buffer
+                );
 
-                success: true,
+                return {
 
-                document,
+                    success: true,
 
-                pageCount:
-                    document.getPageCount(),
+                    document,
 
-                encrypted,
+                    pageCount:
+                        document.getPageCount(),
 
-                passwordRequired: false,
+                    encrypted: false,
 
-                passwordAccepted,
+                    passwordRequired: false,
 
-                errorCode:
-                    PdfErrorCode.NONE,
+                    passwordAccepted: false,
 
-                message:
-                    null
+                    errorCode:
+                        PdfErrorCode.NONE,
 
-            };
+                    message:
+                        null
+
+                };
+
+            }
+            catch (browserLoadError) {
+
+                /*
+                 * ============================================================
+                 * PDF-LIB FAILED
+                 * ============================================================
+                 *
+                 * Only now do we fall back to PDFium.
+                 *
+                 * This keeps the normal browser-first path free from
+                 * unnecessary PDFium initialization.
+                 */
+                try {
+
+                    const openResult =
+                        await this.protectedPdfEngine.open(
+                            file
+                        );
+
+                    if (
+                        openResult.status ===
+                        ProtectedPdfStatus.PASSWORD_REQUIRED
+                    ) {
+
+                        if (
+                            openResult.document !== null
+                        ) {
+
+                            await this.protectedPdfEngine.close(
+                                openResult.document
+                            );
+
+                        }
+
+                        return {
+
+                            success: false,
+
+                            document: null,
+
+                            pageCount: 0,
+
+                            encrypted: true,
+
+                            passwordRequired: true,
+
+                            passwordAccepted: false,
+
+                            errorCode:
+                                PdfErrorCode.PASSWORD_REQUIRED,
+
+                            message:
+                                openResult.message ??
+                                "Password is required."
+
+                        };
+
+                    }
+
+                    if (
+                        openResult.status !==
+                        ProtectedPdfStatus.OPENED
+                    ) {
+
+                        return {
+
+                            success: false,
+
+                            document: null,
+
+                            pageCount: 0,
+
+                            encrypted: false,
+
+                            passwordRequired: false,
+
+                            passwordAccepted: false,
+
+                            errorCode:
+                                PdfErrorCode.LOAD_FAILED,
+
+                            message:
+                                openResult.message ??
+                                (
+                                    browserLoadError instanceof Error
+                                        ? browserLoadError.message
+                                        : "Unable to load PDF."
+                                )
+
+                        };
+
+                    }
+
+                    if (
+                        openResult.document !== null
+                    ) {
+
+                        await this.protectedPdfEngine.close(
+                            openResult.document
+                        );
+
+                    }
+
+                    return {
+
+                        success: false,
+
+                        document: null,
+
+                        pageCount: 0,
+
+                        encrypted: false,
+
+                        passwordRequired: false,
+
+                        passwordAccepted: false,
+
+                        errorCode:
+                            PdfErrorMapper.map(
+                                browserLoadError
+                            ),
+
+                        message:
+                            browserLoadError instanceof Error
+                                ? browserLoadError.message
+                                : "Unable to load PDF."
+
+                    };
+
+                }
+                catch (pdfiumError) {
+
+                    return {
+
+                        success: false,
+
+                        document: null,
+
+                        pageCount: 0,
+
+                        encrypted: false,
+
+                        passwordRequired: false,
+
+                        passwordAccepted: false,
+
+                        errorCode:
+                            PdfErrorMapper.map(
+                                browserLoadError
+                            ),
+
+                        message:
+                            browserLoadError instanceof Error
+                                ? browserLoadError.message
+                                : (
+                                    pdfiumError instanceof Error
+                                        ? pdfiumError.message
+                                        : "Unable to load PDF."
+                                )
+
+                    };
+
+                }
+
+            }
 
         }
         catch (error) {

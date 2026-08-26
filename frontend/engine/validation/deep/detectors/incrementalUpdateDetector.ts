@@ -1,4 +1,4 @@
-﻿/**
+/**
  * =============================================================================
  * iePDF Validation Engine
  * =============================================================================
@@ -114,14 +114,21 @@ export class IncrementalUpdateDetector
                 previousLinks.length === 0
             ) {
 
+                /*
+                 * A PDF without /Prev is a valid
+                 * single-revision PDF.
+                 *
+                 * No incremental update is present,
+                 * but there is no incremental-update
+                 * structural error to report.
+                 */
                 return {
-                    validIncrementalUpdate: false,
+                    validIncrementalUpdate:
+                        true,
                     revisionCount:
                         revisionOffsets.length,
                     previousRevisionCount: 0,
-                    revisionOffsets,
-                    reason:
-                        "PDF does not contain an incremental-update /Prev chain."
+                    revisionOffsets
                 };
 
             }

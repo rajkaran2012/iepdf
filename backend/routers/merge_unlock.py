@@ -82,7 +82,7 @@ async def unlock_merge(
         writer = PdfWriter()
 
         for file in files:
-             print("--------------------------------")
+            print("--------------------------------")
             print("Filename :", file.filename)
 
             # -----------------------------
@@ -170,7 +170,7 @@ async def unlock_merge(
         writer.write(buffer)
 
         buffer.seek(0)
-         print()
+        print()
         print("=" * 60)
         print(
             "Merged PDF Size:",

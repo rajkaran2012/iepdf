@@ -1,127 +1,115 @@
-/**
- * =============================================================================
- * iePDF Validation Engine
- * =============================================================================
- *
- * File        : magicNumberValidator.ts
- * Module      : Boundary Validation
- * Layer       : Browser Engine
- *
- * -----------------------------------------------------------------------------
- * Purpose
- * -----------------------------------------------------------------------------
- * Validates the PDF file signature (Magic Number).
- *
- * Responsibilities
- * -----------------------------------------------------------------------------
- * ✓ Read first bytes of uploaded file
- * ✓ Verify PDF signature
- * ✓ Browser First
- * ✓ Fail Fast
- * ✓ Immutable Validation Result
- * ✓ Enterprise Logging
- *
- * =============================================================================
- */
-
-import { BaseValidator } from "../common/baseValidator";
-
-import type { ValidationContext } from "../pipeline/validationContext";
+﻿import type { ValidationContext } from "../pipeline/validationContext";
 import type { ValidationResult } from "../pipeline/validationResult";
-
 import {
     ValidationErrorCode,
     ValidationGate,
     ValidationRule,
-    ValidationSeverity,
-    ValidationStatus,
 } from "../pipeline/validationTypes";
-
-import ValidationConstants from "../common/validationConstants";
-import ValidationLogger from "../common/validationLogger";
+import { BaseValidator } from "../common/baseValidator";
 
 export class MagicNumberValidator extends BaseValidator {
 
-    public override readonly name = "MagicNumberValidator";
+    public readonly gate = ValidationGate.BOUNDARY;
+    public readonly rule = ValidationRule.MAGIC_NUMBER;
+    public readonly name = "Magic Number Validator";
+    public readonly description =
+        "Validates the file signature against the expected format for the selected tool.";
+    public readonly enabled = true;
 
-    public override readonly description =
-        "Validates PDF file signature.";
-
-    public override readonly gate =
-        ValidationGate.BOUNDARY;
-
-    public override readonly rule =
-        ValidationRule.MAGIC_NUMBER;
-
-    protected override readonly priority =
-        ValidationConstants.VALIDATION_PRIORITY.NORMAL;
-
-    protected override async execute(
+    protected async execute(
         context: ValidationContext,
         startedAt: Date,
         timer: number
     ): Promise<ValidationResult> {
 
-        const boundary =
-            ValidationConstants.BOUNDARY_VALIDATION;
+        const file =
+            context.file;
 
-        const messages =
-            ValidationConstants.VALIDATION_MESSAGES;
+        if (context.toolType === "jpg-to-pdf") {
 
-        const file = context.file;
+            const headerBuffer =
+                await file
+                    .slice(0, 8)
+                    .arrayBuffer();
 
-        const headerBuffer = await file
-            .slice(0, boundary.PDF_MAGIC_NUMBER_LENGTH)
-            .arrayBuffer();
+            const bytes =
+                new Uint8Array(headerBuffer);
 
-        const header = new TextDecoder().decode(headerBuffer);
+            const isJpeg =
+                bytes.length >= 3 &&
+                bytes[0] === 0xFF &&
+                bytes[1] === 0xD8 &&
+                bytes[2] === 0xFF;
 
-        ValidationLogger.debug(
-            this.name,
-            `Checking PDF signature (${header}).`,
-            {
-                expected: boundary.PDF_MAGIC_NUMBER,
-                actual: header,
+            const isPng =
+                bytes.length >= 8 &&
+                bytes[0] === 0x89 &&
+                bytes[1] === 0x50 &&
+                bytes[2] === 0x4E &&
+                bytes[3] === 0x47 &&
+                bytes[4] === 0x0D &&
+                bytes[5] === 0x0A &&
+                bytes[6] === 0x1A &&
+                bytes[7] === 0x0A;
+
+            if (isJpeg || isPng) {
+
+                return this.createSuccessResult(
+                    startedAt,
+                    timer,
+                    isJpeg
+                        ? "JPEG file signature is valid."
+                        : "PNG file signature is valid.",
+                    `Detected=${isJpeg ? "JPEG" : "PNG"}, ` +
+                    `Tool="${context.toolType}"`
+                );
+
             }
-        );
 
-        if (header === boundary.PDF_MAGIC_NUMBER) {
-
-            return this.createResult({
+            return this.createFailureResult(
                 startedAt,
                 timer,
-                status: ValidationStatus.PASSED,
-                passed: true,
-                severity: ValidationSeverity.INFO,
-                errorCode: ValidationErrorCode.NONE,
-                message:
-                    messages.MAGIC_NUMBER_VALIDATION_PASSED,
-            });
+                ValidationErrorCode.INVALID_MAGIC_NUMBER,
+                "Invalid image file signature.",
+                `Expected=JPEG(FF D8 FF) or ` +
+                `PNG(89 50 4E 47 0D 0A 1A 0A), ` +
+                `File="${file.name}"`
+            );
 
         }
 
-        ValidationLogger.warn(
-            this.name,
-            "Invalid PDF signature.",
-            {
-                expected: boundary.PDF_MAGIC_NUMBER,
-                actual: header,
-            }
-        );
+        // ---------------------------------------------------------------------
+        // Existing PDF behavior
+        // ---------------------------------------------------------------------
 
-        return this.createResult({
+        const headerBuffer =
+            await file
+                .slice(0, 5)
+                .arrayBuffer();
+
+        const header =
+            new TextDecoder().decode(
+                headerBuffer
+            );
+
+        if (header === "%PDF-") {
+
+            return this.createSuccessResult(
+                startedAt,
+                timer,
+                "PDF file signature is valid.",
+                `Expected="%PDF-", Actual="${header}"`
+            );
+
+        }
+
+        return this.createFailureResult(
             startedAt,
             timer,
-            status: ValidationStatus.FAILED,
-            passed: false,
-            severity: ValidationSeverity.ERROR,
-            errorCode:
-                ValidationErrorCode.INVALID_MAGIC_NUMBER,
-            message:
-                messages.INVALID_MAGIC_NUMBER,
-            details:
-                `Expected="${boundary.PDF_MAGIC_NUMBER}", Actual="${header}"`,
-        });
+            ValidationErrorCode.INVALID_MAGIC_NUMBER,
+            "Invalid PDF file signature.",
+            `Expected="%PDF-", Actual="${header}"`
+        );
 
     }
 

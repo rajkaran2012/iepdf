@@ -1,0 +1,62 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260907164134
+Username: DESKTOP-PVDVQ84\WELCOME
+RunAs User: DESKTOP-PVDVQ84\WELCOME
+Configuration Name: 
+Machine: DESKTOP-PVDVQ84 (Microsoft Windows NT 10.0.19045.0)
+Host Application: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\IEPDF\scripts\Test-MergePdfRegression.ps1
+Process ID: 29272
+PSVersion: 5.1.19041.6456
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.19041.6456
+BuildVersion: 10.0.19041.6456
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+==================================================
+ iePDF Merge PDF Regression Test
+==================================================
+
+PASS  PRE-01 - Required project files
+PASS  SRC-01 - Merge source UX and notification checks
+PASS  VAL-01 - 15 MiB validation limit
+PASS  VAL-02 - Exactly 15 MiB boundary
+
+Running pnpm build...
+$ node .\node_modules\next\dist\bin\next build
+▲ Next.js 16.2.9 (Turbopack)
+
+  Creating an optimized production build ...
+[ELIFECYCLE] Command failed with exit code 3221225477.
+FAIL  M-10 - Production build
+      pnpm build failed with exit code -1073741819.
+PASS  ENV-01 - Node.js / pnpm available
+      Node v24.18.0, pnpm 11.24.0
+PASS  BROWSER - Playwright + installed Chrome
+      Browser automation environment ready.
+PASS  TEST-DATA - Merge browser test files
+PS>TerminatingError(Invoke-WebRequest): "Unable to connect to the remote server"
+FAIL  SERVER - Merge PDF page reachable
+      Unable to connect to the remote server
+PS>TerminatingError(node.exe): "The running command stopped because the preference variable "ErrorActionPreference" or common parameter is set to Stop: node:internal/modules/cjs/loader:1520"
+FAIL  BROWSER-RUNNER - Browser regression execution
+      node:internal/modules/cjs/loader:1520
+
+==================================================
+ FINAL RESULT
+==================================================
+PASS    : 7
+FAIL    : 3
+SKIPPED : 0
+
+Report : C:\IEPDF\frontend\_regression\merge-pdf\merge-regression-report.txt
+Log    : C:\IEPDF\frontend\_regression\merge-pdf\logs\merge-regression-20260907-164134.log
+
+**********************
+Windows PowerShell transcript end
+End time: 20260907164146
+**********************

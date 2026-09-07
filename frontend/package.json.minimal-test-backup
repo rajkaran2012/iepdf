@@ -1,0 +1,13 @@
+{
+  "name": "iepdf-frontend-test",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "node .\\node_modules\\next\\dist\\bin\\next build"
+  },
+  "dependencies": {
+    "next": "16.2.8",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  }
+}

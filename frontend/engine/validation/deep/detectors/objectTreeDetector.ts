@@ -1,4 +1,4 @@
-/**
+﻿/**
  * =============================================================================
  * iePDF Validation Engine
  * =============================================================================
@@ -145,7 +145,7 @@ export class ObjectTreeDetector
              * 2 0 obj
              */
             const objectPattern =
-                /(?:^|\r?\n)\s*(\d+)\s+(\d+)\s+obj\b/g;
+                /(?:^|\r?\n|endobj)\s*(\d+)\s+(\d+)\s+obj\b/g;
 
             const objects =
                 new Map<string, {
@@ -161,6 +161,13 @@ export class ObjectTreeDetector
                 (match =
                     objectPattern.exec(text)) !== null
             ) {
+
+                const declarationOffset =
+                    match[0].search(/\d/);
+
+                const declarationStartIndex =
+                    match.index +
+                    declarationOffset;
 
                 const objectNumber =
                     Number(match[1]);
@@ -217,7 +224,7 @@ export class ObjectTreeDetector
                         objectNumber,
                         generationNumber,
                         startIndex:
-                            match.index
+                            declarationStartIndex
                     }
                 );
 
@@ -343,3 +350,6 @@ export class ObjectTreeDetector
     }
 
 }
+
+
+

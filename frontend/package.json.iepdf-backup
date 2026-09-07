@@ -1,0 +1,39 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test:watch": "vitest",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@embedpdf/engines": "^2.15.0",
+    "@embedpdf/pdfium": "^2.15.0",
+    "@embedpdf/viewer": "file:C:/IEPDF/embed-pdf-viewer/embedpdf-viewer-3.0.0-next.9.tgz",
+    "@embedpdf/viewer-react": "file:C:/IEPDF/embed-pdf-viewer/embedpdf-viewer-react-3.0.0-next.9.tgz",
+    "framer-motion": "^12.42.2",
+    "lucide-react": "^1.22.0",
+    "next": "16.2.9",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^5.4.296",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-dropzone": "^15.0.0",
+    "react-pdf": "^10.4.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.9",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "^4.1.11"
+  }
+}

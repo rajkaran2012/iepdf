@@ -1,0 +1,143 @@
+﻿import { describe, it, expect } from "vitest";
+import { readFile } from "node:fs/promises";
+import { PdfiumCompressorAdapter } from "../../engine/compression/PdfiumCompressorAdapter";
+
+const files = [
+    "basic.pdf",
+    "image-fixture-normalized.pdf",
+    "image-fixture-real.pdf",
+    "image-fixture-rebuilt.pdf",
+    "image-fixture-valid.pdf",
+    "image-fixture.pdf",
+    "pdfium-render-blank.pdf",
+];
+
+describe("PDFium fixture comparison", () => {
+
+    it("tests FPDF_LoadPage against every fixture", async () => {
+
+        for (const name of files) {
+
+            console.log("");
+            console.log("================================");
+            console.log("TESTING:", name);
+            console.log("================================");
+
+            const bytes =
+                new Uint8Array(
+                    await readFile(
+                        `C:/IEPDF/FRONTEND/tests/fixtures/${name}`
+                    )
+                );
+
+            const file =
+                new File(
+                    [bytes],
+                    name,
+                    {
+                        type: "application/pdf"
+                    }
+                );
+
+            const adapter =
+                new PdfiumCompressorAdapter();
+
+            try {
+
+                const documentPtr =
+                    await adapter.openDocument(file);
+
+                console.log(
+                    "DOCUMENT PTR:",
+                    documentPtr
+                );
+
+                const module =
+                    adapter.getModule();
+
+                const pageCount =
+                    module.FPDF_GetPageCount(
+                        documentPtr
+                    );
+
+                console.log(
+                    "PAGE COUNT:",
+                    pageCount
+                );
+
+                console.log(
+                    "LAST ERROR BEFORE LOAD:",
+                    module.FPDF_GetLastError()
+                );
+
+                let pagePtr = 0;
+
+                try {
+
+                    console.log(
+                        "ABOUT TO CALL FPDF_LoadPage"
+                    );
+
+                    pagePtr =
+                        module.FPDF_LoadPage(
+                            documentPtr,
+                            0
+                        );
+
+                    console.log(
+                        "FPDF_LoadPage RETURNED:",
+                        pagePtr
+                    );
+
+                    console.log(
+                        "LAST ERROR AFTER LOAD:",
+                        module.FPDF_GetLastError()
+                    );
+
+                } finally {
+
+                    if (pagePtr) {
+
+                        module.FPDF_ClosePage(
+                            pagePtr
+                        );
+
+                        console.log(
+                            "PAGE CLOSED"
+                        );
+
+                    }
+
+                }
+
+            } catch (error) {
+
+                console.log(
+                    "!!! FAILED !!!"
+                );
+
+                console.log(
+                    error instanceof Error
+                        ? error.message
+                        : error
+                );
+
+            } finally {
+
+                try {
+
+                    await adapter.closeDocument();
+
+                } catch {
+                    // diagnostic cleanup only
+                }
+
+            }
+
+        }
+
+        expect(true).toBe(true);
+
+    });
+
+});

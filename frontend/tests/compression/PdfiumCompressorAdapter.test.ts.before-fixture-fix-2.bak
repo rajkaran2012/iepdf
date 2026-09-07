@@ -1,0 +1,493 @@
+﻿import {
+    describe,
+    expect,
+    it,
+} from "vitest";
+
+import {
+    PdfiumCompressorAdapter,
+} from "@/engine/compression/PdfiumCompressorAdapter";
+
+
+function loadFixturePdf(): File {
+
+    const fixturePath =
+        "C:\\IEPDF\\FRONTEND\\tests\\fixtures\\pdfium-render-blank.pdf";
+
+    const fs =
+        require("node:fs");
+
+    const bytes =
+        fs.readFileSync(fixturePath);
+
+    return new File(
+        [
+            bytes,
+        ],
+        "image-fixture-real.pdf",
+        {
+            type:
+                "application/pdf",
+        }
+    );
+
+}
+
+describe(
+    "PdfiumCompressorAdapter",
+    () => {
+
+        it(
+            "starts uninitialized",
+            () => {
+
+                const adapter =
+                    new PdfiumCompressorAdapter();
+
+                expect(
+                    adapter.isInitialized()
+                ).toBe(false);
+
+            }
+        );
+
+
+        it(
+            "throws when PDFium module is requested before initialization",
+            () => {
+
+                const adapter =
+                    new PdfiumCompressorAdapter();
+
+                expect(
+                    () => adapter.getModule()
+                ).toThrow(
+                    "PDFium has not been initialized."
+                );
+
+            }
+        );
+
+
+        it(
+            "initializes PDFium successfully",
+            async () => {
+
+                const adapter =
+                    new PdfiumCompressorAdapter();
+
+                await adapter.initialize();
+
+                expect(
+                    adapter.isInitialized()
+                ).toBe(true);
+
+                expect(
+                    adapter.getModule()
+                ).toBeDefined();
+
+            }
+        );
+
+
+        it(
+            "initialization is idempotent",
+            async () => {
+
+                const adapter =
+                    new PdfiumCompressorAdapter();
+
+                await adapter.initialize();
+
+                const firstModule =
+                    adapter.getModule();
+
+                await adapter.initialize();
+
+                const secondModule =
+                    adapter.getModule();
+
+                expect(
+                    secondModule
+                ).toBe(firstModule);
+
+            }
+        );
+
+
+        it(
+            "opens a PDF and returns its page count",
+            async () => {
+
+                const adapter =
+                    new PdfiumCompressorAdapter();
+
+                const file =
+                    loadFixturePdf();
+
+                const documentPtr =
+                    await adapter.openDocument(
+                        file
+                    );
+
+                expect(
+                    documentPtr
+                ).toBeGreaterThan(0);
+
+                expect(
+                    adapter.getDocumentPtr()
+                ).toBe(
+                    documentPtr
+                );
+
+                expect(
+                    adapter.getPageCount()
+                ).toBe(1);
+
+                await adapter.closeDocument();
+
+            }
+        );
+
+
+        it(
+            "rejects an invalid page index",
+            async () => {
+
+                const adapter =
+                    new PdfiumCompressorAdapter();
+
+                const file =
+                    loadFixturePdf();
+
+                await adapter.openDocument(
+                    file
+                );
+
+                expect(
+                    () => adapter.openPage(1)
+                ).toThrow(
+                    "Invalid PDF page index: 1"
+                );
+
+                await adapter.closeDocument();
+
+            }
+        );
+
+
+        it(
+            "opens and closes a valid page",
+            async () => {
+
+                const adapter =
+                    new PdfiumCompressorAdapter();
+
+                const file =
+                    loadFixturePdf();
+
+                await adapter.openDocument(
+                    file
+                );
+
+                const pagePtr =
+                    adapter.openPage(0);
+
+                expect(
+                    pagePtr
+                ).toBeGreaterThan(0);
+
+                expect(
+                    adapter.getPagePtr()
+                ).toBe(
+                    pagePtr
+                );
+
+                adapter.closePage();
+
+                expect(
+                    () => adapter.getPagePtr()
+                ).toThrow(
+                    "PDFium page is not open."
+                );
+
+                await adapter.closeDocument();
+
+            }
+        );
+
+
+        it(
+            "analyzes a page without modifying it",
+            async () => {
+
+                const adapter =
+                    new PdfiumCompressorAdapter();
+
+                const file =
+                    loadFixturePdf();
+
+                await adapter.openDocument(
+                    file
+                );
+
+                const pagePtr =
+                    adapter.openPage(
+                        0
+                    );
+
+                const module =
+                    adapter.getModule();
+
+                console.log(
+                    "PAGE PTR:",
+                    pagePtr
+                );
+
+                const pageObjectCount =
+                    module.FPDFPage_CountObjects(
+                        pagePtr
+                    );
+
+                console.log(
+                    "PAGE OBJECT COUNT:",
+                    pageObjectCount
+                );
+
+                const pageWidth =
+                    module.FPDF_GetPageWidth(
+                        pagePtr
+                    );
+
+                const pageHeight =
+                    module.FPDF_GetPageHeight(
+                        pagePtr
+                    );
+
+                console.log(
+                    "PDFIUM PAGE WIDTH:",
+                    pageWidth
+                );
+
+                console.log(
+                    "PDFIUM PAGE HEIGHT:",
+                    pageHeight
+                );
+
+                console.log(
+                    "PDFIUM LAST ERROR BEFORE RENDER:",
+                    module.FPDF_GetLastError()
+                );
+
+                const renderWidth = 612;
+                const renderHeight = 792;
+
+                const bitmapPtr =
+                    module.FPDFBitmap_Create(
+                        renderWidth,
+                        renderHeight,
+                        4
+                    );
+
+                console.log(
+                    "BITMAP PTR:",
+                    bitmapPtr
+                );
+
+                if (bitmapPtr) {
+
+                    console.log(
+                        "BITMAP WIDTH:",
+                        module.FPDFBitmap_GetWidth(
+                            bitmapPtr
+                        )
+                    );
+
+                    console.log(
+                        "BITMAP HEIGHT:",
+                        module.FPDFBitmap_GetHeight(
+                            bitmapPtr
+                        )
+                    );
+
+                    console.log(
+                        "BITMAP STRIDE:",
+                        module.FPDFBitmap_GetStride(
+                            bitmapPtr
+                        )
+                    );
+
+                    console.log(
+                        "BITMAP FORMAT:",
+                        module.FPDFBitmap_GetFormat(
+                            bitmapPtr
+                        )
+                    );
+
+                }
+
+                if (bitmapPtr) {
+
+                    console.log(
+                        "ABOUT TO RENDER:",
+                        {
+                            bitmapPtr,
+                            pagePtr,
+                            renderWidth,
+                            renderHeight,
+                            startX: 0,
+                            startY: 0,
+                            rotate: 0,
+                            flags: 0
+                        }
+                    );
+
+                    const renderResult =
+                        module.FPDF_RenderPageBitmap(
+                            bitmapPtr,
+                            pagePtr,
+                            0,
+                            0,
+                            renderWidth,
+                            renderHeight,
+                            0,
+                            0
+                        );
+
+                    console.log(
+                        "RENDER CALL RETURNED"
+                    );
+
+                    console.log(
+                        "RENDER RESULT: completed",
+                        renderResult
+                    );
+
+                    const bufferPtr =
+                        module.FPDFBitmap_GetBuffer(
+                            bitmapPtr
+                        );
+
+                    const bitmapWidth =
+                        module.FPDFBitmap_GetWidth(
+                            bitmapPtr
+                        );
+
+                    const bitmapHeight =
+                        module.FPDFBitmap_GetHeight(
+                            bitmapPtr
+                        );
+
+                    console.log(
+                        "BITMAP BUFFER PTR:",
+                        bufferPtr
+                    );
+
+                    console.log(
+                        "BITMAP WIDTH:",
+                        bitmapWidth
+                    );
+
+                    console.log(
+                        "BITMAP HEIGHT:",
+                        bitmapHeight
+                    );
+
+                    module.FPDFBitmap_Destroy(
+                        bitmapPtr
+                    );
+
+                }
+
+                for (
+                    let i = 0;
+                    i < Math.min(pageObjectCount, 5);
+                    i++
+                ) {
+
+                    const objectPtr =
+                        module.FPDFPage_GetObject(
+                            pagePtr,
+                            i
+                        );
+
+                    console.log(
+                        "OBJECT",
+                        i,
+                        "PTR:",
+                        objectPtr
+                    );
+
+                    if (objectPtr) {
+
+                        console.log(
+                            "OBJECT",
+                            i,
+                            "TYPE:",
+                            module.FPDFPageObj_GetType(
+                                objectPtr
+                            )
+                        );
+
+                    }
+
+                }
+
+                const analysis =
+                    adapter.analyzePageByIndex(
+                        0
+                    );
+
+
+                expect(
+                    analysis.pageIndex
+                ).toBe(0);
+
+                expect(
+                    analysis.objectCount
+                ).toBeGreaterThan(0);
+
+                expect(
+                    analysis.imageCount
+                ).toBeGreaterThan(0);
+
+                expect(
+                    analysis.images.length
+                ).toBeGreaterThan(0);
+
+                expect(
+                    analysis.images[0].width
+                ).toBeGreaterThan(0);
+
+                expect(
+                    analysis.images[0].height
+                ).toBeGreaterThan(0);
+
+                await adapter.closeDocument();
+
+            }
+        );
+
+    }
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

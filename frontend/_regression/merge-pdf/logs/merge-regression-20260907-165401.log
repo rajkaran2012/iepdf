@@ -1,0 +1,91 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260907165401
+Username: DESKTOP-PVDVQ84\WELCOME
+RunAs User: DESKTOP-PVDVQ84\WELCOME
+Configuration Name: 
+Machine: DESKTOP-PVDVQ84 (Microsoft Windows NT 10.0.19045.0)
+Host Application: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\IEPDF\scripts\Test-MergePdfRegression.ps1
+Process ID: 8068
+PSVersion: 5.1.19041.6456
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.19041.6456
+BuildVersion: 10.0.19041.6456
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+==================================================
+ iePDF Merge PDF Regression Test
+==================================================
+
+PASS  PRE-01 - Required project files
+PASS  SRC-01 - Merge source UX and notification checks
+PASS  VAL-01 - 15 MiB validation limit
+PASS  VAL-02 - Exactly 15 MiB boundary
+
+Running pnpm build...
+$ node .\node_modules\next\dist\bin\next build
+▲ Next.js 16.2.9 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 8.9s
+✓ Finished TypeScript in 6.0s
+✓ Collecting page data using 3 workers in 830ms
+✓ Generating static pages using 3 workers (9/9) in 417ms
+✓ Finalizing page optimization in 11ms
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /compress-pdf
+├ ○ /jpg-to-pdf
+├ ○ /merge-pdf
+├ ○ /pdf-to-jpg
+└ ○ /split-pdf
+
+
+○  (Static)  prerendered as static content
+PASS  M-10 - Production build
+PASS  ENV-01 - Node.js / pnpm available
+      Node v24.18.0, pnpm 11.24.0
+PASS  BROWSER - Playwright + installed Chrome
+      Browser automation environment ready.
+PASS  TEST-DATA - Merge browser test files
+PASS  SERVER - Merge PDF page reachable
+      HTTP 200
+FAIL  M-01 - 2 valid PDFs -> merge/download/toast
+      Merge button not found.
+FAIL  M-02 - 3 valid PDFs -> merge/download/toast
+      locator.isEnabled: Timeout 30000ms exceeded.
+FAIL  M-04 - Password PDF + correct password -> merge/download
+      locator.fill: Timeout 30000ms exceeded.
+FAIL  M-05 - Password PDF + wrong password -> blocked
+      locator.fill: Timeout 30000ms exceeded.
+FAIL  M-06 - Oversized PDF -> blocked
+      Maximum file size validation message was not shown.
+FAIL  M-03 - Corrupted PDF -> blocked
+      locator.isEnabled: Timeout 30000ms exceeded.
+FAIL  M-07 - Exact 15 MiB PDF -> accepted
+      Exact 15 MiB PDF was not shown as Ready.
+FAIL  M-08 - Successful browser merge -> output + toast
+      locator.isEnabled: Timeout 30000ms exceeded.
+FAIL  M-09 - Merge button state matrix
+      Expected exactly one Merge button for two valid PDFs.
+
+==================================================
+ FINAL RESULT
+==================================================
+PASS    : 9
+FAIL    : 9
+SKIPPED : 0
+
+Report : C:\IEPDF\frontend\_regression\merge-pdf\merge-regression-report.txt
+Log    : C:\IEPDF\frontend\_regression\merge-pdf\logs\merge-regression-20260907-165401.log
+
+**********************
+Windows PowerShell transcript end
+End time: 20260907165709
+**********************

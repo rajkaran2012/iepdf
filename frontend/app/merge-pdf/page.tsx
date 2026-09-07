@@ -4,6 +4,8 @@ import { useRef, useState } from "react";
 import { BrowserPdfAnalyzer } from "@/engine/analysis/BrowserPdfAnalyzer";
 import { BrowserMergeProcessor } from "@/engine/processing/processors/BrowserMergeProcessor";
 import { BrowserPdfUnlockService } from "@/engine/unlock/BrowserPdfUnlockService";
+import useToast from "@/hooks/useToast";
+import { ValidationConstants } from "@/engine/validation/common/validationConstants";
 
 import ToolLayout from "@/components/layout/ToolLayout";
 import MergeWorkspace from "@/components/MergeWorkspace";
@@ -14,6 +16,9 @@ export default function MergePDF() {
   
   const [workspaceFiles, setWorkspaceFiles] = useState<any[]>([]);
   const [showWorkspace, setShowWorkspace] = useState(false);
+
+  const toast = useToast();
+  const MAX_FILE_SIZE = ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES;
   
   const handlePasswordChange = (
     id: string,
@@ -110,10 +115,13 @@ export default function MergePDF() {
 
     } catch (error) {
 
-      console.error(
-        "Password unlock failed:",
-        error
-      );
+      toast.error({
+        title: "Password verification failed",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Unable to unlock PDF.",
+      });
 
       const message =
         error instanceof Error
@@ -192,6 +200,7 @@ const handleRemoveFile = (id: string) => {
 
     try {
 
+
         const processor =
             new BrowserMergeProcessor();
 
@@ -206,7 +215,12 @@ const handleRemoveFile = (id: string) => {
 
         if (!result.success || !result.outputFile) {
 
-            console.error(result.error);
+            toast.error({
+              title: "Merge failed",
+              message:
+                result.error ||
+                "Unable to merge the selected PDFs.",
+            });
 
             return;
 
@@ -229,6 +243,11 @@ const handleRemoveFile = (id: string) => {
 
         link.remove();
 
+        toast.success({
+          title: "Merge completed",
+          message: "Your PDFs were merged successfully.",
+        });
+
         URL.revokeObjectURL(url);
 
         setWorkspaceFiles([]);
@@ -243,15 +262,18 @@ const handleRemoveFile = (id: string) => {
 
     } catch (error) {
 
-        console.error(error);
+        toast.error({
+          title: "Merge failed",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to merge the selected PDFs.",
+        });
 
     }
 
 };
   const handleSelectFiles = () => {
-  console.log("Button Clicked");
-  console.log(fileInputRef.current);
-
   fileInputRef.current?.click();
 };
 
@@ -262,6 +284,20 @@ const handleFileChange = async (
     const files = Array.from(event.target.files ?? []);
 
     if (files.length === 0) {
+        return;
+    }
+
+    const oversizedFile = files.find(
+        (file) => file.size > MAX_FILE_SIZE
+    );
+
+    if (oversizedFile) {
+        toast.error({
+          title: "Invalid PDF",
+          message: "File exceeds the maximum allowed size.",
+          fileName: oversizedFile.name,
+          fileSize: oversizedFile.size,
+        });
         return;
     }
 
@@ -291,10 +327,6 @@ const handleFileChange = async (
     setShowWorkspace(true);
 
 };
-
-
-  console.log("Workspace Files:", workspaceFiles);
-  console.log("Show Workspace:", showWorkspace);
 
   return (
     <ToolLayout
@@ -331,8 +363,16 @@ const handleFileChange = async (
 />
 )}
 
+
+
       </div>
 
     </ToolLayout>
   );
 }
+
+
+
+
+
+

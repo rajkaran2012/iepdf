@@ -1,4 +1,4 @@
-/**
+﻿/**
  * =============================================================================
  * iePDF Validation Engine
  * =============================================================================
@@ -12,9 +12,9 @@
  * Verifies the REAL canonical validation pipeline:
  *
  *     Boundary
- *         ↓
+ *         â†“
  *     Security
- *         ↓
+ *         â†“
  *     Deep
  *
  * IMPORTANT
@@ -423,7 +423,7 @@ function failedResults(
  */
 
 describe(
-    "Complete Validation Pipeline Ã¢â‚¬â€ Boundary Ã¢â€ â€™ Security Ã¢â€ â€™ Deep",
+    "Complete Validation Pipeline ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Boundary ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Security ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Deep",
     () => {
 
         /**
@@ -561,7 +561,7 @@ describe(
          * =====================================================================
          */
         it(
-            "returns gates in canonical Boundary Ã¢â€ â€™ Security Ã¢â€ â€™ Deep order",
+            "returns gates in canonical Boundary ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Security ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Deep order",
             async () => {
 
                 const pipeline =
@@ -678,7 +678,7 @@ describe(
 
         /**
          * =====================================================================
-         * 7. FAIL CLOSED Ã¢â‚¬â€ BOUNDARY
+         * 7. FAIL CLOSED ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â BOUNDARY
          * =====================================================================
          */
         it(
@@ -831,6 +831,92 @@ describe(
 }
         );
 
+
+        /**
+         * =====================================================================
+         * 8B.5 XREF TRAILER SAME-LINE REGRESSION
+         * =====================================================================
+         */
+        it(
+            "accepts a valid XRef table when trailer and dictionary share one line",
+            async () => {
+
+                let pdf =
+                    "%PDF-1.3\n" +
+                    "1 0 obj\n" +
+                    "<< /Type /Catalog /Pages 2 0 R >>\n" +
+                    "endobj\n" +
+                    "2 0 obj\n" +
+                    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>\n" +
+                    "endobj\n" +
+                    "3 0 obj\n" +
+                    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>\n" +
+                    "endobj\n";
+
+                const xrefOffset =
+                    pdf.length;
+
+                pdf +=
+                    "xref\n" +
+                    "0 4\n" +
+                    "0000000000 65535 f \n" +
+                    "0000000009 00000 n \n" +
+                    "0000000058 00000 n \n" +
+                    "0000000115 00000 n \n" +
+                    "trailer << /Size 4 /Root 1 0 R >>\n" +
+                    "startxref\n" +
+                    `${xrefOffset}` +
+                    "\n%%EOF\n";
+
+                const file =
+                    new File(
+                        [pdf],
+                        "integration-valid-same-line-trailer.pdf",
+                        {
+                            type: "application/pdf",
+                        }
+                    );
+
+                const pipeline =
+                    new ValidationPipeline();
+
+                const results =
+                    await pipeline.execute(
+                        [file],
+                        file,
+                        "split"
+                    );
+
+                const deepResults =
+                    results.filter(
+                        (result) =>
+                            result.gate ===
+                            ValidationGate.DEEP
+                    );
+
+                const xrefResult =
+                    deepResults.find(
+                        (result) =>
+                            result.rule ===
+                            ValidationRule.XREF
+                    );
+
+                expect(
+                    xrefResult
+                ).toBeDefined();
+
+                expect(
+                    xrefResult?.status
+                ).toBe(
+                    ValidationStatus.PASSED
+                );
+
+                expect(
+                    xrefResult?.passed
+                ).toBe(true);
+
+            }
+        );
 
         /**
          * =====================================================================
@@ -1013,6 +1099,99 @@ describe(
 
         /**
          * =====================================================================
+         * 8E.1 PAGE TREE INLINE OBJECT REGRESSION
+         * =====================================================================
+         */
+        it(
+            "accepts a valid Page Tree when objects follow endobj on the same line",
+            async () => {
+
+                let pdf =
+                    "%PDF-1.4\n" +
+                    "1 0 obj\n" +
+                    "<< /Type /Catalog /Pages 2 0 R >>\n" +
+                    "endobj\n" +
+                    "2 0 obj\n" +
+                    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>\n" +
+                    "endobj\n" +
+                    "3 0 obj\n" +
+                    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>\n" +
+                    "endobj 4 0 obj\n" +
+                    "<< /Length 0 >>\n" +
+                    "stream\n" +
+                    "endstream\n" +
+                    "endobj\n";
+
+                const xrefOffset =
+                    pdf.length;
+
+                pdf +=
+                    "xref\n" +
+                    "0 5\n" +
+                    "0000000000 65535 f \n" +
+                    "0000000009 00000 n \n" +
+                    "0000000058 00000 n \n" +
+                    "0000000115 00000 n \n" +
+                    "0000000216 00000 n \n" +
+                    "trailer\n" +
+                    "<< /Size 5 /Root 1 0 R >>\n" +
+                    "startxref\n" +
+                    `${xrefOffset}\n` +
+                    "%%EOF\n";
+
+                const file =
+                    new File(
+                        [pdf],
+                        "integration-valid-inline-page-tree.pdf",
+                        {
+                            type:
+                                "application/pdf"
+                        }
+                    );
+
+                const pipeline =
+                    new ValidationPipeline();
+
+                const results =
+                    await pipeline.execute(
+                        [file],
+                        file,
+                        "split"
+                    );
+
+                const deepResults =
+                    results.filter(
+                        (result) =>
+                            result.gate ===
+                            ValidationGate.DEEP
+                    );
+
+                const pageTreeResult =
+                    deepResults.find(
+                        (result) =>
+                            result.rule ===
+                            ValidationRule.PAGE_TREE
+                    );
+
+                expect(
+                    pageTreeResult
+                ).toBeDefined();
+
+                expect(
+                    pageTreeResult?.status
+                ).toBe(
+                    ValidationStatus.PASSED
+                );
+
+                expect(
+                    pageTreeResult?.passed
+                ).toBe(true);
+
+            }
+        );
+
+        /**
+         * =====================================================================
          * 8F. FONT DEEP VALIDATION
          * =====================================================================
          */
@@ -1131,7 +1310,7 @@ describe(
         );
         /**
          * =====================================================================
-         * 8G. INCREMENTAL UPDATE — NORMAL PDF
+         * 8G. INCREMENTAL UPDATE â€” NORMAL PDF
          * =====================================================================
          */
         it(
@@ -1330,6 +1509,10 @@ describe(
 
     }
 );
+
+
+
+
 
 
 

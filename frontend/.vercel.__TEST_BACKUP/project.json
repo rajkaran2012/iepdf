@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_WAkSeYBtt5eyazuSkQmfA8r7EjmG",
+  "orgId": "team_56zSULPH5TBXF7ysOCR0mbZj",
+  "projectName": "iepdf-web",
+  "settings": {
+    "createdAt": 1782812498532,
+    "framework": null,
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": "frontend",
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

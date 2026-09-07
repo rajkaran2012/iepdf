@@ -43,6 +43,15 @@ import {
     TrailerDetector
 } from "./trailerDetector";
 
+import {
+    PdfObjectParser
+} from "../parsers/PdfObjectParser";
+
+import type {
+    PdfObject,
+    PdfObjectReference
+} from "../parsers/PdfObject";
+
 import type {
     IXrefDetector
 } from "../interfaces/IXrefDetector";
@@ -55,16 +64,6 @@ import type {
     PageTreeDetectionResult
 } from "../models/PageTreeDetectionResult";
 
-interface PdfObjectReference {
-    readonly objectNumber: number;
-    readonly generationNumber: number;
-}
-
-interface PdfObject {
-    readonly objectNumber: number;
-    readonly generationNumber: number;
-    readonly body: string;
-}
 
 interface PageTreeNode {
     readonly reference: PdfObjectReference;
@@ -79,6 +78,9 @@ export class PageTreeDetector
 
     private readonly trailerDetector:
         TrailerDetector;
+
+    private readonly objectParser:
+        PdfObjectParser;
 
     public constructor(
         xrefDetector: IXrefDetector =
@@ -95,6 +97,9 @@ export class PageTreeDetector
 
         this.trailerDetector =
             trailerDetector;
+
+        this.objectParser =
+            new PdfObjectParser();
 
     }
 
@@ -155,7 +160,10 @@ export class PageTreeDetector
                 new TextDecoder("latin1").decode(bytes);
 
             const objects =
-                this.collectObjects(text);
+                this.objectParser.collectObjects(
+                    text,
+                    bytes
+                );
 
             const rootReference: PdfObjectReference = {
                 objectNumber:
@@ -165,7 +173,7 @@ export class PageTreeDetector
             };
 
             const catalog =
-                this.getObject(
+                this.objectParser.getObject(
                     objects,
                     rootReference
                 );
@@ -196,7 +204,7 @@ export class PageTreeDetector
             }
 
             const pagesReference =
-                this.parseReference(
+                this.objectParser.parseReference(
                     catalog.body,
                     "/Pages"
                 );
@@ -212,7 +220,7 @@ export class PageTreeDetector
             }
 
             const rootPages =
-                this.getObject(
+                this.objectParser.getObject(
                     objects,
                     pagesReference
                 );
@@ -339,127 +347,6 @@ export class PageTreeDetector
 
     }
 
-    private collectObjects(
-        text: string
-    ): Map<string, PdfObject> {
-
-        const objects =
-            new Map<string, PdfObject>();
-
-        const pattern =
-            /(?:^|\r?\n)\s*(\d+)\s+(\d+)\s+obj\b/g;
-
-        const matches:
-            Array<{
-                objectNumber: number;
-                generationNumber: number;
-                startIndex: number;
-            }> = [];
-
-        let match:
-            RegExpExecArray | null;
-
-        while (
-            (match =
-                pattern.exec(text)) !== null
-        ) {
-
-            const objectNumber =
-                Number(match[1]);
-
-            const generationNumber =
-                Number(match[2]);
-
-            if (
-                !Number.isSafeInteger(objectNumber) ||
-                objectNumber <= 0 ||
-                !Number.isSafeInteger(generationNumber) ||
-                generationNumber < 0
-            ) {
-
-                continue;
-
-            }
-
-            matches.push({
-                objectNumber,
-                generationNumber,
-                startIndex:
-                    match.index
-            });
-
-        }
-
-        for (
-            let index = 0;
-            index < matches.length;
-            index++
-        ) {
-
-            const current =
-                matches[index];
-
-            const nextStart =
-                index + 1 < matches.length
-                    ? matches[index + 1].startIndex
-                    : text.length;
-
-            const objectText =
-                text.slice(
-                    current.startIndex,
-                    nextStart
-                );
-
-            const endObjectIndex =
-                objectText.search(
-                    /\bendobj\b/
-                );
-
-            if (
-                endObjectIndex === -1
-            ) {
-
-                continue;
-
-            }
-
-            const body =
-                objectText.slice(
-                    objectText.indexOf("obj") + 3,
-                    endObjectIndex
-                );
-
-            const key =
-                `${current.objectNumber} ${current.generationNumber}`;
-
-            objects.set(
-                key,
-                {
-                    objectNumber:
-                        current.objectNumber,
-                    generationNumber:
-                        current.generationNumber,
-                    body
-                }
-            );
-
-        }
-
-        return objects;
-
-    }
-
-    private getObject(
-        objects: Map<string, PdfObject>,
-        reference: PdfObjectReference
-    ): PdfObject | undefined {
-
-        return objects.get(
-            `${reference.objectNumber} ${reference.generationNumber}`
-        );
-
-    }
-
     private hasType(
         body: string,
         type: "Catalog" | "Pages" | "Page"
@@ -467,56 +354,10 @@ export class PageTreeDetector
 
         const pattern =
             new RegExp(
-                `/Type\\s+/${type}(?![A-Za-z0-9])`
+                `/Type\\s*/${type}(?![A-Za-z0-9])`
             );
 
         return pattern.test(body);
-
-    }
-
-    private parseReference(
-        body: string,
-        key: string
-    ): PdfObjectReference | undefined {
-
-        const escapedKey =
-            key.replace(
-                /[.*+?^${}()|[\]\\]/g,
-                "\\$&"
-            );
-
-        const match =
-            body.match(
-                new RegExp(
-                    `${escapedKey}\\s+(\\d+)\\s+(\\d+)\\s+R`
-                )
-            );
-
-        if (match === null) {
-            return undefined;
-        }
-
-        const objectNumber =
-            Number(match[1]);
-
-        const generationNumber =
-            Number(match[2]);
-
-        if (
-            !Number.isSafeInteger(objectNumber) ||
-            objectNumber <= 0 ||
-            !Number.isSafeInteger(generationNumber) ||
-            generationNumber < 0
-        ) {
-
-            return undefined;
-
-        }
-
-        return {
-            objectNumber,
-            generationNumber
-        };
 
     }
 
@@ -639,7 +480,7 @@ export class PageTreeDetector
         }
 
         const object =
-            this.getObject(
+            this.objectParser.getObject(
                 objects,
                 reference
             );
@@ -669,7 +510,7 @@ export class PageTreeDetector
             ) {
 
                 const parent =
-                    this.parseReference(
+                    this.objectParser.parseReference(
                         object.body,
                         "/Parent"
                     );
@@ -721,7 +562,7 @@ export class PageTreeDetector
         ) {
 
             const parent =
-                this.parseReference(
+                this.objectParser.parseReference(
                     object.body,
                     "/Parent"
                 );
@@ -826,3 +667,10 @@ export class PageTreeDetector
     }
 
 }
+
+
+
+
+
+
+

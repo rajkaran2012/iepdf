@@ -1,4 +1,4 @@
-/**
+﻿/**
  * =============================================================================
  * iePDF Validation Engine
  * =============================================================================
@@ -79,7 +79,7 @@ export class ValidationPipeline {
      *
      * Gate order:
      *
-     * Boundary → Security → Deep
+     * Boundary â†’ Security â†’ Deep
      */
     public async execute(
         files: ReadonlyArray<File>,
@@ -105,7 +105,7 @@ export class ValidationPipeline {
 
             /**
              * ================================================================
-             * Gate 1 — Boundary Validation
+             * Gate 1 â€” Boundary Validation
              * ================================================================
              */
             await this.executeBoundaryValidation(
@@ -130,13 +130,23 @@ export class ValidationPipeline {
 
             /**
              * ================================================================
-             * Gate 2 — Security Validation
+             * Gate 2 â€” Security Validation
              * ================================================================
              */
-            await this.executeSecurityValidation(
-                context,
-                results
-            );
+            if (context.toolType !== "jpg-to-pdf") {
+                await this.executeSecurityValidation(
+                    context,
+                    results
+                );
+            } else {
+                ValidationLogger.info(
+                    this.constructor.name,
+                    "Security Validation not applicable to JPG to PDF.",
+                    {
+                        toolType: context.toolType,
+                    }
+                );
+            }
 
             /**
              * Fail closed.
@@ -155,13 +165,23 @@ export class ValidationPipeline {
 
             /**
              * ================================================================
-             * Gate 3 — Deep Validation
+             * Gate 3 â€” Deep Validation
              * ================================================================
              */
-            await this.executeDeepValidation(
-                context,
-                results
-            );
+            if (context.toolType !== "jpg-to-pdf") {
+                await this.executeDeepValidation(
+                    context,
+                    results
+                );
+            } else {
+                ValidationLogger.info(
+                    this.constructor.name,
+                    "Deep Validation not applicable to JPG to PDF.",
+                    {
+                        toolType: context.toolType,
+                    }
+                );
+            }
 
             /**
              * ================================================================

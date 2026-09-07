@@ -1,4 +1,4 @@
-/**
+﻿/**
  * =============================================================================
  * iePDF Validation Engine
  * =============================================================================
@@ -11,22 +11,8 @@
  * Purpose
  * =============================================================================
  *
- * Detects and validates the PDF trailer dictionary.
- *
- * Responsibilities
- * ---------------------------------------------------------------------------
- * - Reads PDF bytes.
- * - Uses XrefDetector for XRef structural validation.
- * - Locates the trailer dictionary after the validated XRef table.
- * - Validates /Size.
- * - Validates /Root.
- *
- * This detector does NOT:
- * - Produce ValidationResult.
- * - Handle UI logic.
- * - Modify the source PDF.
- * - Perform security validation.
- * - Duplicate XRef validation logic.
+ * Detects and validates the PDF trailer dictionary or the trailer-equivalent
+ * dictionary contained in a direct XRef stream.
  *
  * =============================================================================
  */
@@ -88,18 +74,6 @@ export class TrailerDetector {
 
         }
 
-        if (
-            xrefResult.xrefType !== "table"
-        ) {
-
-            return {
-                validTrailer: false,
-                reason:
-                    "Trailer validation currently supports traditional XRef tables only."
-            };
-
-        }
-
         const buffer =
             await file.arrayBuffer();
 
@@ -108,6 +82,66 @@ export class TrailerDetector {
 
         const text =
             new TextDecoder("latin1").decode(bytes);
+
+        /*
+         * -----------------------------------------------------------------------
+         * Direct XRef stream
+         *
+         * The XRef stream dictionary contains the trailer-equivalent entries.
+         * -----------------------------------------------------------------------
+         */
+
+        if (
+            xrefResult.xrefType === "stream"
+        ) {
+
+            const section =
+                text.slice(
+                    xrefResult.xrefOffset
+                );
+
+            const dictionaryStart =
+                section.indexOf("<<");
+
+            const dictionaryEnd =
+                dictionaryStart === -1
+                    ? -1
+                    : this.findDictionaryEnd(
+                        section,
+                        dictionaryStart
+                    );
+
+            if (
+                dictionaryStart === -1 ||
+                dictionaryEnd === -1
+            ) {
+
+                return {
+                    validTrailer: false,
+                    reason:
+                        "XRef stream trailer-equivalent dictionary is missing or malformed."
+                };
+
+            }
+
+            const dictionary =
+                section.slice(
+                    dictionaryStart + 2,
+                    dictionaryEnd
+                );
+
+            return this.validateTrailerDictionary(
+                dictionary,
+                xrefResult.xrefOffset
+            );
+
+        }
+
+        /*
+         * -----------------------------------------------------------------------
+         * Traditional XRef table
+         * -----------------------------------------------------------------------
+         */
 
         const xrefSection =
             text.slice(
@@ -126,8 +160,6 @@ export class TrailerDetector {
 
             return {
                 validTrailer: false,
-                trailerOffset:
-                    undefined,
                 reason:
                     "Validated XRef table does not contain a trailer keyword."
             };
@@ -145,13 +177,22 @@ export class TrailerDetector {
                     .join("\n")
             );
 
+        const trailerLine =
+            lines[trailerLineIndex]?.trim() ?? "";
+
         const trailerDictionaryText =
-            lines
-                .slice(
-                    trailerLineIndex + 1
-                )
-                .join("\n")
-                .trim();
+            trailerLine === "trailer"
+                ? lines
+                    .slice(
+                        trailerLineIndex + 1
+                    )
+                    .join("\n")
+                    .trim()
+                : trailerLine
+                    .slice(
+                        "trailer".length
+                    )
+                    .trim();
 
         const dictionaryMatch =
             trailerDictionaryText.match(
@@ -172,8 +213,17 @@ export class TrailerDetector {
 
         }
 
-        const dictionary =
-            dictionaryMatch[1];
+        return this.validateTrailerDictionary(
+            dictionaryMatch[1],
+            trailerKeywordOffset
+        );
+
+    }
+
+    private validateTrailerDictionary(
+        dictionary: string,
+        trailerOffset: number
+    ): TrailerDetectionResult {
 
         const sizeMatch =
             dictionary.match(
@@ -186,8 +236,7 @@ export class TrailerDetector {
 
             return {
                 validTrailer: false,
-                trailerOffset:
-                    trailerKeywordOffset,
+                trailerOffset,
                 reason:
                     "Trailer dictionary does not contain a valid /Size entry."
             };
@@ -206,8 +255,7 @@ export class TrailerDetector {
 
             return {
                 validTrailer: false,
-                trailerOffset:
-                    trailerKeywordOffset,
+                trailerOffset,
                 reason:
                     "Trailer /Size value is invalid."
             };
@@ -225,8 +273,7 @@ export class TrailerDetector {
 
             return {
                 validTrailer: false,
-                trailerOffset:
-                    trailerKeywordOffset,
+                trailerOffset,
                 size,
                 reason:
                     "Trailer dictionary does not contain a valid /Root reference."
@@ -253,8 +300,7 @@ export class TrailerDetector {
 
             return {
                 validTrailer: false,
-                trailerOffset:
-                    trailerKeywordOffset,
+                trailerOffset,
                 size,
                 reason:
                     "Trailer /Root reference is invalid."
@@ -264,8 +310,7 @@ export class TrailerDetector {
 
         return {
             validTrailer: true,
-            trailerOffset:
-                trailerKeywordOffset,
+            trailerOffset,
             size,
             rootObjectNumber,
             rootGenerationNumber
@@ -273,6 +318,51 @@ export class TrailerDetector {
 
     }
 
+    private findDictionaryEnd(
+        text: string,
+        dictionaryStart: number
+    ): number {
+
+        let depth = 0;
+
+        for (
+            let index = dictionaryStart;
+            index < text.length - 1;
+            index++
+        ) {
+
+            const pair =
+                text.slice(
+                    index,
+                    index + 2
+                );
+
+            if (pair === "<<") {
+
+                depth++;
+                index++;
+
+                continue;
+
+            }
+
+            if (pair === ">>") {
+
+                depth--;
+
+                if (depth === 0) {
+                    return index;
+                }
+
+                index++;
+
+            }
+
+        }
+
+        return -1;
+
+    }
     private findTrailerLineIndex(
         lines: string[]
     ): number {
@@ -283,9 +373,12 @@ export class TrailerDetector {
             index++
         ) {
 
+            const line =
+                lines[index]?.trim();
+
             if (
-                lines[index]?.trim() ===
-                "trailer"
+                line === "trailer" ||
+                line?.startsWith("trailer <<")
             ) {
 
                 return index;
@@ -309,3 +402,4 @@ export class TrailerDetector {
     }
 
 }
+

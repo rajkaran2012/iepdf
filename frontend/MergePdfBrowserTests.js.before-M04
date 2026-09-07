@@ -1,0 +1,273 @@
+const { chromium } = require("playwright");
+const path = require("path");
+const fs = require("fs");
+
+const ROOT = "C:\\IEPDF\\frontend\\_regression\\merge-pdf";
+const URL = "http://127.0.0.1:3000/merge-pdf";
+const CHROME = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+
+function result(id, status, name, details = "") {
+  console.log(`RESULT|${id}|${status}|${name}|${details}`);
+}
+
+async function main() {
+  let browser;
+
+  try {
+    browser = await chromium.launch({
+      executablePath: CHROME,
+      headless: true
+    });
+
+    // ========================================================
+    // M-01 - 2 valid PDFs
+    // ========================================================
+
+    {
+      const context = await browser.newContext({
+        acceptDownloads: true
+      });
+
+      const page = await context.newPage();
+
+      try {
+        await page.goto(URL, {
+          waitUntil: "domcontentloaded",
+          timeout: 30000
+        });
+
+        await page.locator('input[type="file"]').setInputFiles([
+          path.join(ROOT, "A-2-pages.pdf"),
+          path.join(ROOT, "B-1-page.pdf")
+        ]);
+
+        await page.waitForTimeout(1200);
+
+        const mergeButton = page.getByRole("button", {
+          name: /unlock\s*&\s*merge/i
+        });
+
+        if (await mergeButton.count() !== 1) {
+          throw new Error("Merge button not found.");
+        }
+
+        if (!(await mergeButton.isEnabled())) {
+          throw new Error("Merge button is disabled.");
+        }
+
+        const output = path.join(ROOT, "M-01-browser-output.pdf");
+
+        if (fs.existsSync(output)) {
+          fs.unlinkSync(output);
+        }
+
+        const downloadPromise = page.waitForEvent("download", {
+          timeout: 30000
+        });
+
+        await mergeButton.click();
+
+        const download = await downloadPromise;
+        await download.saveAs(output);
+
+        if (!fs.existsSync(output)) {
+          throw new Error("Output PDF was not created.");
+        }
+
+        const toast = page.getByText(/merge completed/i).first();
+
+        if (!(await toast.isVisible().catch(() => false))) {
+          throw new Error("Merge success toast was not visible.");
+        }
+
+        result(
+          "M-01",
+          "PASS",
+          "2 valid PDFs -> merge/download/toast",
+          "Download and success toast verified."
+        );
+      } catch (error) {
+        result(
+          "M-01",
+          "FAIL",
+          "2 valid PDFs -> merge/download/toast",
+          error.message
+        );
+      } finally {
+        await context.close();
+      }
+    }
+
+    // ========================================================
+    // M-02 - 3 valid PDFs
+    // ========================================================
+
+    {
+      const context = await browser.newContext({
+        acceptDownloads: true
+      });
+
+      const page = await context.newPage();
+
+      try {
+        await page.goto(URL, {
+          waitUntil: "domcontentloaded",
+          timeout: 30000
+        });
+
+        await page.locator('input[type="file"]').setInputFiles([
+          path.join(ROOT, "A-2-pages.pdf"),
+          path.join(ROOT, "B-1-page.pdf"),
+          path.join(ROOT, "C-1-page.pdf")
+        ]);
+
+        await page.waitForTimeout(1200);
+
+        const mergeButton = page.getByRole("button", {
+          name: /unlock\s*&\s*merge/i
+        });
+
+        if (!(await mergeButton.isEnabled())) {
+          throw new Error("Merge button is disabled.");
+        }
+
+        const output = path.join(ROOT, "M-02-browser-output.pdf");
+
+        if (fs.existsSync(output)) {
+          fs.unlinkSync(output);
+        }
+
+        const downloadPromise = page.waitForEvent("download", {
+          timeout: 30000
+        });
+
+        await mergeButton.click();
+
+        const download = await downloadPromise;
+        await download.saveAs(output);
+
+        if (!fs.existsSync(output)) {
+          throw new Error("Output PDF was not created.");
+        }
+
+        const toast = page.getByText(/merge completed/i).first();
+
+        if (!(await toast.isVisible().catch(() => false))) {
+          throw new Error("Merge success toast was not visible.");
+        }
+
+        result(
+          "M-02",
+          "PASS",
+          "3 valid PDFs -> merge/download/toast",
+          "Download and success toast verified."
+        );
+      } catch (error) {
+        result(
+          "M-02",
+          "FAIL",
+          "3 valid PDFs -> merge/download/toast",
+          error.message
+        );
+      } finally {
+        await context.close();
+      }
+    }
+
+    // ========================================================
+    // M-03 - Corrupted PDF must block merge
+    // ========================================================
+
+    {
+      const context = await browser.newContext({
+        acceptDownloads: true
+      });
+
+      const page = await context.newPage();
+
+      try {
+        await page.goto(URL, {
+          waitUntil: "domcontentloaded",
+          timeout: 30000
+        });
+
+        const output = path.join(ROOT, "M-03-should-not-exist.pdf");
+
+        if (fs.existsSync(output)) {
+          fs.unlinkSync(output);
+        }
+
+        await page.locator('input[type="file"]').setInputFiles([
+          path.join(ROOT, "A-2-pages.pdf"),
+          path.join(ROOT, "Corrupted.pdf")
+        ]);
+
+        await page.waitForTimeout(1800);
+
+        const bodyText = await page.locator("body").innerText();
+
+        const corruptedVisible = /Corrupted/i.test(bodyText);
+
+        const mergeButton = page.getByRole("button", {
+          name: /unlock\s*&\s*merge/i
+        });
+
+        const buttonEnabled = await mergeButton.isEnabled();
+
+        const outputExists = fs.existsSync(output);
+
+        const successToastVisible =
+          await page.getByText(/merge completed/i)
+            .first()
+            .isVisible()
+            .catch(() => false);
+
+        if (!corruptedVisible) {
+          throw new Error("Corrupted state was not shown.");
+        }
+
+        if (buttonEnabled) {
+          throw new Error("Merge button remained enabled.");
+        }
+
+        if (outputExists) {
+          throw new Error("Unexpected output PDF exists.");
+        }
+
+        if (successToastVisible) {
+          throw new Error("Unexpected success toast appeared.");
+        }
+
+        result(
+          "M-03",
+          "PASS",
+          "Corrupted PDF -> blocked",
+          "Corrupted state shown, merge disabled, no download."
+        );
+      } catch (error) {
+        result(
+          "M-03",
+          "FAIL",
+          "Corrupted PDF -> blocked",
+          error.message
+        );
+      } finally {
+        await context.close();
+      }
+    }
+
+  } catch (error) {
+    result(
+      "BROWSER",
+      "FAIL",
+      "Browser regression runner",
+      error.message
+    );
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
+  }
+}
+
+main();

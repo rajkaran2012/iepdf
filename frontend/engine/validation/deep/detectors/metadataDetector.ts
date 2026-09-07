@@ -120,7 +120,8 @@ export class MetadataDetector
 
             const objects =
                 this.objectParser.collectObjects(
-                    text
+                    text,
+                    bytes
                 );
 
             if (
@@ -287,7 +288,7 @@ export class MetadataDetector
                 }
 
                 if (
-                    !/\/Type\s+\/Metadata(?![A-Za-z0-9])/.test(
+                    !/\/Type\s*\/Metadata(?![A-Za-z0-9])/.test(
                         metadataObject.body
                     )
                 ) {
@@ -302,7 +303,7 @@ export class MetadataDetector
                 }
 
                 if (
-                    !/\/Subtype\s+\/XML(?![A-Za-z0-9])/.test(
+                    !/\/Subtype\s*\/XML(?![A-Za-z0-9])/.test(
                         metadataObject.body
                     )
                 ) {
@@ -348,3 +349,5 @@ export class MetadataDetector
     }
 
 }
+
+

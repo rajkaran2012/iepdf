@@ -1,0 +1,81 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260907095507
+Username: DESKTOP-PVDVQ84\WELCOME
+RunAs User: DESKTOP-PVDVQ84\WELCOME
+Configuration Name: 
+Machine: DESKTOP-PVDVQ84 (Microsoft Windows NT 10.0.19045.0)
+Host Application: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\IEPDF\scripts\Test-MergePdfRegression.ps1
+Process ID: 572
+PSVersion: 5.1.19041.6456
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.19041.6456
+BuildVersion: 10.0.19041.6456
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+
+==================================================
+ iePDF Merge PDF Regression Test
+==================================================
+
+PASS  PRE-01 - Required project files
+PASS  M-09 - Merge source UX and notification checks
+PASS  M-06 - 15 MiB validation limit
+PASS  M-07 - Exactly 15 MiB boundary
+
+Running pnpm build...
+$ node .\node_modules\next\dist\bin\next build
+▲ Next.js 16.2.9 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 11.8s
+✓ Finished TypeScript in 7.8s
+✓ Collecting page data using 3 workers in 833ms
+Workspace Files: []
+Show Workspace: false
+✓ Generating static pages using 3 workers (9/9) in 409ms
+✓ Finalizing page optimization in 12ms
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /compress-pdf
+├ ○ /jpg-to-pdf
+├ ○ /merge-pdf
+├ ○ /pdf-to-jpg
+└ ○ /split-pdf
+
+
+○  (Static)  prerendered as static content
+PASS  M-10 - Production build
+PASS  ENV-01 - Node.js / pnpm available
+      Node v24.18.0, pnpm 11.24.0
+PASS  BROWSER - Playwright + installed Chrome
+      Browser automation environment ready.
+PASS  TEST-DATA - Merge browser test files
+PASS  SERVER - Merge PDF page reachable
+      HTTP 200
+PASS  M-01 - 2 valid PDFs -> merge/download/toast
+      Download and success toast verified.
+PASS  M-02 - 3 valid PDFs -> merge/download/toast
+      Download and success toast verified.
+PASS  M-03 - Corrupted PDF -> blocked
+      Corrupted state shown, merge disabled, no download.
+
+==================================================
+ FINAL RESULT
+==================================================
+PASS    : 12
+FAIL    : 0
+SKIPPED : 0
+
+Report : C:\IEPDF\frontend\_regression\merge-pdf\merge-regression-report.txt
+Log    : C:\IEPDF\frontend\_regression\merge-pdf\logs\merge-regression-20260907-095507.log
+
+**********************
+Windows PowerShell transcript end
+End time: 20260907095547
+**********************

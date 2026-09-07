@@ -1,0 +1,243 @@
+﻿"use client";
+
+import { useRef, useState } from "react";
+
+import { CompressPdfProcessor } from "@/engine/processing/processors/CompressPdfProcessor";
+
+import type { ProcessingContext } from "@/engine/processing/ProcessingContext";
+import type { WorkspaceFile } from "@/engine/processing/WorkspaceFile";
+
+export default function CompressPDF() {
+
+  const inputRef =
+    useRef<HTMLInputElement>(null);
+
+  const [file, setFile] =
+    useState<File | null>(null);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [errorMessage, setErrorMessage] =
+    useState("");
+
+  const [successMessage, setSuccessMessage] =
+    useState("");
+
+  const MAX_FILE_SIZE =
+    15 * 1024 * 1024;
+
+  const handleFileChange =
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+
+      setErrorMessage("");
+      setSuccessMessage("");
+
+      if (!e.target.files?.length) {
+        return;
+      }
+
+      const selectedFile =
+        e.target.files[0];
+
+      if (
+        selectedFile.size >
+        MAX_FILE_SIZE
+      ) {
+
+        alert(
+          `"${selectedFile.name}" is larger than 15 MB.\n\nMaximum allowed file size is 15 MB.`
+        );
+
+        e.target.value = "";
+        setFile(null);
+
+        return;
+      }
+
+      setFile(selectedFile);
+    };
+
+
+  const handleCompress =
+    async () => {
+
+      setErrorMessage("");
+      setSuccessMessage("");
+
+      if (!file) {
+
+        alert(
+          "Please select a PDF."
+        );
+
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+
+        const workspaceFile: WorkspaceFile = {
+          id: crypto.randomUUID(),
+          file,
+          filename: file.name,
+          extension: ".pdf",
+          size: file.size,
+          pages: 0,
+          status: "ready",
+          encrypted: false,
+          corrupted: false,
+          password: "",
+          showPassword: false,
+          skipped: false
+        };
+
+        const context: ProcessingContext = {
+          files: [workspaceFile],
+          toolType: "compress"
+        };
+
+        const processor =
+          new CompressPdfProcessor();
+
+        const result =
+          await processor.process(
+            context
+          );
+
+        if (
+          !result.success ||
+          !result.outputFile
+        ) {
+
+          throw new Error(
+            result.error ||
+            "Compression failed."
+          );
+
+        }
+
+        const outputFile =
+          result.outputFile;
+
+        const url =
+          window.URL.createObjectURL(
+            outputFile
+          );
+
+        const link =
+          document.createElement("a");
+
+        link.href = url;
+        link.download =
+          "compressed.pdf";
+
+        document.body.appendChild(
+          link
+        );
+
+        link.click();
+        link.remove();
+
+        window.URL.revokeObjectURL(
+          url
+        );
+
+        setSuccessMessage(
+          "PDF compressed successfully."
+        );
+
+      } catch (error: unknown) {
+
+        console.error(
+          "Compress PDF failed:",
+          error
+        );
+
+        const message =
+          error instanceof Error &&
+          error.message.length > 0
+            ? error.message
+            : "Unable to compress PDF.";
+
+        setErrorMessage(
+          message
+        );
+
+      } finally {
+
+        setLoading(false);
+
+      }
+
+    };
+
+
+  return (
+    <main className="min-h-screen bg-gray-100 flex flex-col items-center justify-center px-6">
+
+      <h1 className="text-4xl font-bold mb-4">
+        Compress PDF
+      </h1>
+
+      <p className="mb-8 text-gray-600">
+        Reduce PDF size while maintaining quality.
+      </p>
+
+      <button
+        onClick={() =>
+          inputRef.current?.click()
+        }
+        className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition"
+      >
+        Select PDF
+      </button>
+
+      <input
+        type="file"
+        accept=".pdf,application/pdf"
+        ref={inputRef}
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
+      {file && (
+        <div className="mt-8 w-full max-w-lg bg-white rounded-xl shadow p-6">
+
+          <h3 className="font-bold mb-3">
+            Selected File
+          </h3>
+
+          <div className="border rounded p-2">
+            {file.name}
+          </div>
+
+          <button
+            onClick={handleCompress}
+            disabled={loading}
+            className="mt-6 w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-500 text-white py-3 rounded-lg transition"
+          >
+            {loading
+              ? "Compressing..."
+              : "Compress PDF"}
+          </button>
+
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="mt-6 w-full max-w-lg rounded-xl border border-green-200 bg-green-50 px-6 py-4 text-center text-green-700">
+          {successMessage}
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="mt-6 w-full max-w-lg rounded-xl border border-red-200 bg-red-50 px-6 py-4 text-center text-red-700">
+          {errorMessage}
+        </div>
+      )}
+
+    </main>
+  );
+}

@@ -1,0 +1,13 @@
+{
+  "pages": {
+    "/_app": []
+  },
+  "devFiles": [],
+  "polyfillFiles": [],
+  "lowPriorityFiles": [
+    "static/Fb7_dIs7Mp65nAeDZsqxv/_buildManifest.js",
+    "static/Fb7_dIs7Mp65nAeDZsqxv/_ssgManifest.js",
+    "static/Fb7_dIs7Mp65nAeDZsqxv/_clientMiddlewareManifest.js"
+  ],
+  "rootMainFiles": []
+}

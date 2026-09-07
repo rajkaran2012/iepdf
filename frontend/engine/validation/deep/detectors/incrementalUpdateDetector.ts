@@ -1,4 +1,4 @@
-/**
+﻿/**
  * =============================================================================
  * iePDF Validation Engine
  * =============================================================================
@@ -82,8 +82,16 @@ export class IncrementalUpdateDetector
 
             }
 
-            const trailers =
-                this.findTrailers(text);
+            const trailers = [
+                ...this.findTrailers(text),
+                ...this.findXrefStreamTrailers(
+                    text,
+                    revisionOffsets
+                )
+            ].sort(
+                (a, b) =>
+                    a.offset - b.offset
+            );
 
             if (
                 trailers.length === 0
@@ -282,6 +290,138 @@ export class IncrementalUpdateDetector
 
     }
 
+    private findDictionaryEnd(
+        text: string,
+        dictionaryStart: number
+    ): number {
+
+        let depth = 0;
+
+        for (
+            let index = dictionaryStart;
+            index < text.length - 1;
+            index++
+        ) {
+
+            const pair =
+                text.slice(index, index + 2);
+
+            if (pair === "<<") {
+                depth++;
+                index++;
+                continue;
+            }
+
+            if (pair === ">>") {
+                depth--;
+
+                if (depth === 0) {
+                    return index;
+                }
+
+                index++;
+            }
+        }
+
+        return -1;
+    }
+    private findXrefStreamTrailers(
+        text: string,
+        revisionOffsets: readonly number[]
+    ): TrailerInfo[] {
+
+        const trailers: TrailerInfo[] = [];
+
+        for (
+            const revisionOffset of revisionOffsets
+        ) {
+
+            if (
+                revisionOffset < 0 ||
+                revisionOffset >= text.length
+            ) {
+                continue;
+            }
+
+            const section =
+                text.slice(revisionOffset);
+
+            const objectHeaderMatch =
+                section.match(
+                    /^(\d+)\s+(\d+)\s+obj\b/
+                );
+
+            if (
+                objectHeaderMatch === null
+            ) {
+                continue;
+            }
+
+            const dictionaryStart =
+                section.indexOf(
+                    "<<",
+                    objectHeaderMatch[0].length
+                );
+
+            if (
+                dictionaryStart === -1
+            ) {
+                continue;
+            }
+
+            const dictionaryEnd =
+                this.findDictionaryEnd(
+                    section,
+                    dictionaryStart
+                );
+
+            if (
+                dictionaryEnd === -1
+            ) {
+                continue;
+            }
+
+            const dictionary =
+                section.slice(
+                    dictionaryStart + 2,
+                    dictionaryEnd
+                );
+
+            if (
+                !/\/Type\s*\/XRef\b/.test(
+                    dictionary
+                )
+            ) {
+                continue;
+            }
+
+            const previousMatch =
+                dictionary.match(
+                    /\/Prev\s+(\d+)/
+                );
+
+            const previousOffset =
+                previousMatch === null
+                    ? undefined
+                    : Number(
+                        previousMatch[1]
+                    );
+
+            trailers.push({
+                offset:
+                    revisionOffset,
+                ...(previousOffset !== undefined
+                    ? {
+                        previousOffset
+                    }
+                    : {})
+            });
+
+        }
+
+        return trailers;
+
+    }
     private findTrailers(
         text: string
     ): TrailerInfo[] {
@@ -329,3 +469,8 @@ export class IncrementalUpdateDetector
     }
 
 }
+
+
+
+
+

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node .\\node_modules\\next\\dist\\bin\\next build",
     "start": "next start",
     "lint": "eslint",
     "test:watch": "vitest",
@@ -12,7 +12,11 @@
   },
   "dependencies": {
     "@embedpdf/engines": "^2.15.0",
+    "@embedpdf/models": "2.15.0",
     "@embedpdf/pdfium": "^2.15.0",
+    "@embedpdf/viewer": "file:C:/IEPDF/embed-pdf-viewer/embedpdf-viewer-3.0.0-next.9.tgz",
+    "@embedpdf/viewer-react": "file:C:/IEPDF/embed-pdf-viewer/embedpdf-viewer-react-3.0.0-next.9.tgz",
+    "fflate": "^0.8.3",
     "framer-motion": "^12.42.2",
     "lucide-react": "^1.22.0",
     "next": "16.2.9",
@@ -30,6 +34,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "playwright": "^1.63.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.11"

@@ -1,0 +1,708 @@
+/**
+ * =============================================================================
+ * iePDF Validation Engine
+ * =============================================================================
+ *
+ * File        : ValidationGateway.ts
+ * Module      : Validation Gateway
+ * Layer       : Application Boundary
+ *
+ * -----------------------------------------------------------------------------
+ * Purpose
+ * -----------------------------------------------------------------------------
+ *
+ * Canonical application-facing gateway for the iePDF Validation Engine.
+ *
+ * Application / processing code MUST use this gateway instead of directly
+ * accessing ValidationPipeline or any validator registry.
+ *
+ * Architecture:
+ *
+ *      Application
+ *           |
+ *           v
+ *      ValidationGateway
+ *           |
+ *           v
+ *      ValidationPipeline
+ *           |
+ *      +----+---------+---------+
+ *      |              |         |
+ *   Boundary       Security    Deep
+ *
+ * -----------------------------------------------------------------------------
+ * Security Principles
+ * -----------------------------------------------------------------------------
+ *
+ * 1. Fail closed.
+ * 2. Empty validation results are NEVER treated as success.
+ * 3. Any failed result blocks processing.
+ * 4. Any critical/unknown validation failure blocks processing.
+ * 5. Unexpected gateway errors block processing.
+ * 6. Uploaded files are never modified.
+ * 7. The gateway never performs PDF processing.
+ * 8. Internal exception details are never returned as user-facing messages.
+ * 9. Returned results are immutable.
+ * 10. The gateway owns the application-level validation decision.
+ *
+ * =============================================================================
+ */
+
+import type { ToolType } from "@/lib/validationTypes";
+
+import type {
+    ValidationResult,
+} from "../pipeline/validationResult";
+
+import {
+    ValidationErrorCode,
+    ValidationSeverity,
+    ValidationStatus,
+} from "../pipeline/validationTypes";
+
+import {
+    ValidationPipeline,
+} from "../pipeline/validationPipeline";
+
+import {
+    ValidationEngineException,
+} from "../common/validationException";
+
+import {
+    ValidationLogger,
+} from "../common/validationLogger";
+
+import type {
+    IValidationGateway,
+    ValidationGatewayResult,
+} from "./IValidationGateway";
+
+/**
+ * =============================================================================
+ * ValidationGateway
+ * =============================================================================
+ *
+ * Single application-facing implementation of IValidationGateway.
+ *
+ * This class intentionally contains no PDF processing logic.
+ * =============================================================================
+ */
+export class ValidationGateway
+    implements IValidationGateway {
+
+    /**
+     * -------------------------------------------------------------------------
+     * Pipeline
+     * -------------------------------------------------------------------------
+     *
+     * Kept private so application code cannot access the pipeline through
+     * the gateway.
+     */
+    private readonly pipeline: ValidationPipeline;
+
+    /**
+     * -------------------------------------------------------------------------
+     * Constructor
+     * -------------------------------------------------------------------------
+     */
+    public constructor(
+        pipeline?: ValidationPipeline
+    ) {
+
+        this.pipeline =
+            pipeline ??
+            new ValidationPipeline();
+
+    }
+
+    /**
+     * =========================================================================
+     * Validate
+     * =========================================================================
+     *
+     * Executes the canonical validation pipeline and produces the single
+     * application-level processing decision.
+     *
+     * FAIL-CLOSED RULE:
+     *
+     * Processing may proceed ONLY when:
+     *
+     *   1. A valid file collection exists.
+     *   2. The current file exists.
+     *   3. Validation results exist.
+     *   4. Every returned result is valid.
+     *   5. Every result passed.
+     *   6. No critical validation failure exists.
+     *   7. No unknown validation failure exists.
+     *
+     * Anything else results in:
+     *
+     *      passed = false
+     *
+     * =========================================================================
+     */
+    public async validate(
+        files: ReadonlyArray<File>,
+        file: File,
+        toolType: ToolType
+    ): Promise<ValidationGatewayResult> {
+
+        const correlationId =
+            crypto.randomUUID();
+
+        ValidationLogger.group(
+            "Validation Gateway"
+        );
+
+        ValidationLogger.info(
+            "ValidationGateway",
+            "Starting canonical validation.",
+            {
+                correlationId,
+                fileCount: files?.length ?? 0,
+                fileName:
+                    file instanceof File
+                        ? file.name
+                        : undefined,
+                toolType,
+            }
+        );
+
+        try {
+
+            /**
+             * ================================================================
+             * Input Gate
+             * ================================================================
+             *
+             * Invalid application input must never reach the pipeline.
+             */
+            this.validateInput(
+                files,
+                file,
+                toolType
+            );
+
+            /**
+             * ================================================================
+             * Execute Canonical Pipeline
+             * ================================================================
+             */
+            const rawResults =
+                await this.pipeline.execute(
+                    files,
+                    file,
+                    toolType
+                );
+
+            /**
+             * ================================================================
+             * Normalize Results
+             * ================================================================
+             *
+             * Always create a new immutable collection.
+             */
+            const results =
+                this.normalizeResults(
+                    rawResults,
+                    correlationId
+                );
+
+            /**
+             * ================================================================
+             * Make Application Decision
+             * ================================================================
+             */
+            const passed =
+                this.isProcessingAllowed(
+                    results
+                );
+
+            ValidationLogger.info(
+                "ValidationGateway",
+                passed
+                    ? "Canonical validation PASSED."
+                    : "Canonical validation FAILED. Processing is blocked.",
+                {
+                    correlationId,
+                    resultCount: results.length,
+                    passed,
+                }
+            );
+
+            return Object.freeze({
+
+                passed,
+
+                results,
+
+                correlationId,
+
+            });
+
+        }
+        catch (error: unknown) {
+
+            /**
+             * ================================================================
+             * FAIL CLOSED
+             * ================================================================
+             *
+             * An unexpected gateway failure is never interpreted as success.
+             *
+             * We deliberately do not expose the internal exception message
+             * through the application-facing result.
+             */
+            ValidationLogger.error(
+                "ValidationGateway",
+                "Unexpected validation gateway failure.",
+                error,
+                {
+                    correlationId,
+                    fileName:
+                        file instanceof File
+                            ? file.name
+                            : undefined,
+                    toolType,
+                }
+            );
+
+            const failure =
+                this.createGatewayFailureResult(
+                    correlationId
+                );
+
+            return Object.freeze({
+
+                passed: false,
+
+                results: Object.freeze([
+                    failure,
+                ]),
+
+                correlationId,
+
+            });
+
+        }
+        finally {
+
+            ValidationLogger.groupEnd();
+
+        }
+
+    }
+
+    /**
+     * =========================================================================
+     * Input Validation
+     * =========================================================================
+     *
+     * This is an application-boundary check.
+     *
+     * It does not replace Boundary Validation.
+     *
+     * It only prevents malformed API usage from entering the pipeline.
+     * =========================================================================
+     */
+    private validateInput(
+        files: ReadonlyArray<File>,
+        file: File,
+        toolType: ToolType
+    ): void {
+
+        if (
+            !Array.isArray(files)
+        ) {
+
+            throw new ValidationEngineException({
+
+                message:
+                    "Validation files collection is invalid.",
+
+            });
+
+        }
+
+        if (
+            files.length === 0
+        ) {
+
+            throw new ValidationEngineException({
+
+                message:
+                    "No files were supplied for validation.",
+
+            });
+
+        }
+
+        if (
+            !(file instanceof File)
+        ) {
+
+            throw new ValidationEngineException({
+
+                message:
+                    "Validation file is invalid.",
+
+            });
+
+        }
+
+        if (
+            !toolType
+        ) {
+
+            throw new ValidationEngineException({
+
+                message:
+                    "Validation tool type is required.",
+
+            });
+
+        }
+
+        /**
+         * Ensure the current file actually belongs to the supplied collection.
+         *
+         * Object identity is intentionally used here.
+         *
+         * We do not compare filenames because filenames are not unique
+         * identifiers.
+         */
+        if (
+            !files.some(
+                candidate => candidate === file
+            )
+        ) {
+
+            throw new ValidationEngineException({
+
+                message:
+                    "Validation file is not part of the supplied file collection.",
+
+            });
+
+        }
+
+    }
+
+    /**
+     * =========================================================================
+     * Normalize Results
+     * =========================================================================
+     *
+     * Creates the final immutable result collection exposed by the Gateway.
+     *
+     * The Gateway assigns the correlation identifier to every result because
+     * the application-level decision must be traceable to the same execution.
+     * =========================================================================
+     */
+    private normalizeResults(
+        rawResults: readonly ValidationResult[],
+        correlationId: string
+    ): ReadonlyArray<ValidationResult> {
+
+        if (
+            !Array.isArray(rawResults) ||
+            rawResults.length === 0
+        ) {
+
+            throw new ValidationEngineException({
+
+                message:
+                    "Validation pipeline returned no validation results.",
+
+            });
+
+        }
+
+        const normalized =
+            rawResults.map(
+                (
+                    result,
+                    index
+                ) => {
+
+                    if (
+                        !result ||
+                        typeof result !== "object"
+                    ) {
+
+                        throw new ValidationEngineException({
+
+                            message:
+                                "Validation pipeline returned an invalid validation result.",
+
+                        });
+
+                    }
+
+                    /**
+                     * Every result must explicitly declare its decision.
+                     */
+                    if (
+                        typeof result.passed !== "boolean"
+                    ) {
+
+                        throw new ValidationEngineException({
+
+                            message:
+                                "Validation result does not contain a valid pass/fail decision.",
+
+                        });
+
+                    }
+
+                    /**
+                     * Every result must have a valid status.
+                     */
+                    if (
+                        typeof result.status !== "string"
+                    ) {
+
+                        throw new ValidationEngineException({
+
+                            message:
+                                "Validation result does not contain a valid status.",
+
+                        });
+
+                    }
+
+                    /**
+                     * Preserve every existing field while attaching the
+                     * canonical gateway correlation identifier.
+                     *
+                     * The result itself is frozen.
+                     */
+                    return Object.freeze({
+
+                        ...result,
+
+                        order:
+                            Number.isFinite(result.order)
+                                ? result.order
+                                : index + 1,
+
+                        correlationId,
+
+                        metadata:
+                            Object.freeze({
+                                ...(result.metadata ?? {}),
+                            }),
+
+                    });
+
+                }
+            );
+
+        return Object.freeze(
+            normalized
+        );
+
+    }
+
+    /**
+     * =========================================================================
+     * Processing Decision
+     * =========================================================================
+     *
+     * The Gateway owns the final application decision.
+     *
+     * Processing is allowed ONLY when every result represents a successful
+     * validation.
+     * =========================================================================
+     */
+    private isProcessingAllowed(
+        results: ReadonlyArray<ValidationResult>
+    ): boolean {
+
+        /**
+         * Fail closed on an empty collection.
+         */
+        if (
+            results.length === 0
+        ) {
+
+            return false;
+
+        }
+
+        /**
+         * Any failed result blocks processing.
+         */
+        if (
+            results.some(
+                result =>
+                    result.passed !== true ||
+                    result.status === ValidationStatus.FAILED
+            )
+        ) {
+
+            return false;
+
+        }
+
+        /**
+         * Critical severity must never be allowed through even if a malformed
+         * validator result accidentally reports passed=true.
+         */
+        if (
+            results.some(
+                result =>
+                    result.severity ===
+                    ValidationSeverity.CRITICAL
+            )
+        ) {
+
+            return false;
+
+        }
+
+        /**
+         * Unknown errors are always blocking.
+         */
+        if (
+            results.some(
+                result =>
+                    result.errorCode ===
+                    ValidationErrorCode.UNKNOWN_ERROR
+            )
+        ) {
+
+            return false;
+
+        }
+
+        /**
+         * A SKIPPED result is not equivalent to a successful validation.
+         *
+         * The current BaseValidator represents disabled validators as
+         * passed=true/SKIPPED. The Gateway therefore treats SKIPPED as
+         * non-authorizing.
+         *
+         * This is important for a security boundary: absence of validation
+         * cannot grant permission to process.
+         */
+        if (
+            results.some(
+                result =>
+                    result.status ===
+                    ValidationStatus.SKIPPED
+            )
+        ) {
+
+            return false;
+
+        }
+
+        /**
+         * Every result must explicitly be PASSED.
+         */
+        if (
+            results.some(
+                result =>
+                    result.status !==
+                    ValidationStatus.PASSED
+            )
+        ) {
+
+            return false;
+
+        }
+
+        return true;
+
+    }
+
+    /**
+     * =========================================================================
+     * Gateway Failure Result
+     * =========================================================================
+     *
+     * Used only when the Gateway itself encounters an unexpected internal
+     * failure before it can obtain authoritative pipeline results.
+     *
+     * Internal exception details are deliberately NOT exposed here.
+     * =========================================================================
+     */
+    private createGatewayFailureResult(
+        correlationId: string
+    ): ValidationResult {
+
+        const now =
+            new Date();
+
+        return Object.freeze({
+
+            id:
+                crypto.randomUUID(),
+
+            gate:
+                "SECURITY" as ValidationResult["gate"],
+
+            rule:
+                "MALWARE_PATTERN" as ValidationResult["rule"],
+
+            validator:
+                "ValidationGateway",
+
+            status:
+                ValidationStatus.FAILED,
+
+            passed:
+                false,
+
+            severity:
+                ValidationSeverity.CRITICAL,
+
+            errorCode:
+                ValidationErrorCode.UNKNOWN_ERROR,
+
+            message:
+                "Validation could not be completed securely. Processing has been blocked.",
+
+            details:
+                undefined,
+
+            exception:
+                undefined,
+
+            startedAt:
+                now,
+
+            completedAt:
+                now,
+
+            executionTimeMs:
+                0,
+
+            order:
+                0,
+
+            metadata:
+                Object.freeze({}),
+
+            correlationId,
+
+        });
+
+    }
+
+}
+
+/**
+ * =============================================================================
+ * Default Gateway
+ * =============================================================================
+ *
+ * One canonical application-facing gateway instance.
+ *
+ * Application code should import this instance rather than constructing
+ * alternate gateways throughout the application.
+ * =============================================================================
+ */
+export const validationGateway =
+    new ValidationGateway();

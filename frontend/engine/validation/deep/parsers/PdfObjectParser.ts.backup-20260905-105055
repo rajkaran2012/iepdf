@@ -1,0 +1,206 @@
+﻿/**
+ * =============================================================================
+ * iePDF Validation Engine
+ * =============================================================================
+ *
+ * File       : PdfObjectParser.ts
+ * Module     : Deep Validation
+ * Layer      : Shared PDF Object Parser
+ * =============================================================================
+ *
+ * Purpose
+ * ---------------------------------------------------------------------------
+ * Provides bounded PDF indirect-object collection and reference resolution.
+ *
+ * This is NOT a general-purpose PDF parser.
+ * =============================================================================
+ */
+
+import type {
+    PdfObject,
+    PdfObjectReference
+} from "./PdfObject";
+
+export class PdfObjectParser {
+
+    public collectObjects(
+        text: string
+    ): Map<string, PdfObject> {
+
+        const objects =
+            new Map<string, PdfObject>();
+
+        const pattern =
+            /(?:^|\r?\n|endobj)\s*(\d+)\s+(\d+)\s+obj\b/g;
+
+        const matches:
+            Array<{
+                objectNumber: number;
+                generationNumber: number;
+                startIndex: number;
+            }> = [];
+
+        let match:
+            RegExpExecArray | null;
+
+        while (
+            (match =
+                pattern.exec(text)) !== null
+        ) {
+
+            const objectNumber =
+                Number(match[1]);
+
+            const generationNumber =
+                Number(match[2]);
+
+            if (
+                !Number.isSafeInteger(objectNumber) ||
+                objectNumber <= 0 ||
+                !Number.isSafeInteger(generationNumber) ||
+                generationNumber < 0
+            ) {
+                continue;
+            }
+
+            const declarationOffset =
+                match[0].search(/\d/);
+
+            const declarationStartIndex =
+                match.index + declarationOffset;
+
+            matches.push({
+                objectNumber,
+                generationNumber,
+                startIndex:
+                    declarationStartIndex
+            });
+
+        }
+
+        for (
+            let index = 0;
+            index < matches.length;
+            index++
+        ) {
+
+            const current =
+                matches[index];
+
+            const nextStart =
+                index + 1 < matches.length
+                    ? matches[index + 1].startIndex
+                    : text.length;
+
+            const objectText =
+                text.slice(
+                    current.startIndex,
+                    nextStart
+                );
+
+            const endObjectIndex =
+                objectText.search(
+                    /\bendobj\b/
+                );
+
+            if (
+                endObjectIndex === -1
+            ) {
+                continue;
+            }
+
+            const objectKeywordIndex =
+                objectText.indexOf("obj");
+
+            if (
+                objectKeywordIndex === -1
+            ) {
+                continue;
+            }
+
+            const body =
+                objectText.slice(
+                    objectKeywordIndex + 3,
+                    endObjectIndex
+                );
+
+            const key =
+                `${current.objectNumber} ${current.generationNumber}`;
+
+            objects.set(
+                key,
+                {
+                    objectNumber:
+                        current.objectNumber,
+                    generationNumber:
+                        current.generationNumber,
+                    body
+                }
+            );
+
+        }
+
+        return objects;
+
+    }
+
+    public getObject(
+        objects: Map<string, PdfObject>,
+        reference: PdfObjectReference
+    ): PdfObject | undefined {
+
+        return objects.get(
+            `${reference.objectNumber} ${reference.generationNumber}`
+        );
+
+    }
+
+    public parseReference(
+        body: string,
+        key: string
+    ): PdfObjectReference | undefined {
+
+        const escapedKey =
+            key.replace(
+                /[.*+?^${}()|[\]\\]/g,
+                "\\$&"
+            );
+
+        const match =
+            body.match(
+                new RegExp(
+                    `${escapedKey}\\s+(\\d+)\\s+(\\d+)\\s+R`
+                )
+            );
+
+        if (
+            match === null
+        ) {
+            return undefined;
+        }
+
+        const objectNumber =
+            Number(match[1]);
+
+        const generationNumber =
+            Number(match[2]);
+
+        if (
+            !Number.isSafeInteger(objectNumber) ||
+            objectNumber <= 0 ||
+            !Number.isSafeInteger(generationNumber) ||
+            generationNumber < 0
+        ) {
+            return undefined;
+        }
+
+        return {
+            objectNumber,
+            generationNumber
+        };
+
+    }
+
+}
+
+

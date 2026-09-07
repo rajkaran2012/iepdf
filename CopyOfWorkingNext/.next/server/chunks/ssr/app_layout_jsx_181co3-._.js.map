@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../../app/layout.jsx"],"sourcesContent":["export default function RootLayout({ children }) {\n  return (\n    <html>\n      <body>{children}</body>\n    </html>\n  )\n}\r\n"],"names":["RootLayout","children"],"mappings":"yEAAe,SAASA,AAAW,UAAEC,CAAQ,CAAE,EAC7C,MACE,CAAA,EAAA,EAAA,GAAA,EAAC,OAAA,UACC,CAAA,EAAA,EAAA,GAAA,EAAC,OAAA,UAAMA,KAGb"}

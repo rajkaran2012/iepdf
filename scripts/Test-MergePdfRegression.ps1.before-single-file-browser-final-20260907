@@ -1,0 +1,344 @@
+# ============================================================
+# iePDF - Merge PDF Functional Regression Test
+# ============================================================
+
+$ErrorActionPreference = "Stop"
+
+$ProjectRoot = "C:\IEPDF\frontend"
+$TestRoot    = Join-Path $ProjectRoot "_regression\merge-pdf"
+$LogRoot     = Join-Path $TestRoot "logs"
+$ReportFile  = Join-Path $TestRoot "merge-regression-report.txt"
+
+$MaxFileSize = 15 * 1024 * 1024
+
+New-Item -ItemType Directory -Force -Path $TestRoot | Out-Null
+New-Item -ItemType Directory -Force -Path $LogRoot | Out-Null
+
+$TimeStamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$LogFile = Join-Path $LogRoot "merge-regression-$TimeStamp.log"
+
+Start-Transcript -Path $LogFile -Force | Out-Null
+
+$Results = New-Object System.Collections.Generic.List[object]
+
+function Add-TestResult {
+    param(
+        [string]$Id,
+        [string]$Name,
+        [ValidateSet("PASS","FAIL","SKIPPED")]
+        [string]$Status,
+        [string]$Details = ""
+    )
+
+    $Results.Add([PSCustomObject]@{
+        Test    = $Id
+        Name    = $Name
+        Status  = $Status
+        Details = $Details
+    })
+
+    switch ($Status) {
+        "PASS" {
+            Write-Host "PASS  $Id - $Name" -ForegroundColor Green
+        }
+        "FAIL" {
+            Write-Host "FAIL  $Id - $Name" -ForegroundColor Red
+        }
+        "SKIPPED" {
+            Write-Host "SKIP  $Id - $Name" -ForegroundColor Yellow
+        }
+    }
+
+    if ($Details) {
+        Write-Host "      $Details"
+    }
+}
+
+function Assert-FileExists {
+    param([string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        throw "File not found: $Path"
+    }
+}
+
+Write-Host ""
+Write-Host "==================================================" -ForegroundColor Cyan
+Write-Host " iePDF Merge PDF Regression Test" -ForegroundColor Cyan
+Write-Host "==================================================" -ForegroundColor Cyan
+Write-Host ""
+
+Set-Location $ProjectRoot
+
+$pageFile = Join-Path $ProjectRoot "app\merge-pdf\page.tsx"
+$toastHook = Join-Path $ProjectRoot "hooks\useToast.tsx"
+$constants = Join-Path $ProjectRoot "engine\validation\common\validationConstants.ts"
+
+# ------------------------------------------------------------
+# Required files
+# ------------------------------------------------------------
+
+try {
+    Assert-FileExists $pageFile
+    Assert-FileExists $toastHook
+    Assert-FileExists $constants
+
+    Add-TestResult "PRE-01" "Required project files" "PASS"
+}
+catch {
+    Add-TestResult "PRE-01" "Required project files" "FAIL" $_.Exception.Message
+}
+
+# ------------------------------------------------------------
+# Source checks
+# ------------------------------------------------------------
+
+try {
+    $pageText = [IO.File]::ReadAllText($pageFile)
+    $constantText = [IO.File]::ReadAllText($constants)
+
+    $failedChecks = @()
+
+    if ($pageText -notmatch 'useToast') {
+        $failedChecks += "useToast missing"
+    }
+
+    if ($pageText -notmatch 'toast\.success') {
+        $failedChecks += "toast.success missing"
+    }
+
+    if ($pageText -notmatch 'toast\.error') {
+        $failedChecks += "toast.error missing"
+    }
+
+    if ($pageText -notmatch 'MAX_FILE_SIZE_BYTES') {
+        $failedChecks += "authoritative size limit reference missing"
+    }
+
+    if ($pageText -match 'setSuccessMessage|setErrorMessage') {
+        $failedChecks += "legacy notification state found"
+    }
+
+    if ($pageText -match 'alert\(') {
+        $failedChecks += "alert() found"
+    }
+
+    if ($pageText -match 'console\.error') {
+        $failedChecks += "console.error found"
+    }
+
+    if ($failedChecks.Count -eq 0) {
+        Add-TestResult "SRC-01" "Merge source UX and notification checks" "PASS"
+    }
+    else {
+        Add-TestResult "SRC-01" "Merge source UX and notification checks" "FAIL" ($failedChecks -join "; ")
+    }
+}
+catch {
+    Add-TestResult "SRC-01" "Merge source UX and notification checks" "FAIL" $_.Exception.Message
+}
+
+# ------------------------------------------------------------
+# Validation size checks
+# ------------------------------------------------------------
+
+try {
+    if ($constantText -match 'MAX_FILE_SIZE_BYTES\s*:\s*15\s*\*\s*1024\s*\*\s*1024') {
+        Add-TestResult "VAL-01" "15 MiB validation limit" "PASS"
+    }
+    else {
+        Add-TestResult "VAL-01" "15 MiB validation limit" "FAIL" "15 MiB constant not confirmed."
+    }
+
+    if ($MaxFileSize -eq 15728640) {
+        Add-TestResult "VAL-02" "Exactly 15 MiB boundary" "PASS"
+    }
+    else {
+        Add-TestResult "VAL-02" "Exactly 15 MiB boundary" "FAIL"
+    }
+}
+catch {
+    Add-TestResult "VAL-01" "15 MiB validation limit" "FAIL" $_.Exception.Message
+}
+
+# ------------------------------------------------------------
+# Production build
+# ------------------------------------------------------------
+
+try {
+    Write-Host ""
+    Write-Host "Running pnpm build..." -ForegroundColor Cyan
+
+    pnpm build
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "pnpm build failed with exit code $LASTEXITCODE."
+    }
+
+    Add-TestResult "M-10" "Production build" "PASS"
+}
+catch {
+    Add-TestResult "M-10" "Production build" "FAIL" $_.Exception.Message
+}
+
+# ------------------------------------------------------------
+# Basic environment checks
+# ------------------------------------------------------------
+
+try {
+    $node = node --version
+    $pnpm = pnpm --version
+
+    Add-TestResult "ENV-01" "Node.js / pnpm available" "PASS" "Node $node, pnpm $pnpm"
+}
+catch {
+    Add-TestResult "ENV-01" "Node.js / pnpm available" "FAIL" $_.Exception.Message
+}
+
+# ------------------------------------------------------------
+# ------------------------------------------------------------
+# Browser functional regression
+# ------------------------------------------------------------
+
+$playwrightPackage = Join-Path $ProjectRoot "node_modules\playwright\package.json"
+$chromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+$browserRunner = Join-Path $ProjectRoot "MergePdfBrowserTests.js"
+
+if (-not (Test-Path -LiteralPath $playwrightPackage)) {
+    Add-TestResult "BROWSER" "Playwright package" "FAIL" "Playwright is not installed."
+}
+elseif (-not (Test-Path -LiteralPath $chromePath)) {
+    Add-TestResult "BROWSER" "Installed Chrome" "FAIL" "Chrome executable not found."
+}
+elseif (-not (Test-Path -LiteralPath $browserRunner)) {
+    Add-TestResult "BROWSER" "Browser regression runner" "FAIL" "MergePdfBrowserTests.js not found."
+}
+else {
+    Add-TestResult "BROWSER" "Playwright + installed Chrome" "PASS" "Browser automation environment ready."
+
+    $testFiles=@(
+        "A-2-pages.pdf",
+        "B-1-page.pdf",
+        "C-1-page.pdf",
+        "Corrupted.pdf",
+        "M-06-valid-over-15MiB.pdf",
+        "M-07-valid-exact-15MiB.pdf"
+    )
+
+    $missingFiles=@()
+    foreach($file in $testFiles){
+        if(-not (Test-Path -LiteralPath (Join-Path $TestRoot $file))){
+            $missingFiles += $file
+        }
+    }
+
+    if($missingFiles.Count -gt 0){
+        Add-TestResult "TEST-DATA" "Merge browser test files" "FAIL" ("Missing: " + ($missingFiles -join ", "))
+    }
+    else {
+        Add-TestResult "TEST-DATA" "Merge browser test files" "PASS"
+
+        try {
+            $response=Invoke-WebRequest -Uri "http://127.0.0.1:3000/merge-pdf" -UseBasicParsing -TimeoutSec 10
+            if($response.StatusCode -ne 200){
+                throw "Merge PDF page returned HTTP $($response.StatusCode)."
+            }
+            Add-TestResult "SERVER" "Merge PDF page reachable" "PASS" "HTTP 200"
+        }
+        catch {
+            Add-TestResult "SERVER" "Merge PDF page reachable" "FAIL" $_.Exception.Message
+        }
+
+        try {
+            $browserOutput=& node $browserRunner 2>&1
+            $resultLines=@($browserOutput | Where-Object { $_ -is [string] -and $_ -match "^RESULT\|" })
+
+            if($resultLines.Count -eq 0){
+                throw "Browser runner produced no RESULT lines."
+            }
+
+            foreach($line in $resultLines){
+                if($line -match "^RESULT\|([^|]+)\|([^|]+)\|([^|]+)\|(.*)$"){
+                    $id=$Matches[1]
+                    $status=$Matches[2]
+                    $name=$Matches[3]
+                    $details=$Matches[4]
+
+                    if($status -eq "PASS"){
+                        Add-TestResult $id $name "PASS" $details
+                    }
+                    elseif($status -eq "FAIL"){
+                        Add-TestResult $id $name "FAIL" $details
+                    }
+                    else {
+                        Add-TestResult $id $name "SKIPPED" $details
+                    }
+                }
+            }
+
+            if($LASTEXITCODE -ne 0){
+                Add-TestResult "BROWSER-RUNNER" "Browser regression execution" "FAIL" "Node exited with code $LASTEXITCODE."
+            }
+        }
+        catch {
+            Add-TestResult "BROWSER-RUNNER" "Browser regression execution" "FAIL" $_.Exception.Message
+        }
+    }
+}
+
+# Final report
+# ------------------------------------------------------------
+
+$passCount = ($Results | Where-Object Status -eq "PASS").Count
+$failCount = ($Results | Where-Object Status -eq "FAIL").Count
+$skipCount = @($Results | Where-Object { $_.Status -eq "SKIPPED" }).Count
+
+$report = New-Object System.Text.StringBuilder
+
+[void]$report.AppendLine("iePDF - Merge PDF Regression Report")
+[void]$report.AppendLine("Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')")
+[void]$report.AppendLine("")
+[void]$report.AppendLine("PASS    : $passCount")
+[void]$report.AppendLine("FAIL    : $failCount")
+[void]$report.AppendLine("SKIPPED : $skipCount")
+[void]$report.AppendLine("")
+[void]$report.AppendLine("Detailed Results")
+[void]$report.AppendLine("----------------")
+
+foreach ($r in $Results) {
+    [void]$report.AppendLine(
+        "TEST=$($r.Test) | STATUS=$($r.Status) | $($r.Name)"
+    )
+
+    if ($r.Details) {
+        [void]$report.AppendLine(
+            "DETAILS=$($r.Details)"
+        )
+    }
+}
+
+[IO.File]::WriteAllText(
+    $ReportFile,
+    $report.ToString(),
+    [Text.Encoding]::UTF8
+)
+
+Write-Host ""
+Write-Host "==================================================" -ForegroundColor Cyan
+Write-Host " FINAL RESULT" -ForegroundColor Cyan
+Write-Host "==================================================" -ForegroundColor Cyan
+Write-Host "PASS    : $passCount" -ForegroundColor Green
+Write-Host "FAIL    : $failCount" -ForegroundColor Red
+Write-Host "SKIPPED : $skipCount" -ForegroundColor Yellow
+Write-Host ""
+Write-Host "Report : $ReportFile"
+Write-Host "Log    : $LogFile"
+Write-Host ""
+
+Stop-Transcript | Out-Null
+
+if ($failCount -gt 0) {
+    exit 1
+}
+
+exit 0

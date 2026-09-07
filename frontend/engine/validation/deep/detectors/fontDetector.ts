@@ -120,7 +120,8 @@ export class FontDetector
 
             const objects =
                 this.objectParser.collectObjects(
-                    text
+                    text,
+                    bytes
                 );
 
             if (
@@ -219,7 +220,7 @@ export class FontDetector
                     }
 
                     if (
-                        !/\/Type\s+\/Font(?![A-Za-z0-9])/.test(
+                        !/\/Type\s*\/Font(?![A-Za-z0-9])/.test(
                             object.body
                         )
                     ) {
@@ -262,3 +263,5 @@ export class FontDetector
     }
 
 }
+
+

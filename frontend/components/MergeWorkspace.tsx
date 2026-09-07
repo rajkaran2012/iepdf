@@ -162,6 +162,23 @@ export default function MergeWorkspace({
 
     }, [files]);
 
+    const canMerge = useMemo(() => {
+
+        const activeFiles = files.filter(file => !file.skipped);
+
+        if (activeFiles.length < 2) {
+            return false;
+        }
+
+        return activeFiles.every(
+            file => file.status === "ready" || (
+                file.status === "password_required" &&
+                Boolean(file.password?.trim())
+            )
+        );
+
+    }, [files]);
+
     return (
 
         <div className="mt-10 w-full max-w-6xl rounded-3xl border border-gray-200 bg-white shadow-xl">
@@ -536,13 +553,13 @@ export default function MergeWorkspace({
                     <button
                         type="button"
                         disabled={
-                            summary.ready < 2
+                            !canMerge
                         }
                         onClick={
                             onUnlockMerge
                         }
                         className={`rounded-2xl px-10 py-4 text-lg font-semibold text-white transition ${
-                            summary.ready < 2
+                            !canMerge
                                 ? "cursor-not-allowed bg-gray-400"
                                 : "bg-blue-600 hover:bg-blue-700"
                         }`}

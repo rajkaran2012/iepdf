@@ -1,4 +1,4 @@
-﻿/**
+/**
  * =============================================================================
  * iePDF Validation Engine
  * =============================================================================
@@ -150,96 +150,105 @@ export class FontDetector
             const fontDictionaryPattern =
                 /\/Font\s*<<([\s\S]*?)>>/g;
 
-            let dictionaryMatch:
-                RegExpExecArray | null;
+            for (const [, parsedObject] of objects) {
 
-            while (
-                (dictionaryMatch =
-                    fontDictionaryPattern.exec(text)) !== null
-            ) {
+                fontDictionaryPattern.lastIndex = 0;
 
-                const dictionary =
-                    dictionaryMatch[1];
-
-                const referencePattern =
-                    /\/([A-Za-z0-9_.-]+)\s+(\d+)\s+(\d+)\s+R/g;
-
-                let referenceMatch:
+                let dictionaryMatch:
                     RegExpExecArray | null;
 
                 while (
-                    (referenceMatch =
-                        referencePattern.exec(dictionary)) !== null
+                    (dictionaryMatch =
+                        fontDictionaryPattern.exec(
+                            parsedObject.body
+                        )
+                    ) !== null
                 ) {
 
-                    const resourceName =
-                        referenceMatch[1];
+                    const dictionary =
+                        dictionaryMatch[1];
 
-                    const objectNumber =
-                        Number(referenceMatch[2]);
+                    const referencePattern =
+                        /\/([A-Za-z0-9_.-]+)\s+(\d+)\s+(\d+)\s+R/g;
 
-                    const generationNumber =
-                        Number(referenceMatch[3]);
+                    let referenceMatch:
+                        RegExpExecArray | null;
 
-                    if (
-                        !Number.isSafeInteger(objectNumber) ||
-                        objectNumber <= 0 ||
-                        !Number.isSafeInteger(generationNumber) ||
-                        generationNumber < 0
+                    while (
+                        (referenceMatch =
+                            referencePattern.exec(dictionary)
+                        ) !== null
                     ) {
 
-                        return {
-                            validFont: false,
-                            fontCount,
-                            reason:
-                                `Font resource /${resourceName} contains an invalid object reference.`
-                        };
+                        const resourceName =
+                            referenceMatch[1];
+
+                        const objectNumber =
+                            Number(referenceMatch[2]);
+
+                        const generationNumber =
+                            Number(referenceMatch[3]);
+
+                        if (
+                            !Number.isSafeInteger(objectNumber) ||
+                            objectNumber <= 0 ||
+                            !Number.isSafeInteger(generationNumber) ||
+                            generationNumber < 0
+                        ) {
+
+                            return {
+                                validFont: false,
+                                fontCount,
+                                reason:
+                                    `Font resource /${resourceName} contains an invalid object reference.`
+                            };
+
+                        }
+
+                        const object =
+                            this.objectParser.getObject(
+                                objects,
+                                {
+                                    objectNumber,
+                                    generationNumber
+                                }
+                            );
+
+                        if (
+                            object === undefined
+                        ) {
+
+                            return {
+                                validFont: false,
+                                fontCount,
+                                reason:
+                                    `Font resource /${resourceName} references missing object ${objectNumber} ${generationNumber} R.`
+                            };
+
+                        }
+
+                        if (
+                            !/\/Type\s*\/Font(?![A-Za-z0-9])/.test(
+                                object.body
+                            )
+                        ) {
+
+                            return {
+                                validFont: false,
+                                fontCount,
+                                reason:
+                                    `Font resource /${resourceName} references object ${objectNumber} ${generationNumber} R which is not a /Font object.`
+                            };
+
+                        }
+
+                        fontCount++;
 
                     }
-
-                    const object =
-                        this.objectParser.getObject(
-                            objects,
-                            {
-                                objectNumber,
-                                generationNumber
-                            }
-                        );
-
-                    if (
-                        object === undefined
-                    ) {
-
-                        return {
-                            validFont: false,
-                            fontCount,
-                            reason:
-                                `Font resource /${resourceName} references missing object ${objectNumber} ${generationNumber} R.`
-                        };
-
-                    }
-
-                    if (
-                        !/\/Type\s*\/Font(?![A-Za-z0-9])/.test(
-                            object.body
-                        )
-                    ) {
-
-                        return {
-                            validFont: false,
-                            fontCount,
-                            reason:
-                                `Font resource /${resourceName} references object ${objectNumber} ${generationNumber} R which is not a /Font object.`
-                        };
-
-                    }
-
-                    fontCount++;
 
                 }
 
             }
-
             return {
                 validFont: true,
                 fontCount
@@ -263,5 +272,3 @@ export class FontDetector
     }
 
 }
-
-

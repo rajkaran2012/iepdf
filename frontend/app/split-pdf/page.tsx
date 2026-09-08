@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 
 import { BrowserPdfAnalyzer } from "@/engine/analysis/BrowserPdfAnalyzer";
 import { SplitPdfProcessor } from "@/engine/processing/processors/SplitPdfProcessor";
+import ValidationConstants from "@/engine/validation/common/validationConstants";
 import useToast from "@/hooks/useToast";
 
 import ToolLayout from "@/components/layout/ToolLayout";
@@ -28,6 +29,21 @@ export default function SplitPDF() {
     }
 
     const selectedFile = files[0];
+
+    if (selectedFile.size > ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES) {
+      toast.error({
+        title: "File too large",
+        message: "The selected PDF exceeds the 15 MB limit.",
+      });
+
+      setWorkspaceFile(null);
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      return;
+    }
 
     const analyzer = new BrowserPdfAnalyzer();
 

@@ -77,7 +77,6 @@ export default function PdfToJpg() {    const inputRef = useRef<HTMLInputElement
                 skipped: false,
             });
         } catch (error: unknown) {
-            console.warn("PDF analysis failed:", error);
 
             toast.error({ title: "PDF analysis failed", message: error instanceof Error ? error.message : "Unable to analyze the selected PDF." });
         }
@@ -141,7 +140,6 @@ export default function PdfToJpg() {    const inputRef = useRef<HTMLInputElement
                 inputRef.current.value = "";
             }
         } catch (error: unknown) {
-            console.warn("PDF to JPG failed:", error);
 
             toast.error({ title: "Conversion failed", message: error instanceof Error ? error.message : "Unable to convert the PDF to JPG." });
         } finally {

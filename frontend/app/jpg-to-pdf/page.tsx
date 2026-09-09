@@ -99,7 +99,6 @@ export default function JpgToPdf() {
 
             setWorkspaceFiles(workspace);
         } catch (error: unknown) {
-            console.warn("JPG selection failed:", error);
 
             toast.error({
                 title: "JPG selection failed",
@@ -178,7 +177,6 @@ export default function JpgToPdf() {
                 inputRef.current.value = "";
             }
         } catch (error: unknown) {
-            console.warn("JPG to PDF failed:", error);
 
             toast.error({
                 title: "Conversion failed",

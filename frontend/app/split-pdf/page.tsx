@@ -111,8 +111,6 @@ export default function SplitPDF() {
         fileInputRef.current.value = "";
       }
     } catch (error: unknown) {
-      console.warn("Split PDF failed:", error);
-
       toast.error({ title: "Split failed", message: error instanceof Error ? error.message : "Unable to split the PDF." });
     } finally {
       setLoading(false);

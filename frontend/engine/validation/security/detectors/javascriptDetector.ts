@@ -38,8 +38,12 @@ export class JavaScriptDetector implements IJavaScriptDetector {
 
         const document = this.pdfDocumentService.getDocument();
 
+        const jsActions =
+            await document.getJSActions();
+
         const hasJavaScript =
-            await document.hasJSActions();
+            jsActions !== null &&
+            Object.keys(jsActions).length > 0;
 
         return {
             hasJavaScript

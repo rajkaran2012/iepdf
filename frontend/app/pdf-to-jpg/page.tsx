@@ -1,146 +1,198 @@
-
 "use client";
 
 import { useRef, useState } from "react";
-import { API_URL } from "@/lib/api";
 
-export default function PdfToJpg() {
-  const inputRef = useRef<HTMLInputElement>(null);
+import { BrowserPdfAnalyzer } from "@/engine/analysis/BrowserPdfAnalyzer";
+import { PdfToJpgProcessor } from "@/engine/processing/processors/PdfToJpgProcessor";
+import useToast from "@/hooks/useToast";
+import { ValidationConstants } from "@/engine/validation/common/validationConstants";
 
-  const [file, setFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
+import ToolLayout from "@/components/layout/ToolLayout";
 
-  const MAX_FILE_SIZE = 15 * 1024 * 1024; //15 MB
+const MAX_FILE_SIZE = ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES;
 
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    if (!e.target.files?.length) return;
+export default function PdfToJpg() {    const inputRef = useRef<HTMLInputElement>(null);
 
-    const selectedFile = e.target.files[0];
+    const toast = useToast();
 
-    if (selectedFile.size > MAX_FILE_SIZE) {
-      alert(
-        `"${selectedFile.name}" is larger than 15 MB.\n\nMaximum allowed file size is 15 MB.`
-      );
+    const [workspaceFile, setWorkspaceFile] =
+        useState<any | null>(null);
 
-      e.target.value = "";
-      setFile(null);
+    const [loading, setLoading] =
+        useState(false);const handleSelectFile = () => {
+        inputRef.current?.click();
+    };
 
-      return;
-    }
+    const handleFileChange = async (
+        event: React.ChangeEvent<HTMLInputElement>
+    ) => {
+        const files =
+            Array.from(
+                event.target.files ?? []
+            );
 
-    setFile(selectedFile);
-  };
-
-  const handleConvert = async () => {
-    if (!file) {
-      alert("Please select a PDF.");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await fetch(
-        `${API_URL}/pdf-to-jpg`,
-        {
-          method: "POST",
-          body: formData,
+        if (files.length === 0) {
+            return;
         }
-      );
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(
-          error.detail || "Conversion failed."
-        );
-      }
 
-      const blob = await response.blob();
 
-      const url = window.URL.createObjectURL(blob);
 
-      const a = document.createElement("a");
+        const selectedFile = files[0];
 
-      a.href = url;
-      a.download = "jpg_pages.zip";
+        if (
+            selectedFile.size >
+            MAX_FILE_SIZE
+        ) {
+            toast.error({ title: "File too large", message: `"${selectedFile.name}" is larger than 15 MB. The maximum allowed file size is 15 MB per PDF.`, fileName: selectedFile.name, fileSize: selectedFile.size });
 
-      document.body.appendChild(a);
+            event.target.value = "";
+            setWorkspaceFile(null);
 
-      a.click();
+            return;
+        }
 
-      a.remove();
+        try {
+            const analyzer =
+                new BrowserPdfAnalyzer();
 
-      window.URL.revokeObjectURL(url);
+            const analysis =
+                await analyzer.analyzeMany([
+                    selectedFile,
+                ]);
 
-      alert("JPG ZIP downloaded successfully!");
-    } catch (error: any) {
-      console.error(error);
+            const result = analysis[0];
 
-      alert(
-        error.message ||
-          "Unable to connect to backend."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+            if (!result) {
+                toast.error({ title: "Unable to analyze PDF", message: "We couldn't read the selected PDF." });
 
-  return (
-    <main className="min-h-screen bg-gray-100 flex flex-col items-center justify-center px-6">
+                return;
+            }
 
-      <h1 className="text-4xl font-bold mb-4">
-        PDF to JPG
-      </h1>
+            setWorkspaceFile({
+                ...result,
+                file: selectedFile,
+                password: "",
+                showPassword: false,
+                skipped: false,
+            });
+        } catch (error: unknown) {
 
-      <p className="mb-8 text-gray-600">
-        Convert PDF pages into JPG images.
-      </p>
+            toast.error({ title: "PDF analysis failed", message: error instanceof Error ? error.message : "Unable to analyze the selected PDF." });
+        }
+    };
 
-      <input
-        type="file"
-        accept=".pdf"
-        ref={inputRef}
-        className="hidden"
-        onChange={handleFileChange}
-      />
+    const handleConvert = async () => {
+        if (!workspaceFile) {
+            toast.warning({ title: "No PDF selected", message: "Please select a PDF to convert." });
 
-      <button
-        onClick={() => inputRef.current?.click()}
-        className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition"
-      >
-        Select PDF
-      </button>
+            return;
+        }
 
-      {file && (
-        <div className="mt-8 w-full max-w-lg bg-white rounded-xl shadow p-6">
+        setLoading(true);
 
-          <h3 className="font-bold mb-3">
-            Selected File
-          </h3>
 
-          <div className="border rounded p-2">
-            {file.name}
-          </div>
 
-          <button
-            onClick={handleConvert}
-            disabled={loading}
-            className="mt-6 w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-500 text-white py-3 rounded-lg transition"
-          >
-            {loading
-              ? "Converting..."
-              : "Convert to JPG"}
-          </button>
+        try {
+            const processor =
+                new PdfToJpgProcessor();
 
-        </div>
-      )}
+            const result =
+                await processor.process({
+                    files: [workspaceFile],
+                    toolType: "pdf-to-jpg",
+                });
 
-    </main>
-  );
+            if (
+                !result.success ||
+                !result.outputFile
+            ) {
+                toast.error({ title: "Conversion failed", message: result.error || "Unable to convert the PDF to JPG." });
+
+                return;
+            }
+
+            const url =
+                URL.createObjectURL(
+                    result.outputFile
+                );
+
+            const link =
+                document.createElement("a");
+
+            link.href = url;
+            link.download =
+                result.outputFile.name;
+
+            document.body.appendChild(link);
+
+            link.click();
+
+            link.remove();
+
+            URL.revokeObjectURL(url);
+
+            toast.success({ title: "Conversion completed", message: "Your PDF was converted to JPG successfully. ZIP downloaded." });
+
+            setWorkspaceFile(null);
+
+            if (inputRef.current) {
+                inputRef.current.value = "";
+            }
+        } catch (error: unknown) {
+
+            toast.error({ title: "Conversion failed", message: error instanceof Error ? error.message : "Unable to convert the PDF to JPG." });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <ToolLayout
+            title="PDF to JPG"
+            description="Convert PDF pages into JPG images securely and instantly."
+        >
+            <div className="flex flex-col items-center justify-center py-16">
+                <input
+                    ref={inputRef}
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    className="hidden"
+                    onChange={handleFileChange}
+                />
+
+                <button
+                    type="button"
+                    onClick={handleSelectFile}
+                    disabled={loading}
+                    className="rounded-xl bg-purple-600 px-8 py-4 text-lg font-semibold text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                    Select PDF
+                </button>
+
+                {workspaceFile && (
+                    <div className="mt-8 w-full max-w-xl rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                        <h3 className="mb-3 text-lg font-semibold">
+                            Selected File
+                        </h3>
+
+                        <div className="mb-6 rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-700">
+                            {workspaceFile.filename}
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={handleConvert}
+                            disabled={loading}
+                            className="w-full rounded-xl bg-purple-600 px-6 py-3 font-semibold text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            {loading
+                                ? "Converting..."
+                                : "Convert to JPG"}
+                        </button>
+                    </div>
+                )}
+            </div>
+        </ToolLayout>
+    );
 }
-

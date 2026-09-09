@@ -1,203 +1,372 @@
 "use client";
 
 import { useRef, useState } from "react";
-
-import { API_URL } from "@/lib/api";
-import { validateFiles } from "@/lib/validateFile";
-import { createNotifications } from "@/lib/notifications";
-
+import { BrowserPdfAnalyzer } from "@/engine/analysis/BrowserPdfAnalyzer";
+import { BrowserMergeProcessor } from "@/engine/processing/processors/BrowserMergeProcessor";
+import { BrowserPdfUnlockService } from "@/engine/unlock/BrowserPdfUnlockService";
 import useToast from "@/hooks/useToast";
+import { ValidationConstants } from "@/engine/validation/common/validationConstants";
 
-import LoadingOverlay from "@/components/loading/LoadingOverlay";
 import ToolLayout from "@/components/layout/ToolLayout";
+import MergeWorkspace from "@/components/MergeWorkspace";
 
 export default function MergePDF() {
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [files, setFiles] = useState<File[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [workspaceFiles, setWorkspaceFiles] = useState<any[]>([]);
+  const [showWorkspace, setShowWorkspace] = useState(false);
 
   const toast = useToast();
-  const notifications = createNotifications(toast);
+  const MAX_FILE_SIZE = ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES;
 
-  const handleSelectFiles = () => {
-    fileInputRef.current?.click();
-  };
+  const handlePasswordChange = (
+    id: string,
+    password: string
+) => {
 
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>
+    setWorkspaceFiles((prev) =>
+        prev.map((file) =>
+            file.id === id
+                ? {
+                      ...file,
+                      password,
+                  }
+                : file
+        )
+    );
+
+};
+
+  const handlePasswordBlur = async (
+    id: string
   ) => {
-    if (!e.target.files) return;
 
-    const selectedFiles = Array.from(e.target.files);
+    const targetFile =
+      workspaceFiles.find(
+        (file) => file.id === id
+      );
 
-    const result = validateFiles(selectedFiles, "merge");
-
-    if (!result.success) {
-      notifications.fromValidation(result);
-
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-
+    if (!targetFile) {
       return;
     }
 
-    setSuccess(false);
-    setFiles(selectedFiles);
-  };
+    const password =
+      targetFile.password?.trim();
 
-  const handleMerge = async () => {
-    const result = validateFiles(files, "merge");
-
-    if (!result.success) {
-      notifications.fromValidation(result);
+    if (!password) {
       return;
     }
 
-    setLoading(true);
-
-    const formData = new FormData();
-
-    files.forEach((file) => {
-      formData.append("files", file);
-    });
+    if (
+      targetFile.status !==
+      "password_required"
+    ) {
+      return;
+    }
 
     try {
-      const response = await fetch(`${API_URL}/merge-pdf`, {
-        method: "POST",
-        body: formData,
+
+      const unlockService =
+        new BrowserPdfUnlockService();
+
+      const result =
+        await unlockService.unlock(
+          targetFile.file,
+          password
+        );
+
+      const unlockedFile =
+        new File(
+          [result.bytes],
+          targetFile.filename,
+          {
+            type: "application/pdf"
+          }
+        );
+
+      setWorkspaceFiles((previous) =>
+        previous.map((file) =>
+          file.id === id
+            ? {
+                ...file,
+
+                file:
+                  unlockedFile,
+
+                size:
+                  unlockedFile.size,
+
+                status:
+                  "ready",
+
+                encrypted:
+                  result.encrypted,
+
+                corrupted:
+                  false,
+
+                message:
+                  "Password accepted. PDF is ready for merge.",
+              }
+            : file
+        )
+      );
+
+    } catch (error) {
+
+      toast.error({
+        title: "Password verification failed",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Unable to unlock PDF.",
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || "Merge failed.");
-      }
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to unlock PDF.";
 
-      const blob = await response.blob();
+      setWorkspaceFiles((previous) =>
+        previous.map((file) =>
+          file.id === id
+            ? {
+                ...file,
 
-      const url = window.URL.createObjectURL(blob);
+                status:
+                  "password_required",
 
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "merged.pdf";
+                message,
+            }
+          : file
+        )
+      );
 
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+    }
 
-      window.URL.revokeObjectURL(url);
+  };
+  const handleTogglePassword = (id: string) => {
+    setWorkspaceFiles((prev) =>
+      prev.map((file) =>
+        file.id === id
+          ? {
+              ...file,
+              showPassword: !file.showPassword,
+            }
+          : file
+      )
+    );
+  };
+  const handleSkipFile = (id: string) => {
+  setWorkspaceFiles((prev) =>
+    prev.map((file) =>
+      file.id === id
+        ? {
+            ...file,
+            skipped: !file.skipped,
+          }
+        : file
+    )
+  );
+};
 
-      notifications.mergeSuccess("merged.pdf");
-      setSuccess(true);
+const handleRemoveFile = (id: string) => {
+
+    setWorkspaceFiles((previous) => {
+
+        const updated = previous.filter(
+            (file) => file.id !== id
+        );
+
+        if (updated.length === 0) {
+
+            setShowWorkspace(false);
+
+            if (fileInputRef.current) {
+
+                fileInputRef.current.value = "";
+
+            }
+
+        }
+
+        return updated;
+
+    });
+
+};
+    const handleUnlockMerge = async () => {
+
+    try {
+
+
+        const processor =
+            new BrowserMergeProcessor();
+
+        const result =
+            await processor.process({
+
+                files: workspaceFiles,
+
+                toolType: "merge",
+
+            });
+
+        if (!result.success || !result.outputFile) {
+
+            toast.error({
+              title: "Merge failed",
+              message:
+                result.error ||
+                "Unable to merge the selected PDFs.",
+            });
+
+            return;
+
+        }
+
+        const url =
+            URL.createObjectURL(result.outputFile);
+
+        const link =
+            document.createElement("a");
+
+        link.href = url;
+
+        link.download =
+            result.outputFile.name;
+
+        document.body.appendChild(link);
+
+        link.click();
+
+        link.remove();
+
+        toast.success({
+          title: "Merge completed",
+          message: "Your PDFs were merged successfully.",
+        });
+
+        URL.revokeObjectURL(url);
+
+        setWorkspaceFiles([]);
+
+        setShowWorkspace(false);
+
+        if (fileInputRef.current) {
+
+            fileInputRef.current.value = "";
+
+        }
+
     } catch (error) {
-      console.error(error);
-      notifications.networkError();
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const handleMergeAnother = () => {
-    setFiles([]);
-    setSuccess(false);
+        toast.error({
+          title: "Merge failed",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to merge the selected PDFs.",
+        });
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
     }
-  };
+
+};
+  const handleSelectFiles = () => {
+  fileInputRef.current?.click();
+};
+
+const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+) => {
+
+    const files = Array.from(event.target.files ?? []);
+
+    if (files.length === 0) {
+        return;
+    }
+
+    const oversizedFile = files.find(
+        (file) => file.size > MAX_FILE_SIZE
+    );
+
+    if (oversizedFile) {
+        toast.error({
+          title: "Invalid PDF",
+          message: "File exceeds the maximum allowed size.",
+          fileName: oversizedFile.name,
+          fileSize: oversizedFile.size,
+        });
+        return;
+    }
+
+    const analyzer = new BrowserPdfAnalyzer();
+
+    const analysis =
+        await analyzer.analyzeMany(files);
+
+    const workspace = analysis.map(
+        (result, index) => ({
+
+            ...result,
+
+            // Original browser File
+            file: files[index],
+
+            // Workspace state
+            password: "",
+            showPassword: false,
+            skipped: false,
+
+        })
+    );
+
+    setWorkspaceFiles(workspace);
+
+    setShowWorkspace(true);
+
+};
 
   return (
-    <>
-      <LoadingOverlay
-        open={loading}
-        title="Merging PDF Files"
-        message="Please wait while we merge your documents..."
-      />
+    <ToolLayout
+      title="Merge PDF"
+      description="Combine multiple PDF files into a single PDF securely and instantly."
+    >
 
-      <ToolLayout
-        title="Merge PDF"
-        description="Combine multiple PDF files into a single document quickly and securely."
-      >
-        <div className="flex flex-col items-center">
-          <input
-            type="file"
-            accept=".pdf"
-            multiple
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            className="hidden"
-          />
+      <div className="flex flex-col items-center justify-center py-16">
 
-          {!success && (
-            <>
-              <button
-                onClick={handleSelectFiles}
-                className="rounded-xl bg-red-600 px-8 py-4 font-semibold text-white transition hover:bg-red-700"
-              >
-                Select PDF Files
-              </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf"
+          className="hidden"
+          onChange={handleFileChange}
+        />
 
-              {files.length > 0 && (
-                <div className="mt-8 w-full max-w-2xl">
-                  <div className="rounded-xl border bg-gray-50 p-6">
-                    <h3 className="mb-4 text-xl font-bold">
-                      Selected Files
-                    </h3>
+        <button
+          onClick={handleSelectFiles}
+          className="rounded-xl bg-red-600 px-8 py-4 text-lg font-semibold text-white transition hover:bg-red-700"
+        >
+          Select PDF Files
+        </button>
+		{showWorkspace && (
+ <MergeWorkspace
+    files={workspaceFiles}
+    onPasswordChange={handlePasswordChange}
+    onPasswordBlur={handlePasswordBlur}
+    onTogglePassword={handleTogglePassword}
+    onSkipFile={handleSkipFile}
+    onRemoveFile={handleRemoveFile}
+    onUnlockMerge={handleUnlockMerge}
+/>
+)}
 
-                    <ul className="space-y-3">
-                      {files.map((file, index) => (
-                        <li
-                          key={index}
-                          className="flex items-center justify-between rounded-lg border bg-white px-4 py-3"
-                        >
-                          <span>{file.name}</span>
 
-                          <span className="text-sm text-gray-500">
-                            {(file.size / (1024 * 1024)).toFixed(2)} MB
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
 
-                    <button
-                      onClick={handleMerge}
-                      disabled={loading}
-                      className="mt-8 w-full rounded-xl bg-green-600 py-4 font-semibold text-white transition hover:bg-green-700 disabled:bg-gray-400"
-                    >
-                      {loading ? "Merging PDFs..." : "Merge PDFs"}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+      </div>
 
-          {success && (
-            <div className="mt-8 w-full max-w-2xl">
-              <div className="rounded-2xl border border-green-300 bg-green-50 p-10 text-center shadow">
-                <div className="mb-4 text-6xl">✅</div>
-
-                <h2 className="text-3xl font-bold text-green-700">
-                  PDF Merged Successfully!
-                </h2>
-
-                <p className="mt-4 text-gray-700">
-                  Your merged PDF has been downloaded successfully.
-                </p>
-
-                <button
-                  onClick={handleMergeAnother}
-                  className="mt-8 rounded-xl bg-red-600 px-8 py-4 font-semibold text-white transition hover:bg-red-700"
-                >
-                  Merge Another PDF
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </ToolLayout>
-    </>
+    </ToolLayout>
   );
 }

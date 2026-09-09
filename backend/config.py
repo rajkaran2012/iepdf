@@ -1,4 +1,5 @@
 import os
+import shutil
 
 # ==========================================
 # PROJECT ROOT
@@ -11,11 +12,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # ==========================================
 
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
-
 OUTPUT_FOLDER = os.path.join(BASE_DIR, "outputs")
-
 TEMP_FOLDER = os.path.join(BASE_DIR, "temp")
-
 LOG_FOLDER = os.path.join(BASE_DIR, "logs")
 
 # ==========================================
@@ -34,6 +32,12 @@ POPPLER_PATH = r"C:\poppler\Library\bin"
 # GHOSTSCRIPT
 # ==========================================
 
-GHOSTSCRIPT_PATH = (
+_WINDOWS_GHOSTSCRIPT_PATH = (
     r"C:\Program Files\gs\gs10.07.1\bin\gswin64c.exe"
+)
+
+GHOSTSCRIPT_PATH = (
+    os.environ.get("GHOSTSCRIPT_PATH")
+    or shutil.which("gs")
+    or _WINDOWS_GHOSTSCRIPT_PATH
 )

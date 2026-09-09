@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node .\\node_modules\\next\\dist\\bin\\next build",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "test:watch": "vitest",
@@ -36,5 +36,6 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.11"
-  }
+  },
+  "packageManager": "pnpm@10.28.0"
 }

@@ -2,79 +2,87 @@ import { ToolType, ValidationResult } from "./validationTypes";
 
 import { TOOL_RULES } from "./validation/toolRules";
 
-import {
-  validateFileCount,
-  validateEmptyFile,
-  validateFileSize,
-  validateMimeType,
-} from "./validation";
+import { ValidationPipeline } from "@/engine/validation/pipeline/validationPipeline";
 
-// ======================================================
-// Enterprise File Validator
-// ======================================================
+export async function validateFiles(
+    files: File[],
+    toolType: ToolType
+): Promise<ValidationResult> {
 
-export function validateFiles(
-  files: File[],
-  toolType: ToolType
-): ValidationResult {
+    const rule = TOOL_RULES[toolType];
 
-  const rule = TOOL_RULES[toolType];
+    // No file selected
 
-  // No file selected
+    if (files.length === 0) {
 
-  if (files.length === 0) {
+        return {
+            success: false,
+            tool: {
+                id: rule.id,
+                name: rule.name,
+            },
+            code: "NO_FILE",
+            title: "No File Selected",
+            message: "Please select at least one file.",
+        };
+
+    }
+
+
+
+    // Execute Validation Engine
+
+    const pipeline = new ValidationPipeline();
+
+    for (const file of files) {
+
+         const results = await pipeline.execute(
+          files,
+          file,
+          toolType
+        );
+
+        const failed =
+            results.find(result => !result.passed);
+
+        if (failed) {
+
+            return {
+                success: false,
+
+                tool: {
+                    id: rule.id,
+                    name: rule.name,
+                },
+
+                code: failed.errorCode as any,
+
+                title: failed.rule,
+
+                message:
+                    failed.message ??
+                    "Validation failed.",
+
+                file: {
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                },
+
+            };
+
+        }
+
+    }
+
     return {
-      success: false,
-      tool: {
-        id: rule.id,
-        name: rule.name,
-      },
-      code: "NO_FILE",
-      title: "No File Selected",
-      message: "Please select at least one file.",
+        success: true,
+
+        tool: {
+            id: rule.id,
+            name: rule.name,
+        },
+
     };
-  }
 
-  // File count
-
-  const countResult = validateFileCount(files, rule);
-
-  if (!countResult.success) {
-    return countResult;
-  }
-
-  // Validate every file
-
-  for (const file of files) {
-
-    const emptyResult = validateEmptyFile(file, rule);
-
-    if (!emptyResult.success) {
-      return emptyResult;
-    }
-
-    const sizeResult = validateFileSize(file, rule);
-
-    if (!sizeResult.success) {
-      return sizeResult;
-    }
-
-    const mimeResult = validateMimeType(file, rule);
-
-    if (!mimeResult.success) {
-      return mimeResult;
-    }
-
-  }
-
-  // Success
-
-  return {
-    success: true,
-
-    tool: {
-      id: rule.id,
-      name: rule.name,
-    },
-  };
 }

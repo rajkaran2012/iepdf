@@ -1,157 +1,254 @@
-
 "use client";
 
 import { useRef, useState } from "react";
-import { API_URL } from "@/lib/api";
+
+import { BrowserPdfAnalyzer } from "@/engine/analysis/BrowserPdfAnalyzer";
+import { JpgToPdfProcessor } from "@/engine/processing/processors/JpgToPdfProcessor";
+
+import ToolLayout from "@/components/layout/ToolLayout";
+import useToast from "@/hooks/useToast";
+import { ValidationConstants } from "@/engine/validation/common/validationConstants";
+
+const MAX_FILE_SIZE = ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES;
 
 export default function JpgToPdf() {
-  const inputRef = useRef<HTMLInputElement>(null);
+    const toast = useToast();
+    const inputRef =
+        useRef<HTMLInputElement>(null);
 
-  const [files, setFiles] = useState<File[]>([]);
-  const [loading, setLoading] = useState(false);
+    const [workspaceFiles, setWorkspaceFiles] =
+        useState<any[]>([]);
 
-  const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
+    const [loading, setLoading] =
+        useState(false);
+    const handleSelectFiles = () => {
+        inputRef.current?.click();
+    };
 
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    if (!e.target.files) return;
+    const handleFileChange = async (
+        event: React.ChangeEvent<HTMLInputElement>
+    ) => {
+        const selectedFiles =
+            Array.from(
+                event.target.files ?? []
+            );
 
-    const selectedFiles = Array.from(e.target.files);
-
-    for (const file of selectedFiles) {
-      if (file.size > MAX_FILE_SIZE) {
-        alert(
-          `"${file.name}" is larger than 15 MB.\n\nMaximum allowed file size is 15 MB.`
-        );
-
-        e.target.value = "";
-        setFiles([]);
-
-        return;
-      }
-    }
-
-    setFiles(selectedFiles);
-  };
-
-  const handleConvert = async () => {
-    if (files.length === 0) {
-      alert("Please select JPG images.");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const formData = new FormData();
-
-      files.forEach((file) => {
-        formData.append("files", file);
-      });
-
-      const response = await fetch(
-        `${API_URL}/jpg-to-pdf`,
-        {
-          method: "POST",
-          body: formData,
+        if (selectedFiles.length === 0) {
+            return;
         }
-      );
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(
-          error.detail || "Conversion failed."
-        );
-      }
+        for (const file of selectedFiles) {
+            if (file.size > MAX_FILE_SIZE) {
+                toast.error({
+                    title: "File too large",
+                    message: `"${file.name}" is larger than 15 MB. The maximum allowed file size is 15 MB per image.`,
+                    fileName: file.name,
+                    fileSize: file.size,
+                });
 
-      const blob = await response.blob();
+                event.target.value = "";
+                setWorkspaceFiles([]);
 
-      const url = window.URL.createObjectURL(blob);
+                return;
+            }
+        }
 
-      const a = document.createElement("a");
+        try {
+            const analyzer =
+                new BrowserPdfAnalyzer();
 
-      a.href = url;
-      a.download = "converted.pdf";
+            const analyzedFiles =
+                selectedFiles.map(file => ({
+                    id:
+                        typeof crypto !== "undefined" &&
+                        typeof crypto.randomUUID === "function"
+                            ? crypto.randomUUID()
+                            : `${file.name}-${file.size}-${file.lastModified}`,
 
-      document.body.appendChild(a);
+                    file,
 
-      a.click();
+                    filename: file.name,
 
-      a.remove();
+                    extension:
+                        file.name
+                            .split(".")
+                            .pop()
+                            ?.toLowerCase() || "",
 
-      window.URL.revokeObjectURL(url);
+                    size: file.size,
 
-      alert("PDF downloaded successfully!");
-    } catch (error: any) {
-      console.error(error);
+                    pages: 0,
 
-      alert(
-        error.message ||
-          "Unable to connect to backend."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+                    status: "ready",
 
-  return (
-    <main className="min-h-screen bg-gray-100 flex flex-col items-center justify-center px-6">
+                    encrypted: false,
 
-      <h1 className="text-4xl font-bold mb-4">
-        JPG to PDF
-      </h1>
+                    corrupted: false,
 
-      <p className="mb-8 text-gray-600">
-        Convert JPG images into a single PDF.
-      </p>
+                    password: "",
 
-      <button
-        onClick={() => inputRef.current?.click()}
-        className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg transition"
-      >
-        Select JPG Images
-      </button>
+                    showPassword: false,
 
-      <input
-        type="file"
-        multiple
-        accept=".jpg,.jpeg,.png"
-        ref={inputRef}
-        className="hidden"
-        onChange={handleFileChange}
-      />
+                    skipped: false,
+                }));
 
-      {files.length > 0 && (
-        <div className="mt-8 w-full max-w-lg bg-white rounded-xl shadow p-6">
+            const workspace =
+                analyzedFiles.map(file => ({
+                    ...file,
+                }));
 
-          <h3 className="font-bold mb-3">
-            Selected Images
-          </h3>
+            setWorkspaceFiles(workspace);
+        } catch (error: unknown) {
 
-          {files.map((file, index) => (
-            <div
-              key={index}
-              className="border rounded p-2 mb-2"
-            >
-              {file.name}
+            toast.error({
+                title: "JPG selection failed",
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : "Unable to prepare the selected images.",
+            });
+        }
+    };
+
+    const handleConvert = async () => {
+        if (workspaceFiles.length === 0) {
+            toast.warning({
+                title: "No JPG images selected",
+                message: "Please select JPG images to convert.",
+            });
+
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const processor =
+                new JpgToPdfProcessor();
+
+            const result =
+                await processor.process({
+                    files: workspaceFiles,
+                    toolType: "jpg-to-pdf",
+                });
+
+            if (
+                !result.success ||
+                !result.outputFile
+            ) {
+                toast.error({
+                    title: "Conversion failed",
+                    message:
+                        result.error ||
+                        "Unable to convert the images to PDF.",
+                });
+
+                return;
+            }
+
+            const url =
+                URL.createObjectURL(
+                    result.outputFile
+                );
+
+            const link =
+                document.createElement("a");
+
+            link.href = url;
+            link.download =
+                result.outputFile.name;
+
+            document.body.appendChild(link);
+
+            link.click();
+
+            link.remove();
+
+            URL.revokeObjectURL(url);
+
+            toast.success({
+                title: "Conversion completed",
+                message: "Images converted to PDF successfully. PDF downloaded.",
+            });
+
+            setWorkspaceFiles([]);
+
+            if (inputRef.current) {
+                inputRef.current.value = "";
+            }
+        } catch (error: unknown) {
+
+            toast.error({
+                title: "Conversion failed",
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : "Unable to convert the images to PDF.",
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <ToolLayout
+            title="JPG to PDF"
+            description="Convert JPG images into a single PDF securely and instantly."
+        >
+            <div className="flex flex-col items-center justify-center py-16">
+                <input
+                    ref={inputRef}
+                    type="file"
+                    multiple
+                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                    className="hidden"
+                    onChange={handleFileChange}
+                />
+
+                <button
+                    type="button"
+                    onClick={handleSelectFiles}
+                    disabled={loading}
+                    className="rounded-xl bg-orange-600 px-8 py-4 text-lg font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                    Select JPG Images
+                </button>
+
+                {workspaceFiles.length > 0 && (
+                    <div className="mt-8 w-full max-w-xl rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                        <h3 className="mb-3 text-lg font-semibold">
+                            Selected Images
+                        </h3>
+
+                        <div className="mb-6 space-y-2">
+                            {workspaceFiles.map(
+                                (workspaceFile, index) => (
+                                    <div
+                                        key={
+                                            workspaceFile.id ||
+                                            index
+                                        }
+                                        className="rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-700"
+                                    >
+                                        {workspaceFile.filename}
+                                    </div>
+                                )
+                            )}
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={handleConvert}
+                            disabled={loading}
+                            className="w-full rounded-xl bg-orange-600 px-6 py-3 font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            {loading
+                                ? "Converting..."
+                                : "Convert to PDF"}
+                        </button>
+                    </div>
+                )}
             </div>
-          ))}
-
-          <button
-            onClick={handleConvert}
-            disabled={loading}
-            className="mt-6 w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-500 text-white py-3 rounded-lg transition"
-          >
-            {loading
-              ? "Converting..."
-              : "Convert to PDF"}
-          </button>
-
-        </div>
-      )}
-
-    </main>
-  );
+        </ToolLayout>
+    );
 }
-

@@ -1,117 +1,157 @@
-
 "use client";
 
 import { useRef, useState } from "react";
-import { API_URL } from "@/lib/api";
+
+import { CompressPdfProcessor } from "@/engine/processing/processors/CompressPdfProcessor";
+
+import type { ProcessingContext } from "@/engine/processing/ProcessingContext";
+import type { WorkspaceFile } from "@/engine/processing/WorkspaceFile";
+import useToast from "@/hooks/useToast";
+import { ValidationConstants } from "@/engine/validation/common/validationConstants";
 
 export default function CompressPDF() {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [file, setFile] = useState<File | null>(null);
+  const toast = useToast();
 
-  const [loading, setLoading] = useState(false);
+  const [file, setFile] =
+    useState<File | null>(null);
 
-  const MAX_FILE_SIZE = 15 * 1024 * 1024; //15 MB
+  const [loading, setLoading] =
+    useState(false);
 
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const MAX_FILE_SIZE = ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES;
 
-    if (!e.target.files?.length) return;
+  const handleFileChange =
+    (e: React.ChangeEvent<HTMLInputElement>) => {
 
-    const selectedFile = e.target.files[0];
+      if (!e.target.files?.length) {
+        return;
+      }
 
-    if (selectedFile.size > MAX_FILE_SIZE) {
+      const selectedFile =
+        e.target.files[0];
 
-      alert(
-        `"${selectedFile.name}" is larger than 15 MB.\n\nMaximum allowed file size is 15 MB.`
-      );
+      if (
+        selectedFile.size >
+        MAX_FILE_SIZE
+      ) {
 
-      e.target.value = "";
+        toast.error({ title: "File too large", message: `"${selectedFile.name}" is larger than ${(MAX_FILE_SIZE / (1024 * 1024)).toFixed(0)} MB. The maximum allowed file size is ${(MAX_FILE_SIZE / (1024 * 1024)).toFixed(0)} MB per PDF.`, fileName: selectedFile.name, fileSize: selectedFile.size });
 
-      setFile(null);
+        e.target.value = "";
+        setFile(null);
 
-      return;
+        return;
+      }
 
-    }
+      setFile(selectedFile);
+    };
 
-    setFile(selectedFile);
 
-  };
+  const handleCompress =
+    async () => {
 
-  const handleCompress = async () => {
+      if (!file) {
 
-    if (!file) {
-      alert("Please select a PDF.");
-      return;
-    }
+        toast.warning({ title: "No PDF selected", message: "Please select a PDF to compress." });
 
-    setLoading(true);
+        return;
+      }
 
-    try {
+      setLoading(true);
 
-      const formData = new FormData();
+      try {
 
-      formData.append("file", file);
+        const workspaceFile: WorkspaceFile = {
+          id: crypto.randomUUID(),
+          file,
+          filename: file.name,
+          extension: ".pdf",
+          size: file.size,
+          pages: 0,
+          status: "ready",
+          encrypted: false,
+          corrupted: false,
+          password: "",
+          showPassword: false,
+          skipped: false
+        };
 
-      const response = await fetch(
-        `${API_URL}/compress-pdf`,
-        {
-          method: "POST",
-          body: formData,
+        const context: ProcessingContext = {
+          files: [workspaceFile],
+          toolType: "compress"
+        };
+
+        const processor =
+          new CompressPdfProcessor();
+
+        const result =
+          await processor.process(
+            context
+          );
+
+        if (
+          !result.success ||
+          !result.outputFile
+        ) {
+
+          throw new Error(
+            result.error ||
+            "Compression failed."
+          );
+
         }
-      );
 
-      if (!response.ok) {
+        const outputFile =
+          result.outputFile;
 
-        const error = await response.json();
+        const url =
+          window.URL.createObjectURL(
+            outputFile
+          );
 
-        throw new Error(
-          error.detail || "Compression failed."
+        const link =
+          document.createElement("a");
+
+        link.href = url;
+        link.download =
+          "compressed.pdf";
+
+        document.body.appendChild(
+          link
         );
+
+        link.click();
+        link.remove();
+
+        window.URL.revokeObjectURL(
+          url
+        );
+        toast.success({ title: "Compression completed", message: "Your PDF was compressed successfully." });
+
+      } catch (error: unknown) {
+
+        console.warn("Compress PDF failed:", error);
+
+        const message =
+          error instanceof Error &&
+          error.message.length > 0
+            ? error.message
+            : "Unable to compress PDF.";
+        toast.error({ title: "Compression failed", message });
+
+      } finally {
+
+        setLoading(false);
 
       }
 
-      const blob = await response.blob();
+    };
 
-      const url = window.URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-
-      a.href = url;
-
-      a.download = "compressed.pdf";
-
-      document.body.appendChild(a);
-
-      a.click();
-
-      a.remove();
-
-      window.URL.revokeObjectURL(url);
-
-      alert("Compressed PDF downloaded successfully!");
-
-    } catch (error: any) {
-
-      console.error(error);
-
-      alert(
-        error.message ||
-        "Unable to connect to backend."
-      );
-
-    } finally {
-
-      setLoading(false);
-
-    }
-
-  };
 
   return (
-
     <main className="min-h-screen bg-gray-100 flex flex-col items-center justify-center px-6">
 
       <h1 className="text-4xl font-bold mb-4">
@@ -123,7 +163,9 @@ export default function CompressPDF() {
       </p>
 
       <button
-        onClick={() => inputRef.current?.click()}
+        onClick={() =>
+          inputRef.current?.click()
+        }
         className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition"
       >
         Select PDF
@@ -131,14 +173,13 @@ export default function CompressPDF() {
 
       <input
         type="file"
-        accept=".pdf"
+        accept=".pdf,application/pdf"
         ref={inputRef}
         className="hidden"
         onChange={handleFileChange}
       />
 
       {file && (
-
         <div className="mt-8 w-full max-w-lg bg-white rounded-xl shadow p-6">
 
           <h3 className="font-bold mb-3">
@@ -160,12 +201,8 @@ export default function CompressPDF() {
           </button>
 
         </div>
-
       )}
 
     </main>
-
   );
-
 }
-

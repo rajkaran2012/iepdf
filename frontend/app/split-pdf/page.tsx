@@ -1,32 +1,42 @@
-
 "use client";
 
 import { useRef, useState } from "react";
-import { API_URL } from "@/lib/api";
+
+import { BrowserPdfAnalyzer } from "@/engine/analysis/BrowserPdfAnalyzer";
+import { SplitPdfProcessor } from "@/engine/processing/processors/SplitPdfProcessor";
+import ValidationConstants from "@/engine/validation/common/validationConstants";
+import useToast from "@/hooks/useToast";
+
+import ToolLayout from "@/components/layout/ToolLayout";
 
 export default function SplitPDF() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [file, setFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
+  const toast = useToast();
 
-  const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
-
-  const handleSelectFile = () => {
+  const [workspaceFile, setWorkspaceFile] = useState<any | null>(null);
+  const [loading, setLoading] = useState(false);const handleSelectFile = () => {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    if (!e.target.files?.length) return;
+    const files = Array.from(event.target.files ?? []);
 
-    const selectedFile = e.target.files[0];
+    if (files.length === 0) {
+      return;
+    }
 
-    if (selectedFile.size > MAX_FILE_SIZE) {
-      alert(
-        `"${selectedFile.name}" is larger than 15 MB.\n\nMaximum allowed file size is 15 MB.`
-      );
+    const selectedFile = files[0];
+
+    if (selectedFile.size > ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES) {
+      toast.error({
+        title: "File too large",
+        message: "The selected PDF exceeds the 15 MB limit.",
+      });
+
+      setWorkspaceFile(null);
 
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -35,109 +45,120 @@ export default function SplitPDF() {
       return;
     }
 
-    setFile(selectedFile);
+    const analyzer = new BrowserPdfAnalyzer();
+
+    const analysis = await analyzer.analyzeMany([selectedFile]);
+
+    const result = analysis[0];
+
+    if (!result) {
+      toast.error({ title: "Unable to analyze PDF", message: "We couldn't read the selected PDF." });
+      return;
+    }
+
+    setWorkspaceFile({
+      ...result,
+
+      file: selectedFile,
+
+      password: "",
+      showPassword: false,
+      skipped: false,
+    });
   };
 
   const handleSplitPDF = async () => {
-    if (!file) {
-      alert("Please select a PDF.");
+    if (!workspaceFile) {
+      toast.warning({ title: "No PDF selected", message: "Please select a PDF to split." });
       return;
     }
 
     setLoading(true);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      const processor = new SplitPdfProcessor();
 
-      const response = await fetch(
-        `${API_URL}/split-pdf`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const result = await processor.process({
+        files: [workspaceFile],
+        toolType: "split",
+      });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || "Split failed.");
+      if (!result.success || !result.outputFile) {
+        toast.error({ title: "Split failed", message: result.error || "Unable to split the PDF." });
+        return;
       }
 
-      const blob = await response.blob();
+      const url = URL.createObjectURL(result.outputFile);
 
-      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
 
-      const a = document.createElement("a");
+      link.href = url;
+      link.download = result.outputFile.name;
 
-      a.href = url;
-      a.download = "split_pages.zip";
+      document.body.appendChild(link);
 
-      document.body.appendChild(a);
+      link.click();
 
-      a.click();
+      link.remove();
 
-      a.remove();
+      URL.revokeObjectURL(url);
 
-      window.URL.revokeObjectURL(url);
+      toast.success({ title: "Split completed", message: "Your PDF was split successfully. ZIP downloaded." });
 
-      alert("ZIP downloaded successfully!");
-    } catch (error: any) {
-      console.error(error);
+      setWorkspaceFile(null);
 
-      alert(
-        error.message ||
-          "Unable to connect to the backend."
-      );
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch (error: unknown) {
+      toast.error({ title: "Split failed", message: error instanceof Error ? error.message : "Unable to split the PDF." });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-gray-100 flex flex-col items-center justify-center px-6">
-      <h1 className="text-4xl font-bold mb-4">
-        Split PDF
-      </h1>
+    <ToolLayout
+      title="Split PDF"
+      description="Split a PDF into separate PDF files securely and instantly."
+    >
+      <div className="flex flex-col items-center justify-center py-16">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf,application/pdf"
+          className="hidden"
+          onChange={handleFileChange}
+        />
 
-      <p className="mb-8 text-gray-600">
-        Split PDF pages into separate PDF files.
-      </p>
+        <button
+          onClick={handleSelectFile}
+          disabled={loading}
+          className="rounded-xl bg-red-600 px-8 py-4 text-lg font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Select PDF
+        </button>
 
-      <input
-        type="file"
-        accept=".pdf"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        className="hidden"
-      />
+        {workspaceFile && (
+          <div className="mt-8 w-full max-w-xl rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h3 className="mb-3 text-lg font-semibold">
+              Selected File
+            </h3>
 
-      <button
-        onClick={handleSelectFile}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition"
-      >
-        Select PDF
-      </button>
+            <div className="mb-6 rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-700">
+              {workspaceFile.filename}
+            </div>
 
-      {file && (
-        <div className="mt-8 w-full max-w-lg bg-white rounded-xl shadow p-6">
-          <h3 className="font-bold mb-3">
-            Selected File
-          </h3>
-
-          <div className="border rounded p-2">
-            {file.name}
+            <button
+              onClick={handleSplitPDF}
+              disabled={loading}
+              className="w-full rounded-xl bg-red-600 px-6 py-3 font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? "Splitting..." : "Split PDF"}
+            </button>
           </div>
-
-          <button
-            onClick={handleSplitPDF}
-            disabled={loading}
-            className="mt-6 w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-500 text-white py-3 rounded-lg transition"
-          >
-            {loading ? "Splitting..." : "Split PDF"}
-          </button>
-        </div>
-      )}
-    </main>
+        )}
+      </div>
+    </ToolLayout>
   );
 }
-

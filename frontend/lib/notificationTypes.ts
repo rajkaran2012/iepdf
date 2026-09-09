@@ -1,79 +1,79 @@
 // =====================================================
-// Tool Types
+// Notification Types
 // =====================================================
 
-export type ToolType =
-  | "merge"
-  | "split"
-  | "compress"
-  | "pdf-to-jpg"
-  | "jpg-to-pdf";
+/**
+ * Supported notification types.
+ */
+export type NotificationType =
+  | "success"
+  | "error"
+  | "warning"
+  | "info"
+  | "loading";
 
-// =====================================================
-// Validation Codes
-// =====================================================
+/**
+ * Notification model used throughout the application.
+ */
+export interface NotificationOptions {
+  id?: string;
 
-export type ValidationCode =
-  | "NO_FILE"
-  | "EMPTY_FILE"
-  | "INVALID_PDF"
-  | "INVALID_IMAGE"
-  | "FILE_TOO_LARGE"
-  | "MERGE_MINIMUM"
-  | "TOO_MANY_FILES"
-  | "ONLY_ONE_FILE"
-  | "PASSWORD_REQUIRED"
-  | "NETWORK_ERROR"
-  | "SERVER_ERROR";
-
-// =====================================================
-// Validation Models
-// =====================================================
-
-export interface ValidationFile {
-  name: string;
-  size: number;
-  type: string;
-}
-
-export interface ValidationTool {
-  id: ToolType;
-  name: string;
-}
-
-export interface ValidationResult {
-  success: boolean;
-
-  tool?: ValidationTool;
-
-  code?: ValidationCode;
-
-  title?: string;
-
-  message?: string;
-
-  file?: ValidationFile;
-}
-
-// =====================================================
-// Password Protected Files
-// =====================================================
-
-export interface PasswordProtectedFile {
-  name: string;
-  size: number;
-}
-
-// =====================================================
-// Toast
-// =====================================================
-
-export interface ToastMessage {
-  id: string;
+  type: NotificationType;
 
   title: string;
 
   message: string;
 
-  type: "success" | "error" | "warning" | "info";
+  fileName?: string;
+
+  fileSize?: number;
+
+  duration?: number;
+
+  persistent?: boolean;
+
+  dismissible?: boolean;
+
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+}
+
+/**
+ * Runtime notification with a guaranteed id.
+ */
+export interface Notification extends NotificationOptions {
+  id: string;
+}
+
+/**
+ * Toast Context Contract
+ */
+export interface NotificationContextType {
+  /**
+   * Active notifications.
+   */
+  notifications: NotificationOptions[];
+
+  dismissible?: boolean;
+   action?: {
+  label: string;
+  onClick: () => void;
+};
+
+  /**
+   * Display a notification.
+   */
+  show(notification: NotificationOptions): void;
+
+  /**
+   * Remove a notification by id.
+   */
+  remove(id: string): void;
+
+  /**
+   * Remove all notifications.
+   */
+  clear(): void;
 }

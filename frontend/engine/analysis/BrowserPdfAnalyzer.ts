@@ -48,7 +48,31 @@ export class BrowserPdfAnalyzer {
     }
   }
 
-  async analyzeMany(files: File[]) {
-    return Promise.all(files.map(file => this.analyze(file)));
+  async analyzeMany(files: File[]): Promise<AnalysisResult[]> {
+    const results: AnalysisResult[] = [];
+
+    for (const file of files) {
+      try {
+        const result = await this.analyze(file);
+        results.push(result);
+      } catch (error) {
+        results.push({
+          id: crypto.randomUUID(),
+          filename: file.name,
+          extension: "pdf",
+          size: file.size,
+          pages: 0,
+          encrypted: false,
+          corrupted: true,
+          status: "corrupted",
+          error:
+            error instanceof Error
+              ? error.message
+              : "Unable to analyze PDF.",
+        });
+      }
+    }
+
+    return results;
   }
 }

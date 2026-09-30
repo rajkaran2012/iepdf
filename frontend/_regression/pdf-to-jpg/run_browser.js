@@ -108,6 +108,10 @@ async function runBrowserTest(id, file, shouldSucceed) {
 
     await input.setInputFiles(path.join(FIX, file));
 
+    if (shouldSucceed) {
+      await page.waitForTimeout(2000);
+    }
+
     if (!shouldSucceed) {
       await page.waitForTimeout(1500);
 

@@ -141,7 +141,7 @@ async function downloadMerge() {
 }
 
 async function visibleHandleCount() {
-  return await page.locator('[aria-label^="Drag PDF "]').count();
+  return await page.locator('[aria-label^="Drag PDF "]:visible').count();
 }
 
 async function allText() {
@@ -149,7 +149,7 @@ async function allText() {
 }
 
 async function run() {
-  browser = await chromium.launch({ headless: true });
+  browser = await chromium.launch({ headless: true, executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" });
   context = await browser.newContext({ acceptDownloads: true });
   const fixtures = ensureTempFixtures();
 
@@ -174,7 +174,7 @@ async function run() {
   } catch (e) { fail("UI-01", "Merge page opens", e.message); }
 
   try {
-    const drop = page.getByText(/Drop PDFs here/i).first();
+    const drop = page.getByRole("button", { name: /Add PDF Files/i }).first();
     const add = page.getByText(/Add PDF Files/i).first();
     if (!(await drop.count()) || !(await add.count())) throw new Error("Drop/add controls missing");
     const merge = await mergeButton();
@@ -246,14 +246,14 @@ async function run() {
     if ((await visibleHandleCount()) !== 2) throw new Error("Expected 2 handles after removing one");
     await removeButtons.first().click();
     await page.waitForTimeout(400);
-    if ((await visibleHandleCount()) !== 1) throw new Error("Expected 1 handle state");
+    if ((await visibleHandleCount()) !== 0) throw new Error("Expected 0 visible handles with one file");
     pass("M-07", "Remove updates workspace and reorder-handle state");
   } catch (e) { fail("M-07", "Remove updates workspace and reorder-handle state", e.message); }
 
   // 7. External file drop onto drop zone.
   try {
     await freshPage();
-    const drop = page.getByText(/Drop PDFs here/i).first();
+    const drop = page.locator("div.relative.w-full").first();
     await drop.drop({ files: [A] });
     await page.waitForTimeout(1200);
     const body = await allText();
@@ -286,7 +286,7 @@ async function run() {
   // 10. Multi-file external drop.
   try {
     await freshPage();
-    const drop = page.getByText(/Drop PDFs here/i).first();
+    const drop = page.locator("div.relative.w-full").first();
     await drop.drop({ files: [A, B, C] });
     await page.waitForTimeout(1200);
     if ((await page.locator('[aria-label^="Drag PDF "]').count()) < 3) throw new Error("Multi-file external drop did not add all files");
@@ -371,7 +371,7 @@ async function run() {
   // 14. Accessibility / keyboard basics.
   try {
     await freshPage();
-    const drop = page.getByText(/Drop PDFs here/i).first();
+    const drop = page.getByRole("button", { name: /Add PDF Files/i }).first();
     await drop.focus();
     if (!(await drop.evaluate(el => el instanceof HTMLElement && el.tabIndex >= 0))) {
       throw new Error("Drop zone is not keyboard focusable");

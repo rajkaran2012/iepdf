@@ -1,0 +1,30 @@
+iePDF Merge PDF - Global Chrome Browser Test V4
+Base URL: http://127.0.0.1:3000
+Chrome: C:\Program Files\Google\Chrome\Application\chrome.exe
+Playwright: Version 1.63.0
+PASS=8 FAIL=16
+
+[PASS] UI-01 Workspace opens immediately - Drop zone visible without scrolling.
+[PASS] UI-02 Add PDF Files button - Current frozen Add PDF Files button found.
+[PASS] UI-03 Empty-state Merge disabled - Merge disabled with zero PDFs.
+[FAIL] UI-04 One PDF row - Observed 0 PDF rows.
+[PASS] UI-05 One PDF reorder handle hidden - No reorder handle for one PDF.
+[FAIL] UI-06 Two PDF rows after Add PDF Files - Expected 2 rows, observed 0.
+[FAIL] UI-07 Two PDF reorder handles visible - Expected 2 handles, observed 0.
+[FAIL] UI-08 Three PDF rows after Add PDF Files - Expected 3 rows, observed 0.
+[FAIL] UI-09 Three PDF reorder handles visible - Expected 3 handles, observed 0.
+[FAIL] M-01 Two valid PDFs merge/download - Merge button is disabled.
+[FAIL] M-02 Three valid PDFs merge/download - Merge button is disabled.
+[FAIL] M-03 Multi-select Add PDF Files - Expected 3 rows, observed 0.
+[FAIL] M-04 Reorder operation - Three reorder handles unavailable.
+[FAIL] M-05 Reordered set merge/download - Skipped because reorder setup failed.
+[FAIL] M-06 Remove 2 -> 1 - Expected 2 Remove buttons, observed 0.
+[FAIL] M-07 Remove 2 -> 1 hides handle - Could not establish two-file state.
+[FAIL] M-08 Duplicate PDF merge/download - Merge button is disabled.
+[FAIL] M-09 Protected PDF correct password - Password input not found.
+[FAIL] M-10 Protected PDF wrong password - Password input not found.
+[PASS] M-11 Corrupted PDF blocked - Validation/error state prevents normal merge.
+[PASS] M-12 Over 15MiB blocked - Size-limit validation visible.
+[PASS] M-13 Exact 15MiB accepted - Exact 15 MiB boundary was not rejected.
+[FAIL] A11Y-01 Reorder handle semantics - Reorder handle not found.
+[PASS] RUNTIME-01 No pageerror events - No browser pageerror events during suite.

@@ -1,0 +1,153 @@
+﻿iePDF SPLIT PDF REGRESSION REPORT
+==================================
+Date/Time : 2026-09-08 13:01:46
+Elapsed   : 00:06:17
+Project   : C:\IEPDF
+Frontend  : http://127.0.0.1:3000/split-pdf
+Backend   : http://127.0.0.1:8000
+
+FINAL RESULT
+------------
+PASS    : 20
+FAIL    : 16
+SKIPPED : 0
+
+RESULTS
+-------
+PASS TEST-DATA : All 12 Split regression files are present and exact boundary sizes are correct.
+PASS SRC-01 : Split page uses SplitPdfProcessor and toolType split.
+PASS SRC-02 : Split page has toast and loading handling.
+PASS SRC-03 : Processor creates one PDF per page and split_pages.zip.
+PASS SRC-04 : Browser loader has PDF signature and password handling.
+PASS SRC-05 : BasePdfProcessor authorizes processing through ValidationGateway.
+PASS BUILD : Frontend production build passed.
+PASS ENV-01 : Existing backend is reachable.
+PASS ENV-02 : Existing frontend is reachable.
+PASS S-01 : 1-page PDF split successfully.
+FAIL S-02 : page.waitForEvent: Timeout 20000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+    at getZip (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:48:29)
+    at async C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:91:14
+    at async caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:37:11)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:90:13)
+FAIL S-03 : page.waitForEvent: Timeout 20000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+    at getZip (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:48:29)
+    at async C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:91:14
+    at async caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:37:11)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:90:13)
+FAIL S-04 : page.waitForEvent: Timeout 20000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+    at getZip (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:48:29)
+    at async C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:91:14
+    at async caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:37:11)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:90:13)
+FAIL S-05 : page.waitForEvent: Timeout 20000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+    at getZip (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:48:29)
+    at async C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:105:12
+    at async caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:37:11)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:104:11)
+PASS S-06 : noDownload=true,failureFeedback=true.
+PASS S-07 : noDownload=true,failureFeedback=true.
+PASS S-08 : noDownload=true,failureFeedback=true.
+PASS S-09 : splitButtonCount=1, passwordHint=true.
+PASS S-10 : Boundary file accepted; downloaded split_pages.zip.
+PASS S-11 : Boundary file accepted; downloaded split_pages.zip.
+FAIL S-12 : Above-limit file exposed Split action.
+FAIL S-13 : page.waitForEvent: Timeout 20000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+    at getZip (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:48:29)
+    at async C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:157:12
+    at async caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:37:11)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:156:11)
+FAIL S-14 : page.waitForEvent: Timeout 20000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+    at getZip (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:48:29)
+    at async C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:162:12
+    at async caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:37:11)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:161:11)
+FAIL S-15 : page.waitForEvent: Timeout 20000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+    at getZip (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:48:29)
+    at async C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:168:12
+    at async caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:37:11)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:167:11)
+FAIL S-16 : page.waitForEvent: Timeout 20000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+    at getZip (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:48:29)
+    at async C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:175:12
+    at async caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:37:11)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:174:11)
+FAIL S-17 : page.waitForEvent: Timeout 20000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+    at getZip (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:48:29)
+    at async C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:182:12
+    at async caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:37:11)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:181:11)
+FAIL S-18 : page.waitForEvent: Timeout 20000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+    at getZip (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:48:29)
+    at async C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:189:12
+    at async caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:37:11)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:188:11)
+FAIL S-19 : page.waitForEvent: Timeout 20000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+    at C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:197:50
+    at async caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:37:11)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:195:11)
+FAIL S-20 : page.waitForEvent: Timeout 20000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+    at C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:207:18
+    at async caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:37:11)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:204:11)
+FAIL S-21 : page.waitForEvent: Timeout 20000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+    at getZip (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:48:29)
+    at async C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:213:12
+    at async caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:37:11)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:212:11)
+PASS S-22 : successToast=true.
+PASS S-23 : downloaded=true.
+FAIL S-24 : page.waitForEvent: Timeout 20000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+    at C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:232:83
+    at async caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:37:11)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:230:11)
+PASS S-25 : splitButtonCount=0 without selected file.
+FAIL S-27 : page.waitForEvent: Timeout 20000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+    at C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:249:20
+    at async caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:37:11)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner.js:242:11)
+PASS BROWSER : Split browser regression completed.

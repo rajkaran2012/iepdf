@@ -61,7 +61,11 @@ function PdfThumbnail({
         return (
 
             <div
-                className={`flex h-48 items-center justify-center rounded-xl border bg-gray-50 text-center shadow-sm ${className}`}
+                style={{
+                    width: `${width}px`,
+                    aspectRatio: "1 / 1.4142",
+                }}
+                className={`flex items-center justify-center rounded-xl border bg-gray-50 text-center shadow-sm ${className}`}
             >
 
                 <div>

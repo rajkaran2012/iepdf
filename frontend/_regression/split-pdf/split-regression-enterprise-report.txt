@@ -1,0 +1,167 @@
+﻿iePDF SPLIT PDF - ENTERPRISE REGRESSION REPORT
+===============================================
+Run        : 20260924-120911
+Project    : C:\IEPDF
+Frontend   : http://127.0.0.1:3000/split-pdf
+Backend    : http://127.0.0.1:8000
+Chrome     : C:\Program Files\Google\Chrome\Application\chrome.exe
+Max bytes  : 15728640
+Elapsed    : 04:38:51
+
+FINAL RESULT
+------------
+PASS       : 39
+FAIL       : 8
+SKIPPED    : 1
+
+RESULTS
+-------
+PASS     TEST-DATA      All 12 Split regression files exist and boundary sizes match 15728640 bytes.
+PASS     SRC-01         Split page wires SplitPdfProcessor and toolType split.
+SKIPPED  SRC-02         Split page toast/loading contract incomplete. [source check non-blocking]
+PASS     SRC-03         Processor creates per-page PDFs and split_pages.zip.
+PASS     SRC-04         Browser PDF loader contains signature and password handling.
+PASS     SRC-05         BasePdfProcessor uses the canonical ValidationGateway authorization boundary.
+PASS     SRC-06         ValidationGateway retains fail-closed authorization semantics.
+PASS     SRC-07         Authoritative 15 MiB validation constant exists.
+PASS     SRC-08         Split page has no direct console.warn/console.error user-failure logging.
+PASS     SRC-09         Split processor does not introduce a second direct Gateway call.
+PASS     BUILD          Frontend production build passed.
+PASS     ENV-01         Frontend /split-pdf is reachable.
+PASS     ENV-02         Backend /docs not required; Split is fully browser-side.
+PASS     ENV-03         Chrome executable found at C:\Program Files\Google\Chrome\Application\chrome.exe.
+PASS     ENV-04         Playwright package is installed.
+FAIL     S-01           EXCEPTION: locator.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('button', { name: /^Split PDF$/ }).first()[22m
+[2m    - locator resolved to <button disabled type="button" class="w-full rounded-lg bg-red-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none">Split PDF</button>[22m
+[2m  - attempting click action[22m
+[2m    2 ├ù waiting for element to be visible, enabled and stable[22m
+[2m      - element is not enabled[22m
+[2m    - retrying click action[22m
+[2m    - waiting 20ms[22m
+[2m    2 ├ù waiting for element to be visible, enabled and stable[22m
+[2m      - element is not enabled[22m
+[2m    - retrying click action[22m
+[2m      - waiting 100ms[22m
+[2m    58 ├ù waiting for element to be visible, enabled and stable[22m
+[2m       - element is not enabled[22m
+[2m     - retrying click action[22m
+[2m       - waiting 500ms[22m
+
+    at splitAndDownload (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:111:16)
+    at async C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:151:15
+    at async caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:83:19)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:150:14) consoleDiagnostics=4
+PASS     S-02           Download received: split_pages.zip. consoleDiagnostics=15
+PASS     S-03           Download received: split_pages.zip. consoleDiagnostics=15
+PASS     S-04           Download received: split_pages.zip. consoleDiagnostics=15
+PASS     S-05           Download received: split_pages.zip. consoleDiagnostics=15
+FAIL     S-06           EXCEPTION: locator.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('button', { name: /^Split PDF$/ }).first()[22m
+[2m    - locator resolved to <button disabled type="button" class="w-full rounded-lg bg-red-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none">Split PDF</button>[22m
+[2m  - attempting click action[22m
+[2m    2 ├ù waiting for element to be visible, enabled and stable[22m
+[2m      - element is not enabled[22m
+[2m    - retrying click action[22m
+[2m    - waiting 20ms[22m
+[2m    2 ├ù waiting for element to be visible, enabled and stable[22m
+[2m      - element is not enabled[22m
+[2m    - retrying click action[22m
+[2m      - waiting 100ms[22m
+[2m    57 ├ù waiting for element to be visible, enabled and stable[22m
+[2m       - element is not enabled[22m
+[2m     - retrying click action[22m
+[2m       - waiting 500ms[22m
+
+    at negativeCase (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:134:63)
+    at async caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:83:19)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:168:16) consoleDiagnostics=2
+FAIL     S-07           EXCEPTION: locator.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('button', { name: /^Split PDF$/ }).first()[22m
+[2m    - locator resolved to <button disabled type="button" class="w-full rounded-lg bg-red-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none">Split PDF</button>[22m
+[2m  - attempting click action[22m
+[2m    2 ├ù waiting for element to be visible, enabled and stable[22m
+[2m      - element is not enabled[22m
+[2m    - retrying click action[22m
+[2m    - waiting 20ms[22m
+[2m    2 ├ù waiting for element to be visible, enabled and stable[22m
+[2m      - element is not enabled[22m
+[2m    - retrying click action[22m
+[2m      - waiting 100ms[22m
+[2m    57 ├ù waiting for element to be visible, enabled and stable[22m
+[2m       - element is not enabled[22m
+[2m     - retrying click action[22m
+[2m       - waiting 500ms[22m
+
+    at negativeCase (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:134:63)
+    at async caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:83:19)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:168:16) consoleDiagnostics=2
+FAIL     S-08           EXCEPTION: locator.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('button', { name: /^Split PDF$/ }).first()[22m
+[2m    - locator resolved to <button disabled type="button" class="w-full rounded-lg bg-red-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none">Split PDF</button>[22m
+[2m  - attempting click action[22m
+[2m    2 ├ù waiting for element to be visible, enabled and stable[22m
+[2m      - element is not enabled[22m
+[2m    - retrying click action[22m
+[2m    - waiting 20ms[22m
+[2m    2 ├ù waiting for element to be visible, enabled and stable[22m
+[2m      - element is not enabled[22m
+[2m    - retrying click action[22m
+[2m      - waiting 100ms[22m
+[2m    57 ├ù waiting for element to be visible, enabled and stable[22m
+[2m       - element is not enabled[22m
+[2m     - retrying click action[22m
+[2m       - waiting 500ms[22m
+
+    at negativeCase (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:134:63)
+    at async caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:83:19)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:168:16) consoleDiagnostics=2
+FAIL     S-09           EXCEPTION: locator.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('button', { name: /^Split PDF$/ }).first()[22m
+[2m    - locator resolved to <button disabled type="button" class="w-full rounded-lg bg-red-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none">Split PDF</button>[22m
+[2m  - attempting click action[22m
+[2m    2 ├ù waiting for element to be visible, enabled and stable[22m
+[2m      - element is not enabled[22m
+[2m    - retrying click action[22m
+[2m    - waiting 20ms[22m
+[2m    2 ├ù waiting for element to be visible, enabled and stable[22m
+[2m      - element is not enabled[22m
+[2m    - retrying click action[22m
+[2m      - waiting 100ms[22m
+[2m    57 ├ù waiting for element to be visible, enabled and stable[22m
+[2m       - element is not enabled[22m
+[2m     - retrying click action[22m
+[2m       - waiting 500ms[22m
+
+    at C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:181:69
+    at async caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:83:19)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:171:14) consoleDiagnostics=2
+PASS     S-10           Download received in 2105ms. consoleDiagnostics=15
+PASS     S-11           Download received in 2110ms. consoleDiagnostics=15
+FAIL     S-12           Above-limit input exposed Split action. consoleDiagnostics=2
+PASS     S-20           workspaceBefore=1,workspaceAfter=0,download=true. consoleDiagnostics=15
+PASS     S-22           download=true,successToast=true. consoleDiagnostics=15
+PASS     S-23           downloaded=true,filename=split_pages.zip. consoleDiagnostics=15
+FAIL     S-24           loadingSeen=false,download=true. consoleDiagnostics=15
+FAIL     S-25           splitButtonCount=1 without selected file. consoleDiagnostics=2
+PASS     S-27           Three sequential split runs completed cleanly. consoleDiagnostics=41
+PASS     DIAG-01        No browser page errors or console errors were captured.
+PASS     BROWSER        Enterprise browser regression completed; individual case results recorded above.
+PASS     ART-01         __enterprise-S-01-1790232148616.zip: ZIP entries, page names, PDF headers and one-page structural markers validated.
+PASS     ART-02         __enterprise-S-01-1790232150900.zip: ZIP entries, page names, PDF headers and one-page structural markers validated.
+PASS     ART-03         __enterprise-S-02-1790232000160.zip: ZIP entries, page names, PDF headers and one-page structural markers validated.
+PASS     ART-04         __enterprise-S-03-1790232002237.zip: ZIP entries, page names, PDF headers and one-page structural markers validated.
+PASS     ART-05         __enterprise-S-03-1790232146264.zip: ZIP entries, page names, PDF headers and one-page structural markers validated.
+PASS     ART-06         __enterprise-S-04-1790232004124.zip: ZIP entries, page names, PDF headers and one-page structural markers validated.
+PASS     ART-07         __enterprise-S-05-1790232005973.zip: ZIP entries, page names, PDF headers and one-page structural markers validated.
+PASS     ART-08         __enterprise-S-10-1790232137693.zip: ZIP entries, page names, PDF headers and one-page structural markers validated.
+PASS     ART-09         __enterprise-S-11-1790232141967.zip: ZIP entries, page names, PDF headers and one-page structural markers validated.
+PASS     ART-10         __enterprise-S-24-1790232154516.zip: ZIP entries, page names, PDF headers and one-page structural markers validated.
+PASS     ART-SUMMARY    Validated 10 downloaded ZIP artifact(s).
+PASS     PERF-S02       S-02 split time 609 ms <= budget 5000 ms.
+PASS     PERF-S03       S-03 split time 700 ms <= budget 15000 ms.

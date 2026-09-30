@@ -1,0 +1,32 @@
+PLAYWRIGHT_MODULE_OK
+CHROME=C:\Program Files\Google\Chrome\Application\chrome.exe
+ROUTE_OK iePDF — Simple Online PDF Tools http://localhost:3000/merge-pdf
+SET_INPUT_FILE=C:\IEPDF\frontend\_regression\merge-pdf\A-2-pages.pdf
+APP IEPDF_DIRECT_RUNTIME_DIAGNOSTIC_V53 CHANGE_ENTER {fileCount: 1, names: Array(1)}
+APP IEPDF_DIRECT_RUNTIME_DIAGNOSTIC_V53 PROCESS_BEFORE_FROM_CHANGE {fileCount: 1}
+APP IEPDF_DIRECT_RUNTIME_DIAGNOSTIC_V53 PROCESS_ENTER {fileCount: 1, names: Array(1), sizes: Array(1)}
+APP IEPDF_DIRECT_RUNTIME_DIAGNOSTIC_V53 ANALYZER_BEFORE {fileCount: 1}
+APP IEPDF_DIRECT_RUNTIME_DIAGNOSTIC_V53 ANALYZER_AFTER {count: 1, results: Array(1)}
+APP IEPDF_DIRECT_RUNTIME_DIAGNOSTIC_V53 SET_WORKSPACE {workspaceCount: 1, workspace: Array(1)}
+APP IEPDF_DIRECT_RUNTIME_DIAGNOSTIC_V53 PROCESS_AFTER_FROM_CHANGE
+STATE_250MS {"nativeChange":1,"inputFiles":[[]],"removeButtons":0,"handles":1,"mergeDisabled":true,"counts":{"files0":false,"total0":false,"ready0":true}}
+STATE_750MS {"nativeChange":1,"inputFiles":[[]],"removeButtons":0,"handles":1,"mergeDisabled":true,"counts":{"files0":false,"total0":false,"ready0":true}}
+STATE_1500MS {"nativeChange":1,"inputFiles":[[]],"removeButtons":0,"handles":1,"mergeDisabled":true,"counts":{"files0":false,"total0":false,"ready0":true}}
+STATE_3000MS {"nativeChange":1,"inputFiles":[[]],"removeButtons":0,"handles":1,"mergeDisabled":true,"counts":{"files0":false,"total0":false,"ready0":true}}
+STATE_5000MS {"nativeChange":1,"inputFiles":[[]],"removeButtons":0,"handles":1,"mergeDisabled":true,"counts":{"files0":false,"total0":false,"ready0":true}}
+STATE_8000MS {"nativeChange":1,"inputFiles":[[]],"removeButtons":0,"handles":1,"mergeDisabled":true,"counts":{"files0":false,"total0":false,"ready0":true}}
+=== APP_DIAGNOSTIC_MARKERS ===
+[log] IEPDF_DIRECT_RUNTIME_DIAGNOSTIC_V53 CHANGE_ENTER {fileCount: 1, names: Array(1)}
+[log] IEPDF_DIRECT_RUNTIME_DIAGNOSTIC_V53 PROCESS_BEFORE_FROM_CHANGE {fileCount: 1}
+[log] IEPDF_DIRECT_RUNTIME_DIAGNOSTIC_V53 PROCESS_ENTER {fileCount: 1, names: Array(1), sizes: Array(1)}
+[log] IEPDF_DIRECT_RUNTIME_DIAGNOSTIC_V53 ANALYZER_BEFORE {fileCount: 1}
+[log] IEPDF_DIRECT_RUNTIME_DIAGNOSTIC_V53 ANALYZER_AFTER {count: 1, results: Array(1)}
+[log] IEPDF_DIRECT_RUNTIME_DIAGNOSTIC_V53 SET_WORKSPACE {workspaceCount: 1, workspace: Array(1)}
+[log] IEPDF_DIRECT_RUNTIME_DIAGNOSTIC_V53 PROCESS_AFTER_FROM_CHANGE
+=== PAGE_ERRORS ===
+=== FAILED_REQUESTS ===
+FINAL {"nativeChange":1,"removeButtons":0,"handles":1,"mergeDisabled":true}
+
+===== V5.3 INTERPRETATION =====
+ANALYZER_RETURNED: inspect ANALYZER_AFTER and SET_WORKSPACE.
+NodeExit=0

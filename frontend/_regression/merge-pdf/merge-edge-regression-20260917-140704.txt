@@ -1,0 +1,42 @@
+iePDF Merge PDF - Production-Grade Edge-Case Test
+Timestamp: 2026-09-17 14:07:18
+Project: C:\IEPDF\frontend
+
+PASS=25 FAIL=0 SKIPPED=2 INFO=0
+
+RESULTS
+-------
+PASS PRE-01 [Preflight] Required MergeWorkspace.tsx
+PASS PRE-02 [Preflight] Required Merge page.tsx
+PASS PRE-03 [Preflight] Required Validation constants
+PASS UI-01 [Frozen UI] Full one-page Merge workspace sizing
+PASS UI-02 [Frozen UI] Primary Unlock and Merge action exists
+PASS UI-03 [Frozen UI] Add PDF and drop-zone labels
+PASS UI-04 [Frozen UI] Reorder handle and 2+ visibility rule
+PASS SEC-01 [Security] Authoritative 15 MiB boundary expression
+PASS SEC-02 [Security] Merge page uses authoritative file-size constant
+PASS SEC-03 [Security] Internal reorder MIME isolation marker
+PASS SEC-04 [Security] No obvious security bypass in Merge page
+PASS DD-01 [Drag/Drop] Row handler distinguishes internal reorder
+PASS DD-02 [Drag/Drop] Workspace handlers recognize internal reorder
+PASS DD-03 [Drag/Drop] External workspace drop lifecycle exists
+PASS FUNC-01 [Functionality] Add file processing
+PASS FUNC-02 [Functionality] Remove file handling
+PASS FUNC-03 [Functionality] Reorder handler
+PASS FUNC-04 [Functionality] Merge action
+PASS FUNC-05 [Functionality] Password handling
+PASS FUNC-06 [Functionality] Skip file handling
+PASS REG-01 [Regression] Existing Merge regression report present | C:\IEPDF\frontend\_regression\merge-pdf\merge-regression-report.txt
+PASS BUILD-01 [Build] TypeScript noEmit check
+PASS BUILD-02 [Build] Next.js production build
+SKIPPED BROWSER-01 [Browser] Playwright package installed | Playwright CLI not found.
+PASS BROWSER-02 [Browser] Google Chrome detected | C:\Program Files\Google\Chrome\Application\chrome.exe
+PASS BROWSER-03 [Browser] Local Merge PDF page responds
+SKIPPED BROWSER-04 [Browser] Playwright Merge UI smoke tests | Requires local server and Playwright.
+
+SAFETY
+------
+No source modification performed by this orchestrator.
+No deployment performed.
+No git reset, clean, stash or push performed.
+Frozen Merge UI and security logic were not changed.

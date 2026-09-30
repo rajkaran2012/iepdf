@@ -1,0 +1,30 @@
+﻿iePDF Merge Engine Audit
+Generated: 2026-09-11 09:26:33
+Processor: C:\iepdf\frontend\app\merge-pdf\page.tsx
+
+IMPORTANT: These are source-code capability signals, not final feature confirmation.
+A feature will only be considered implemented after functional testing.
+
+File merge               : SIGNAL FOUND   files, merge
+File ordering            : NO SIGNAL      -
+Page selection           : NO SIGNAL      -
+Page reordering          : NO SIGNAL      -
+Page deletion            : NO SIGNAL      -
+Page rotation            : NO SIGNAL      -
+Bookmarks / outline      : NO SIGNAL      -
+Table of contents        : NO SIGNAL      -
+Filename footer          : SIGNAL FOUND   filename
+Cover / title            : NO SIGNAL      -
+Form fields              : NO SIGNAL      -
+Same page size           : NO SIGNAL      -
+Password handling        : SIGNAL FOUND   password, encrypted
+
+Current MergeWorkspace architecture:
+onUnlockMerge            : PRESENT
+onRemoveFile             : PRESENT
+onSkipFile               : PRESENT
+password handling        : PRESENT
+reorder callback         : NOT PRESENT
+add-files callback       : NOT PRESENT
+drag handlers            : NOT PRESENT
+drop handlers            : NOT PRESENT

@@ -1,0 +1,380 @@
+﻿const fs = require('fs');
+const path = require('path');
+const { chromium } = require('playwright');
+
+const TOOL = process.env.PDF_TO_JPG_URL || 'http://localhost:3000/pdf-to-jpg';
+
+const ROOT = __dirname;
+const FIX = path.join(ROOT, 'fixtures');
+const OUT = path.join(ROOT, 'artifacts');
+
+fs.mkdirSync(OUT, { recursive: true });
+
+const unicodeFixture = fs.readdirSync(FIX)
+  .find(x => x.startsWith('J16 file with spaces and unicode-') && x.endsWith('.pdf'));
+
+if (!unicodeFixture) {
+  throw new Error('J-15 fixture not found');
+}
+
+const tests = [
+  ['J-01', 'J01-one-page.pdf', true],
+  ['J-02', 'J02-two-page.pdf', true],
+  ['J-03', 'J03-five-page.pdf', true],
+  ['J-04', 'J04-ten-page.pdf', true],
+  ['J-05', 'J05-mixed-dimensions.pdf', true],
+  ['J-06', 'J06-zero-byte.pdf', false],
+  ['J-07', 'J07-fake-pdf.pdf', false],
+  ['J-08', 'J08-corrupt.pdf', false],
+  ['J-09', 'J09-password.pdf', false],
+  ['J-10', 'J10-javascript.pdf', false],
+  ['J-11', 'J11-under-15MB.pdf', true],
+  ['J-12', 'J12-exact-15MB.pdf', true],
+  ['J-13', 'J13-over-15MB.pdf', false],
+  ['J-15', unicodeFixture, true]
+];
+
+const results = [];
+const consoleErrors = [];
+const pageErrors = [];
+
+const pass = (id, msg) => {
+  results.push({ id, status: 'PASS', msg });
+  console.log(`PASS ${id} : ${msg}`);
+};
+
+const fail = (id, msg) => {
+  results.push({ id, status: 'FAIL', msg });
+  console.log(`FAIL ${id} : ${msg}`);
+};
+
+async function waitForConvertButton(page, timeout = 30000) {
+  const button = page.getByRole('button', { name: 'Convert to JPG' });
+
+  await button.waitFor({
+    state: 'visible',
+    timeout
+  });
+
+  await button.waitFor({
+    state: 'attached',
+    timeout
+  });
+
+  await page.waitForFunction(() => {
+    const b = [...document.querySelectorAll('button')]
+      .find(x => /Convert to JPG/i.test(x.textContent || ''));
+
+    return !!b && !b.disabled;
+  }, null, { timeout });
+
+  return button;
+}
+
+async function runOne(page, id, file, shouldSucceed) {
+  const fixture = path.join(FIX, file);
+
+  await page.goto(TOOL, {
+    waitUntil: 'domcontentloaded',
+    timeout: 30000
+  });
+
+  const input = page.locator('input[type=file]').first();
+
+  await input.waitFor({
+    state: 'attached',
+    timeout: 10000
+  });
+
+  await input.setInputFiles(fixture);
+
+  if (!shouldSucceed) {
+    const button = page.getByRole('button', {
+      name: 'Convert to JPG'
+    });
+
+    await button.waitFor({
+      state: 'visible',
+      timeout: 30000
+    });
+
+    const enabled = await button.isEnabled().catch(() => false);
+
+    if (file === 'J13-over-15MB.pdf' && enabled) {
+      fail(id, 'Over-limit file should be blocked before processing');
+      return;
+    }
+
+    if (enabled) {
+      await button.click().catch(() => {});
+    }
+
+    await page.waitForTimeout(1500);
+
+    pass(
+      id,
+      'Negative-path fixture did not produce a successful conversion artifact'
+    );
+
+    return;
+  }
+
+  const target = await waitForConvertButton(page, 30000);
+
+  const enabled = await target.isEnabled().catch(() => false);
+
+  if (!enabled) {
+    throw new Error('Valid PDF processing button is disabled');
+  }
+
+  const downloadPromise = page.waitForEvent('download', {
+    timeout: 45000
+  });
+
+  await target.click();
+
+  const download = await downloadPromise;
+
+  const dir = path.join(OUT, id);
+
+  fs.mkdirSync(dir, {
+    recursive: true
+  });
+
+  const saved = path.join(
+    dir,
+    download.suggestedFilename()
+  );
+
+  await download.saveAs(saved);
+
+  const size = fs.statSync(saved).size;
+
+  if (size <= 0) {
+    throw new Error('Downloaded artifact is empty');
+  }
+
+  pass(
+    id,
+    `Conversion/download completed: ${download.suggestedFilename()}`
+  );
+
+  pass(
+    `${id}-ART`,
+    `Artifact exists, size=${size} bytes`
+  );
+}
+
+async function main() {
+  const browser = await chromium.launch({
+    channel: 'chrome',
+    headless: true,
+    args: ['--disable-dev-shm-usage']
+  });
+
+  const context = await browser.newContext({
+    acceptDownloads: true
+  });
+
+  context.on('page', page => {
+    page.on('console', message => {
+      if (message.type() === 'error') {
+        consoleErrors.push(message.text());
+      }
+    });
+
+    page.on('pageerror', error => {
+      pageErrors.push(String(error));
+    });
+  });
+
+  for (const [id, file, shouldSucceed] of tests) {
+    const page = await context.newPage();
+
+    try {
+      await runOne(
+        page,
+        id,
+        file,
+        shouldSucceed
+      );
+    } catch (error) {
+      if (shouldSucceed) {
+        fail(
+          id,
+          error.message || String(error)
+        );
+      } else {
+        pass(
+          id,
+          'Expected negative path handled without successful conversion'
+        );
+      }
+    } finally {
+      await page.close().catch(() => {});
+    }
+  }
+
+  // J-14 — no file selected
+  {
+    const page = await context.newPage();
+
+    try {
+      await page.goto(TOOL, {
+        waitUntil: 'domcontentloaded',
+        timeout: 30000
+      });
+
+      const buttons = page.getByRole('button');
+
+      let enabled = false;
+
+      for (let i = 0; i < await buttons.count(); i++) {
+        const button = buttons.nth(i);
+        const text = (
+          await button.innerText().catch(() => '')
+        ).trim();
+
+        if (/Convert to JPG/i.test(text)) {
+          enabled = await button.isEnabled().catch(() => false);
+          break;
+        }
+      }
+
+      if (enabled) {
+        fail(
+          'J-14',
+          'Processing enabled with no selected file'
+        );
+      } else {
+        pass(
+          'J-14',
+          'Processing blocked with no selected file'
+        );
+      }
+    } finally {
+      await page.close().catch(() => {});
+    }
+  }
+
+  // J-20/J-21/J-22 — sequential fresh-page conversions
+  const sequentialFixtures = [
+    ['J-20', 'J01-one-page.pdf'],
+    ['J-21', 'J02-two-page.pdf'],
+    ['J-22', 'J03-five-page.pdf']
+  ];
+
+  for (const [id, file] of sequentialFixtures) {
+    const page = await context.newPage();
+
+    try {
+      await page.goto(TOOL, {
+        waitUntil: 'domcontentloaded',
+        timeout: 30000
+      });
+
+      const input = page.locator('input[type=file]').first();
+
+      await input.waitFor({
+        state: 'attached',
+        timeout: 10000
+      });
+
+      await input.setInputFiles(
+        path.join(FIX, file)
+      );
+
+      const button = await waitForConvertButton(
+        page,
+        30000
+      );
+
+      if (!(await button.isEnabled())) {
+        fail(
+          id,
+          'Repeated conversion processing unavailable'
+        );
+        continue;
+      }
+
+      const downloadPromise = page.waitForEvent(
+        'download',
+        { timeout: 45000 }
+      );
+
+      await button.click();
+
+      await downloadPromise;
+
+      pass(
+        id,
+        'Sequential conversion completed'
+      );
+    } catch (error) {
+      fail(
+        id,
+        error.message || String(error)
+      );
+    } finally {
+      await page.close().catch(() => {});
+    }
+  }
+
+  if (consoleErrors.length) {
+    fail(
+      'J-22-CONSOLE',
+      `Browser console errors observed: ${consoleErrors.length}`
+    );
+  } else {
+    pass(
+      'J-22-CONSOLE',
+      'No browser console errors'
+    );
+  }
+
+  if (pageErrors.length) {
+    fail(
+      'J-23',
+      `Browser page errors observed: ${pageErrors.length}`
+    );
+  } else {
+    pass(
+      'J-23',
+      'No browser page errors'
+    );
+  }
+
+  fs.writeFileSync(
+    path.join(OUT, 'browser-results.json'),
+    JSON.stringify(
+      {
+        tool: TOOL,
+        results,
+        consoleErrors,
+        pageErrors
+      },
+      null,
+      2
+    )
+  );
+
+  await browser.close();
+
+  const failures = results.filter(
+    x => x.status === 'FAIL'
+  ).length;
+
+  const passes = results.filter(
+    x => x.status === 'PASS'
+  ).length;
+
+  console.log('');
+  console.log(`TOTAL PASS=${passes} FAIL=${failures}`);
+
+  process.exit(failures ? 1 : 0);
+}
+
+main().catch(error => {
+  console.error(error);
+  process.exit(1);
+});

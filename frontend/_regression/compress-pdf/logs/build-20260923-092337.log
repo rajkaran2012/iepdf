@@ -1,0 +1,42 @@
+
+> frontend@0.1.0 build C:\IEPDF\frontend
+> node .\node_modules\next\dist\bin\next build
+
+▲ Next.js 16.3.4 (Turbopack)
+✓ Running next.config.ts took 40ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.4s
+  Running TypeScript ...
+  Finished TypeScript in 3.4s ...
+  Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/20) ...
+  Generating static pages using 3 workers (5/20) 
+  Generating static pages using 3 workers (10/20) 
+  Generating static pages using 3 workers (15/20) 
+✓ Generating static pages using 3 workers (20/20) in 1604ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /compress-pdf
+├ ○ /jpg-to-pdf
+├ ○ /merge-pdf
+├ ○ /pdf-to-jpg
+├ ○ /pdfium-bc06
+├ ○ /pdfium-bc07
+├ ○ /pdfium-bc08
+├ ○ /pdfium-bc09
+├ ○ /pdfium-bc10
+├ ○ /pdfium-c21
+├ ○ /pdfium-c22
+├ ○ /pdfium-c23
+├ ○ /pdfium-c29
+├ ○ /pdfium-poc
+├ ○ /pdfium-save-poc
+└ ○ /split-pdf
+
+
+○  (Static)  prerendered as static content
+

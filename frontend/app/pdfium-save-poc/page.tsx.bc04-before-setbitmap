@@ -1,0 +1,892 @@
+﻿"use client";
+
+import { useEffect, useState } from "react";
+import { init } from "@embedpdf/pdfium";
+
+export default function PdfiumSavePocPage() {
+  const [output, setOutput] = useState("Starting...\n");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const log = (...args: unknown[]) => {
+      console.log(...args);
+      if (!cancelled) {
+        setOutput(prev => prev + args.join(" ") + "\n");
+      }
+    };
+
+    async function run() {
+      let pdfPtr = 0;
+      let docPtr = 0;
+      let pagePtr = 0;
+
+      try {
+        log("=== PDFium Browser Save / Reopen POC ===");
+
+        const response = await fetch(
+          "/_pdfium-poc/C-04-image-heavy.pdf"
+        );
+
+        if (!response.ok) {
+          throw new Error(`PDF HTTP ${response.status}`);
+        }
+
+        const pdfBytes = new Uint8Array(
+          await response.arrayBuffer()
+        );
+
+        log("Input PDF bytes:", pdfBytes.length);
+
+        const pdfium = await init({});
+
+        log("PDFium wrapper initialized.");
+
+        pdfium.PDFiumExt_Init();
+
+        log("PDFiumExt_Init completed.");
+
+        const mem = pdfium.pdfium.wasmExports;
+
+        // -----------------------------------------
+        // Load original PDF
+        // -----------------------------------------
+
+        pdfPtr = mem.malloc(pdfBytes.length);
+
+        for (let i = 0; i < pdfBytes.length; i++) {
+          pdfium.pdfium.setValue(
+            pdfPtr + i,
+            pdfBytes[i],
+            "i8"
+          );
+        }
+
+        docPtr = pdfium.FPDF_LoadMemDocument(
+          pdfPtr,
+          pdfBytes.length,
+          ""
+        );
+
+        if (!docPtr) {
+          throw new Error("FPDF_LoadMemDocument failed.");
+        }
+
+        log("Original document loaded:", docPtr);
+
+        const pageCount =
+          pdfium.FPDF_GetPageCount(docPtr);
+
+        log("Original page count:", pageCount);
+
+        // -----------------------------------------
+        // BC-02 BASELINE: save ORIGINAL PDF
+        // No image modification has happened yet.
+        // -----------------------------------------
+
+        log("BC-02: saving ORIGINAL document...");
+
+        const originalWriterPtr =
+          pdfium.PDFiumExt_OpenFileWriter();
+
+        if (!originalWriterPtr) {
+          throw new Error(
+            "BC-02: OpenFileWriter for original failed."
+          );
+        }
+
+        try {
+          const originalSaveResult =
+            pdfium.PDFiumExt_SaveAsCopy(
+              docPtr,
+              originalWriterPtr
+            );
+
+          log(
+            "BC-02 original SaveAsCopy:",
+            originalSaveResult
+          );
+
+          if (!originalSaveResult) {
+            throw new Error(
+              "BC-02: original SaveAsCopy failed."
+            );
+          }
+
+          const originalSavedSize =
+            pdfium.PDFiumExt_GetFileWriterSize(
+              originalWriterPtr
+            );
+
+          log(
+            "BC-02 original PDFium-saved size:",
+            originalSavedSize
+          );
+
+          const originalSavedPtr =
+            mem.malloc(originalSavedSize);
+
+          const originalSavedBytes =
+            new Uint8Array(originalSavedSize);
+
+          try {
+            const originalCopied =
+              pdfium.PDFiumExt_GetFileWriterData(
+                originalWriterPtr,
+                originalSavedPtr,
+                originalSavedSize
+              );
+
+            log(
+              "BC-02 original GetFileWriterData:",
+              originalCopied
+            );
+
+            if (!originalCopied) {
+              throw new Error(
+                "BC-02: original GetFileWriterData failed."
+              );
+            }
+
+            for (
+              let i = 0;
+              i < originalSavedSize;
+              i++
+            ) {
+              originalSavedBytes[i] =
+                pdfium.pdfium.getValue(
+                  originalSavedPtr + i,
+                  "i8"
+                ) & 255;
+            }
+
+            const originalHeader =
+              String.fromCharCode(
+                originalSavedBytes[0],
+                originalSavedBytes[1],
+                originalSavedBytes[2],
+                originalSavedBytes[3],
+                originalSavedBytes[4]
+              );
+
+            log(
+              "BC-02 original saved header:",
+              originalHeader
+            );
+
+            log(
+              "BC-02 ORIGINAL INPUT bytes:",
+              pdfBytes.length
+            );
+
+            log(
+              "BC-02 PDFium ORIGINAL SAVE bytes:",
+              originalSavedSize
+            );
+
+            log(
+              "BC-02 save delta:",
+              `${originalSavedSize - pdfBytes.length} bytes`
+            );
+
+            log(
+              "BC-02 save delta:",
+              `${(((originalSavedSize - pdfBytes.length) / pdfBytes.length) * 100).toFixed(2)}%`
+            );
+
+          } finally {
+            mem.free(originalSavedPtr);
+          }
+
+        } finally {
+          pdfium.PDFiumExt_CloseFileWriter(
+            originalWriterPtr
+          );
+        }
+
+        pagePtr = pdfium.FPDF_LoadPage(docPtr, 0);
+
+        if (!pagePtr) {
+          throw new Error("FPDF_LoadPage failed.");
+        }
+
+        log("Page 0 loaded:", pagePtr);
+
+        // -----------------------------------------
+        // Find image object
+        // -----------------------------------------
+
+        const objectCount =
+          pdfium.FPDFPage_CountObjects(pagePtr);
+
+        log("Page 0 object count:", objectCount);
+
+        let imagePtr = 0;
+
+        for (let i = 0; i < objectCount; i++) {
+          const objectPtr =
+            pdfium.FPDFPage_GetObject(
+              pagePtr,
+              i
+            );
+
+          if (!objectPtr) continue;
+
+          const type =
+            pdfium.FPDFPageObj_GetType(
+              objectPtr
+            );
+
+          log(
+            `Object ${i}: type=${type}, ptr=${objectPtr}`
+          );
+
+          if (type === 3) {
+            imagePtr = objectPtr;
+            break;
+          }
+        }
+
+        if (!imagePtr) {
+          throw new Error("No image object found.");
+        }
+
+        log("Existing image:", imagePtr);
+        
+        // -----------------------------------------
+        // BC-03: Inspect original image filters
+        // -----------------------------------------
+        const filterCount =
+          pdfium.FPDFImageObj_GetImageFilterCount(imagePtr);
+
+        log("BC-03 original filter count:", filterCount);
+
+        for (let filterIndex = 0; filterIndex < filterCount; filterIndex++) {
+          const filterBufferSize = 256;
+          const filterBufferPtr = mem.malloc(filterBufferSize);
+
+          try {
+            const filterResult =
+              pdfium.FPDFImageObj_GetImageFilter(
+                imagePtr,
+                filterIndex,
+                filterBufferPtr,
+                filterBufferSize
+              );
+
+            const filterName =
+              filterResult > 0
+                ? pdfium.pdfium.UTF8ToString(filterBufferPtr)
+                : "(unable to read filter)";
+
+            log(
+              `BC-03 filter #${filterIndex}:`,
+              filterName,
+              "result:",
+              filterResult
+            );
+          } finally {
+            mem.free(filterBufferPtr);
+          }
+        }
+
+        const rawLength =
+          pdfium.FPDFImageObj_GetImageDataRaw(imagePtr, 0, 0);
+
+        log("BC-03 original raw image bytes:", rawLength);
+
+        // -----------------------------------------
+        // Get image dimensions
+        // -----------------------------------------
+
+        const widthPtr = mem.malloc(4);
+        const heightPtr = mem.malloc(4);
+
+        let width = 0;
+        let height = 0;
+
+        try {
+          const ok =
+            pdfium.FPDFImageObj_GetImagePixelSize(
+              imagePtr,
+              widthPtr,
+              heightPtr
+            );
+
+          width =
+            pdfium.pdfium.getValue(
+              widthPtr,
+              "i32"
+            );
+
+          height =
+            pdfium.pdfium.getValue(
+              heightPtr,
+              "i32"
+            );
+
+          if (!ok) {
+            throw new Error(
+              "GetImagePixelSize failed."
+            );
+          }
+        } finally {
+          mem.free(widthPtr);
+          mem.free(heightPtr);
+        }
+
+        log(
+          "Image dimensions:",
+          `${width} x ${height}`
+        );
+
+        // -----------------------------------------
+        // Decode existing image
+        // -----------------------------------------
+
+        const decodedLength =
+          pdfium.FPDFImageObj_GetImageDataDecoded(
+            imagePtr,
+            0,
+            0
+          );
+
+        log(
+          "Decoded bytes:",
+          decodedLength
+        );
+
+        if (
+          decodedLength !==
+          width * height * 3
+        ) {
+          throw new Error(
+            `Unexpected decoded format: ${decodedLength}; expected ${width * height * 3}.`
+          );
+        }
+
+        const decodedPtr =
+          mem.malloc(decodedLength);
+
+        const rgbBytes =
+          new Uint8Array(decodedLength);
+
+        try {
+          const actual =
+            pdfium.FPDFImageObj_GetImageDataDecoded(
+              imagePtr,
+              decodedPtr,
+              decodedLength
+            );
+
+          if (actual !== decodedLength) {
+            throw new Error(
+              `Decoded read returned ${actual}; expected ${decodedLength}.`
+            );
+          }
+
+          for (
+            let i = 0;
+            i < decodedLength;
+            i++
+          ) {
+            rgbBytes[i] =
+              pdfium.pdfium.getValue(
+                decodedPtr + i,
+                "i8"
+              ) & 255;
+          }
+        } finally {
+          mem.free(decodedPtr);
+        }
+
+        // -----------------------------------------
+        // RGB -> Canvas
+        // -----------------------------------------
+
+        const canvas =
+          document.createElement("canvas");
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx =
+          canvas.getContext("2d");
+
+        if (!ctx) {
+          throw new Error(
+            "Canvas 2D unavailable."
+          );
+        }
+
+        const rgba =
+          new Uint8ClampedArray(
+            width * height * 4
+          );
+
+        for (
+          let src = 0, dst = 0;
+          src < rgbBytes.length;
+          src += 3, dst += 4
+        ) {
+          rgba[dst] = rgbBytes[src];
+          rgba[dst + 1] = rgbBytes[src + 1];
+          rgba[dst + 2] = rgbBytes[src + 2];
+          rgba[dst + 3] = 255;
+        }
+
+        ctx.putImageData(
+          new ImageData(
+            rgba,
+            width,
+            height
+          ),
+          0,
+          0
+        );
+
+        // -----------------------------------------
+        // Browser JPEG encoding
+        // -----------------------------------------
+
+        const jpegBlob =
+          await new Promise<Blob>(
+            (resolve, reject) => {
+              canvas.toBlob(
+                blob => {
+                  if (blob) {
+                    resolve(blob);
+                  } else {
+                    reject(
+                      new Error(
+                        "Canvas JPEG encoding failed."
+                      )
+                    );
+                  }
+                },
+                "image/jpeg",
+                0.60
+              );
+            }
+          );
+
+        const jpegBytes =
+          new Uint8Array(
+            await jpegBlob.arrayBuffer()
+          );
+
+        log(
+          "JPEG bytes:",
+          jpegBytes.length
+        );
+
+        // -----------------------------------------
+        // Replace image
+        // -----------------------------------------
+
+        const jpegPtr =
+          mem.malloc(jpegBytes.length);
+
+        try {
+          for (
+            let i = 0;
+            i < jpegBytes.length;
+            i++
+          ) {
+            pdfium.pdfium.setValue(
+              jpegPtr + i,
+              jpegBytes[i],
+              "i8"
+            );
+          }
+
+          const replaced =
+            pdfium.EPDFImageObj_SetJpeg(
+              pagePtr,
+              0,
+              imagePtr,
+              jpegPtr,
+              jpegBytes.length
+            );
+
+          log(
+            "EPDFImageObj_SetJpeg:",
+            replaced
+          );
+
+          if (!replaced) {
+            throw new Error(
+              "EPDFImageObj_SetJpeg failed."
+            );
+          }
+        } finally {
+          mem.free(jpegPtr);
+        }
+
+        // -----------------------------------------
+        // Regenerate page content
+        // -----------------------------------------
+
+        const generated =
+          pdfium.FPDFPage_GenerateContent(
+            pagePtr
+          );
+
+        log(
+          "FPDFPage_GenerateContent:",
+          generated
+        );
+
+        if (!generated) {
+          throw new Error(
+            "FPDFPage_GenerateContent failed."
+          );
+        }
+
+        // -----------------------------------------
+        // SAVE MODIFIED PDF
+        // -----------------------------------------
+
+        log("Opening PDFium file writer...");
+
+        const writerPtr =
+          pdfium.PDFiumExt_OpenFileWriter();
+
+        if (!writerPtr) {
+          throw new Error(
+            "PDFiumExt_OpenFileWriter failed."
+          );
+        }
+
+        log(
+          "File writer:",
+          writerPtr
+        );
+
+        try {
+          const saveResult =
+            pdfium.PDFiumExt_SaveAsCopy(
+              docPtr,
+              writerPtr
+            );
+
+          log(
+            "PDFiumExt_SaveAsCopy:",
+            saveResult
+          );
+
+          if (!saveResult) {
+            throw new Error(
+              "PDFiumExt_SaveAsCopy failed."
+            );
+          }
+
+          const savedSize =
+            pdfium.PDFiumExt_GetFileWriterSize(
+              writerPtr
+            );
+
+          log(
+            "Saved PDF size:",
+            savedSize
+          );
+
+          if (!savedSize) {
+            throw new Error(
+              "Saved PDF has zero bytes."
+            );
+          }
+
+          // Allocate output buffer.
+          const savedPtr =
+            mem.malloc(savedSize);
+
+          const savedBytes =
+            new Uint8Array(savedSize);
+
+          try {
+            const copied =
+              pdfium.PDFiumExt_GetFileWriterData(
+                writerPtr,
+                savedPtr,
+                savedSize
+              );
+
+            log(
+              "GetFileWriterData returned:",
+              copied
+            );
+
+            if (!copied) {
+              throw new Error(
+                "PDFiumExt_GetFileWriterData failed."
+              );
+            }
+
+            for (
+              let i = 0;
+              i < savedSize;
+              i++
+            ) {
+              savedBytes[i] =
+                pdfium.pdfium.getValue(
+                  savedPtr + i,
+                  "i8"
+                ) & 255;
+            }
+          } finally {
+            mem.free(savedPtr);
+          }
+
+          log(
+            "Saved PDF copied to browser memory:",
+            savedBytes.length
+          );
+
+          // -----------------------------------------
+          // Verify PDF header
+          // -----------------------------------------
+
+          const header =
+            String.fromCharCode(
+              savedBytes[0],
+              savedBytes[1],
+              savedBytes[2],
+              savedBytes[3],
+              savedBytes[4]
+            );
+
+          log(
+            "Saved PDF header:",
+            header
+          );
+
+          if (header !== "%PDF-") {
+            throw new Error(
+              `Invalid saved PDF header: ${header}`
+            );
+          }
+
+          // -----------------------------------------
+          // REOPEN SAVED PDF
+          // -----------------------------------------
+
+          const reopenPtr =
+            mem.malloc(savedBytes.length);
+
+          let reopenedDoc = 0;
+          let reopenedPage = 0;
+
+          try {
+            for (
+              let i = 0;
+              i < savedBytes.length;
+              i++
+            ) {
+              pdfium.pdfium.setValue(
+                reopenPtr + i,
+                savedBytes[i],
+                "i8"
+              );
+            }
+
+            reopenedDoc =
+              pdfium.FPDF_LoadMemDocument(
+                reopenPtr,
+                savedBytes.length,
+                ""
+              );
+
+            if (!reopenedDoc) {
+              throw new Error(
+                "Reopening saved PDF failed."
+              );
+            }
+
+            log(
+              "Saved PDF reopened:",
+              reopenedDoc
+            );
+
+            const reopenedPageCount =
+              pdfium.FPDF_GetPageCount(
+                reopenedDoc
+              );
+
+            log(
+              "Reopened page count:",
+              reopenedPageCount
+            );
+
+            if (
+              reopenedPageCount !==
+              pageCount
+            ) {
+              throw new Error(
+                `Page count changed: ${pageCount} → ${reopenedPageCount}`
+              );
+            }
+
+            reopenedPage =
+              pdfium.FPDF_LoadPage(
+                reopenedDoc,
+                0
+              );
+
+            if (!reopenedPage) {
+              throw new Error(
+                "Could not reopen page 0."
+              );
+            }
+
+            const reopenedObjectCount =
+              pdfium.FPDFPage_CountObjects(
+                reopenedPage
+              );
+
+            log(
+              "Reopened page 0 objects:",
+              reopenedObjectCount
+            );
+
+            let reopenedImage = 0;
+
+            for (
+              let i = 0;
+              i < reopenedObjectCount;
+              i++
+            ) {
+              const objectPtr =
+                pdfium.FPDFPage_GetObject(
+                  reopenedPage,
+                  i
+                );
+
+              if (!objectPtr) continue;
+
+              const type =
+                pdfium.FPDFPageObj_GetType(
+                  objectPtr
+                );
+
+              if (type === 3) {
+                reopenedImage = objectPtr;
+                break;
+              }
+            }
+
+            if (!reopenedImage) {
+              throw new Error(
+                "No image object found after reopening."
+              );
+            }
+
+            log(
+              "Reopened image object:",
+              reopenedImage
+            );
+
+            log(
+              "=== SAVE / REOPEN SUCCESS ==="
+            );
+
+          } finally {
+            if (reopenedPage) {
+              pdfium.FPDF_ClosePage(
+                reopenedPage
+              );
+            }
+
+            if (reopenedDoc) {
+              pdfium.FPDF_CloseDocument(
+                reopenedDoc
+              );
+            }
+          }
+
+          // Download the modified PDF for inspection.
+          const blob =
+            new Blob(
+              [savedBytes],
+              { type: "application/pdf" }
+            );
+
+          const url =
+            URL.createObjectURL(blob);
+
+          const link =
+            document.createElement("a");
+
+          link.href = url;
+          link.download =
+            "pdfium-browser-compressed-poc.pdf";
+
+          link.textContent =
+            "Download modified PDF";
+
+          link.style.display =
+            "block";
+
+          link.style.marginTop =
+            "20px";
+
+          document.body.appendChild(link);
+
+          log(
+            "Modified PDF download link created."
+          );
+
+        } finally {
+          pdfium.PDFiumExt_CloseFileWriter(
+            writerPtr
+          );
+        }
+
+      } catch (error) {
+        console.error(error);
+
+        if (!cancelled) {
+          setOutput(
+            prev =>
+              prev +
+              "\nPOC FAILED:\n" +
+              (
+                error instanceof Error
+                  ? error.stack ||
+                    error.message
+                  : String(error)
+              )
+          );
+        }
+      } finally {
+        if (pdfiumCleanup) {
+          pdfiumCleanup();
+        }
+      }
+    }
+
+    let pdfiumCleanup: (() => void) | null = null;
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <main
+      style={{
+        padding: 24,
+        fontFamily: "monospace",
+        whiteSpace: "pre-wrap",
+      }}
+    >
+      <h1>PDFium Save / Reopen POC</h1>
+      <pre>{output}</pre>
+    </main>
+  );
+}
+
+
+

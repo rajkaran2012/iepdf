@@ -1,0 +1,594 @@
+﻿"use client";
+
+import { useEffect, useState } from "react";
+import { init } from "@embedpdf/pdfium";
+
+type Result = {
+  name: string;
+  input: number;
+  output: number;
+  reduction: number;
+  pagesBefore: number;
+  pagesAfter: number;
+  images: number;
+  modified: number;
+  reopen: boolean;
+  error?: string;
+};
+
+const FILES = [
+  "embedpdf-test.pdf",
+  "iepdf-merged.pdf",
+  "iepdf-merged-1.pdf",
+];
+
+export default function PdfiumBc09Page() {
+  const [status, setStatus] = useState("Starting BC-09-B...");
+  const [results, setResults] = useState<Result[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function run() {
+      try {
+        const pdfium = await init({
+          locateFile: () => "/_pdfium-bc09/pdfium.wasm",
+        });
+
+        console.log("PDFium wrapper initialized.");
+
+        pdfium.PDFiumExt_Init();
+        console.log("PDFiumExt_Init completed.");
+
+        const mem = pdfium.pdfium.wasmExports;
+        const output: Result[] = [];
+
+        for (const name of FILES) {
+          console.log(`\n========== ${name} ==========`);
+
+          try {
+            const response = await fetch(`/_pdfium-bc09/${name}`);
+
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+
+            const bytes = new Uint8Array(
+              await response.arrayBuffer()
+            );
+
+            const bufferPtr = mem.malloc(bytes.byteLength);
+
+            try {
+              const heap =
+                (pdfium.pdfium as unknown as {
+                  HEAPU8: Uint8Array;
+                }).HEAPU8;
+
+              heap.set(bytes, bufferPtr);
+
+              const docPtr = pdfium.FPDF_LoadMemDocument(
+                bufferPtr,
+                bytes.byteLength,
+                ""
+              );
+
+              if (!docPtr) {
+                throw new Error("FPDF_LoadMemDocument failed");
+              }
+
+              let savedBytes = 0;
+              let pagesBefore = 0;
+              let modified = 0;
+              let imageCount = 0;
+
+              try {
+                pagesBefore =
+                  pdfium.FPDF_GetPageCount(docPtr);
+
+                for (
+                  let pageIndex = 0;
+                  pageIndex < pagesBefore;
+                  pageIndex++
+                ) {
+                  const pagePtr =
+                    pdfium.FPDF_LoadPage(
+                      docPtr,
+                      pageIndex
+                    );
+
+                  if (!pagePtr) continue;
+
+                  try {
+                    const objectCount =
+                      pdfium.FPDFPage_CountObjects(
+                        pagePtr
+                      );
+
+                    for (
+                      let objectIndex = 0;
+                      objectIndex < objectCount;
+                      objectIndex++
+                    ) {
+                      const objectPtr =
+                        pdfium.FPDFPage_GetObject(
+                          pagePtr,
+                          objectIndex
+                        );
+
+                      if (!objectPtr) continue;
+
+                      const type =
+                        pdfium.FPDFPageObj_GetType(
+                          objectPtr
+                        );
+
+                      if (type !== 3) continue;
+
+                      imageCount++;
+
+                      const bitmapPtr =
+                        pdfium.FPDFImageObj_GetBitmap(
+                          objectPtr
+                        );
+
+                      if (!bitmapPtr) {
+                        console.log(
+                          `Page ${pageIndex + 1}, image ${objectIndex}: no bitmap`
+                        );
+                        continue;
+                      }
+
+                      const width =
+                        pdfium.FPDFBitmap_GetWidth(
+                          bitmapPtr
+                        );
+
+                      const height =
+                        pdfium.FPDFBitmap_GetHeight(
+                          bitmapPtr
+                        );
+
+                      const stride =
+                        pdfium.FPDFBitmap_GetStride(
+                          bitmapPtr
+                        );
+
+                      const format =
+                        pdfium.FPDFBitmap_GetFormat(
+                          bitmapPtr
+                        );
+
+                      const buffer =
+                        pdfium.FPDFBitmap_GetBuffer(
+                          bitmapPtr
+                        );
+
+                      console.log(
+                        `Page ${pageIndex + 1}, image ${objectIndex}: ` +
+                          `${width}x${height} stride=${stride} ` +
+                          `format=${format} buffer=${buffer}`
+                      );
+
+                      if (
+                        width <= 0 ||
+                        height <= 0 ||
+                        stride <= 0 ||
+                        !buffer
+                      ) {
+                        continue;
+                      }
+
+                      const byteLength =
+                        stride * height;
+
+                      const currentHeap =
+                        (pdfium.pdfium as unknown as {
+                          HEAPU8: Uint8Array;
+                        }).HEAPU8;
+
+                      if (
+                        buffer < 0 ||
+                        buffer + byteLength >
+                          currentHeap.byteLength
+                      ) {
+                        console.log(
+                          "Bitmap buffer outside WASM memory."
+                        );
+                        continue;
+                      }
+
+                      /*
+                       * Allocate a fresh PDFium bitmap with the
+                       * same dimensions and RGBA format.
+                       *
+                       * Format 2 is the format already observed
+                       * in BC-04/BC-06/BC-08.
+                       */
+                      console.log("BC-09 API CHECK:", {
+                        Create: typeof pdfium.FPDFBitmap_Create,
+                        GetBuffer: typeof pdfium.FPDFBitmap_GetBuffer,
+                        GetStride: typeof pdfium.FPDFBitmap_GetStride,
+                        Destroy: typeof pdfium.FPDFBitmap_Destroy,
+                        SetBitmap: typeof pdfium.FPDFImageObj_SetBitmap,
+                        Generate: typeof pdfium.FPDFPage_GenerateContent,
+                        SetValue: typeof pdfium.pdfium.setValue
+                      });
+                      console.log(
+                        "BC-09 API VALUES:",
+                        typeof pdfium.FPDFBitmap_Create,
+                        typeof pdfium.FPDFBitmap_GetBuffer,
+                        typeof pdfium.FPDFBitmap_GetStride,
+                        typeof pdfium.FPDFBitmap_Destroy,
+                        typeof pdfium.FPDFImageObj_SetBitmap,
+                        typeof pdfium.FPDFPage_GenerateContent,
+                        typeof pdfium.pdfium.setValue
+                      );
+                      const createBitmap = pdfium.FPDFBitmap_Create as unknown as (width: number, height: number, format: number) => number;
+                      console.log("BC09-CHECK-1: before FPDFBitmap_Create");
+                      const newBitmapPtr = createBitmap(width, height, format);
+                      console.log("BC09-CHECK-2: after FPDFBitmap_Create", newBitmapPtr);
+
+                      if (!newBitmapPtr) {
+                        console.log(
+                          "FPDFBitmap_Create failed."
+                        );
+                        continue;
+                      }
+
+                      try {
+                        console.log("BC09-CHECK-3: before GetBuffer");
+                        const newBuffer = pdfium.FPDFBitmap_GetBuffer(newBitmapPtr);
+                        console.log("BC09-CHECK-4: after GetBuffer", newBuffer);
+
+                        console.log("BC09-CHECK-5: before GetStride");
+                        const newStride = pdfium.FPDFBitmap_GetStride(newBitmapPtr);
+                        console.log("BC09-CHECK-6: after GetStride", newStride);
+
+                        if (
+                          !newBuffer ||
+                          newStride <= 0
+                        ) {
+                          console.log(
+                            "New bitmap buffer unavailable."
+                          );
+                          continue;
+                        }
+
+                        /*
+                         * Copy row-by-row so source and
+                         * destination strides can differ safely.
+                         */
+                        for (
+                          let y = 0;
+                          y < height;
+                          y++
+                        ) {
+                          for (
+                            let x = 0;
+                            x < newStride;
+                            x++
+                          ) {
+                            const value =
+                              currentHeap[
+                                buffer +
+                                  y * stride +
+                                  x
+                              ];
+
+                            const destinationHeap = (pdfium.pdfium as unknown as { HEAPU8: Uint8Array }).HEAPU8;
+                            destinationHeap[newBuffer + y * newStride + x] = value;
+                          }
+                        }
+
+                        console.log("BC09-CHECK-7: before SetBitmap");
+                        const setResult = pdfium.FPDFImageObj_SetBitmap(pagePtr, 0, objectIndex, newBitmapPtr);
+                        console.log("BC09-CHECK-8: after SetBitmap", setResult);
+
+                        console.log(
+                          `SetBitmap result: ${setResult}`
+                        );
+
+                        if (setResult) {
+                          modified++;
+                        }
+                      } finally {
+                        pdfium.FPDFBitmap_Destroy(
+                          newBitmapPtr
+                        );
+                      }
+                    }
+
+                    if (modified > 0) {
+                      const generated =
+                        pdfium.FPDFPage_GenerateContent(
+                          pagePtr
+                        );
+
+                      console.log(
+                        `GenerateContent page ${
+                          pageIndex + 1
+                        }: ${generated}`
+                      );
+                    }
+                  } finally {
+                    pdfium.FPDF_ClosePage(pagePtr);
+                  }
+                }
+
+                const writerPtr =
+                  pdfium.PDFiumExt_OpenFileWriter();
+
+                if (!writerPtr) {
+                  throw new Error(
+                    "PDFium file writer failed"
+                  );
+                }
+
+                try {
+                  const saveResult =
+                    pdfium.PDFiumExt_SaveAsCopy(
+                      docPtr,
+                      writerPtr
+                    );
+
+                  console.log(
+                    `SaveAsCopy: ${saveResult}`
+                  );
+
+                  savedBytes =
+                    pdfium.PDFiumExt_GetFileWriterSize(
+                      writerPtr
+                    );
+
+                  console.log(
+                    `Saved bytes: ${savedBytes}`
+                  );
+
+                  const savedPtr =
+                    mem.malloc(savedBytes);
+
+                  try {
+                    const getResult =
+                      pdfium.PDFiumExt_GetFileWriterData(
+                        writerPtr,
+                        savedPtr,
+                        savedBytes
+                      );
+
+                    console.log(
+                      `GetFileWriterData: ${getResult}`
+                    );
+
+                    if (!getResult) {
+                      throw new Error(
+                        "GetFileWriterData failed"
+                      );
+                    }
+
+                    const savedHeap =
+                      (pdfium.pdfium as unknown as {
+                        HEAPU8: Uint8Array;
+                      }).HEAPU8;
+
+                    const savedPdf =
+                      savedHeap.slice(
+                        savedPtr,
+                        savedPtr + savedBytes
+                      );
+
+                    const reopenPtr =
+                      mem.malloc(
+                        savedPdf.byteLength
+                      );
+
+                    try {
+                      const reopenHeap =
+                        (pdfium.pdfium as unknown as {
+                          HEAPU8: Uint8Array;
+                        }).HEAPU8;
+
+                      reopenHeap.set(
+                        savedPdf,
+                        reopenPtr
+                      );
+
+                      const reopened =
+                        pdfium.FPDF_LoadMemDocument(
+                          reopenPtr,
+                          savedPdf.byteLength,
+                          ""
+                        );
+
+                      if (!reopened) {
+                        throw new Error(
+                          "Reopen failed"
+                        );
+                      }
+
+                      try {
+                        const pagesAfter =
+                          pdfium.FPDF_GetPageCount(
+                            reopened
+                          );
+
+                        console.log(
+                          `Pages: ${pagesBefore} -> ${pagesAfter}`
+                        );
+
+                        const reopenOk =
+                          pagesBefore === pagesAfter;
+
+                        const reduction =
+                          bytes.byteLength > 0
+                            ? ((bytes.byteLength -
+                                savedBytes) /
+                                bytes.byteLength) *
+                              100
+                            : 0;
+
+                        output.push({
+                          name,
+                          input: bytes.byteLength,
+                          output: savedBytes,
+                          reduction,
+                          pagesBefore,
+                          pagesAfter,
+                          images: imageCount,
+                          modified,
+                          reopen: reopenOk,
+                        });
+                      } finally {
+                        pdfium.FPDF_CloseDocument(
+                          reopened
+                        );
+                      }
+                    } finally {
+                      mem.free(reopenPtr);
+                    }
+                  } finally {
+                    mem.free(savedPtr);
+                  }
+                } finally {
+                  pdfium.PDFiumExt_CloseFileWriter(
+                    writerPtr
+                  );
+                }
+              } finally {
+                pdfium.FPDF_CloseDocument(docPtr);
+              }
+            } finally {
+              mem.free(bufferPtr);
+            }
+          } catch (error) {
+            const message =
+              error instanceof Error
+                ? error.message
+                : String(error);
+
+            console.error(
+              `${name}: ${message}`
+            );
+
+            output.push({
+              name,
+              input: 0,
+              output: 0,
+              reduction: 0,
+              pagesBefore: 0,
+              pagesAfter: 0,
+              images: 0,
+              modified: 0,
+              reopen: false,
+              error: message,
+            });
+          }
+
+          if (!cancelled) {
+            setResults([...output]);
+          }
+        }
+
+        console.log(
+          "\n========== BC-09-B RESULT =========="
+        );
+
+        for (const result of output) {
+          console.log(
+            `${result.name}: ` +
+              `${result.input} -> ${result.output} ` +
+              `reduction=${result.reduction.toFixed(2)}% ` +
+              `images=${result.images} ` +
+              `modified=${result.modified} ` +
+              `pages=${result.pagesBefore}->${result.pagesAfter} ` +
+              `reopen=${result.reopen}`
+          );
+        }
+
+        console.log(
+          "========== BC-09-B COMPLETE =========="
+        );
+
+        if (!cancelled) {
+          setStatus(
+            "BC-09-B compression corpus test complete."
+          );
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : String(error);
+
+        console.error("BC-09-B FAILED:", error);
+
+        if (!cancelled) {
+          setStatus(
+            `BC-09-B FAILED: ${message}`
+          );
+        }
+      }
+    }
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <main
+      style={{
+        padding: 32,
+        maxWidth: 1200,
+        margin: "0 auto",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
+      <h1>PDFium BC-09-B — SetBitmap Corpus Test</h1>
+
+      <p>{status}</p>
+
+      {results.map((r) => (
+        <section
+          key={r.name}
+          style={{
+            marginTop: 24,
+            padding: 20,
+            border: "1px solid #ccc",
+            borderRadius: 8,
+          }}
+        >
+          <h2>{r.name}</h2>
+
+          {r.error ? (
+            <p>ERROR: {r.error}</p>
+          ) : (
+            <p>
+              Input: {r.input.toLocaleString()} bytes
+              <br />
+              Output: {r.output.toLocaleString()} bytes
+              <br />
+              Reduction: {r.reduction.toFixed(2)}%
+              <br />
+              Images: {r.images}
+              <br />
+              Modified: {r.modified}
+              <br />
+              Pages: {r.pagesBefore} → {r.pagesAfter}
+              <br />
+              Reopen: {r.reopen ? "PASS" : "FAIL"}
+            </p>
+          )}
+        </section>
+      ))}
+    </main>
+  );
+}
+
+
+
+
+
+

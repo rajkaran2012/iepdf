@@ -1,4 +1,4 @@
-/**
+﻿/**
  * =============================================================================
  * iePDF Validation Engine
  * =============================================================================
@@ -22,7 +22,20 @@ export class PasswordDetector implements IPasswordDetector {
         file: File
     ): Promise<PasswordDetectionResult> {
 
-        await this.pdfDocumentService.open(file);
+        try {
+
+            await this.pdfDocumentService.open(file);
+
+        } catch (error: unknown) {
+
+            console.error(
+                "[PASSWORD-DIAGNOSTIC] PdfDocumentService.open() failed",
+                error
+            );
+
+            throw error;
+
+        }
 
         try {
 

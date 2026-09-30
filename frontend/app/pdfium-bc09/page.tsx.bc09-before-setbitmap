@@ -1,0 +1,384 @@
+﻿"use client";
+
+import { useEffect, useState } from "react";
+import { init } from "@embedpdf/pdfium";
+
+type ImageInfo = {
+  page: number;
+  object: number;
+  width: number;
+  height: number;
+  filterCount: number;
+  filters: string[];
+};
+
+type PdfResult = {
+  name: string;
+  bytes: number;
+  pages: number;
+  images: ImageInfo[];
+  error?: string;
+};
+
+const FILES = [
+  "embedpdf-test.pdf",
+  "iepdf-merged.pdf",
+  "iepdf-merged-1.pdf",
+];
+
+const filterNames: Record<number, string> = {
+  1: "ASCIIHexDecode",
+  2: "ASCII85Decode",
+  3: "LZWDecode",
+  4: "FlateDecode",
+  5: "RunLengthDecode",
+  6: "CCITTFaxDecode",
+  7: "JBIG2Decode",
+  8: "DCTDecode",
+  9: "JPXDecode",
+  10: "Crypt",
+};
+
+export default function PdfiumBc09Page() {
+  const [status, setStatus] = useState("Starting BC-09...");
+  const [results, setResults] = useState<PdfResult[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function run() {
+      try {
+        setStatus("Loading PDFium...");
+
+        const pdfium = await init({
+          locateFile: () => "/_pdfium-bc09/pdfium.wasm",
+        });
+
+        if (cancelled) return;
+
+        console.log("PDFium wrapper initialized.");
+
+        pdfium.PDFiumExt_Init();
+        console.log("PDFiumExt_Init completed.");
+
+        const output: PdfResult[] = [];
+
+        for (const name of FILES) {
+          if (cancelled) return;
+
+          console.log(`\n========== ${name} ==========`);
+
+          try {
+            const response = await fetch(`/ _pdfium-bc09/${name}`.replace(" ", ""));
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+
+            const bytes = new Uint8Array(await response.arrayBuffer());
+
+            const mem = pdfium.pdfium.wasmExports;
+            const bufferPtr = mem.malloc(bytes.byteLength);
+
+            try {
+              const heap = (
+                pdfium.pdfium as unknown as { HEAPU8: Uint8Array }
+              ).HEAPU8;
+
+              heap.set(bytes, bufferPtr);
+
+              const docPtr = pdfium.FPDF_LoadMemDocument(
+                bufferPtr,
+                bytes.byteLength,
+                ""
+              );
+
+              if (!docPtr) {
+                throw new Error("FPDF_LoadMemDocument failed");
+              }
+
+              try {
+                const pages = pdfium.FPDF_GetPageCount(docPtr);
+                const images: ImageInfo[] = [];
+
+                console.log(`Bytes: ${bytes.byteLength}`);
+                console.log(`Pages: ${pages}`);
+
+                for (let pageIndex = 0; pageIndex < pages; pageIndex++) {
+                  const pagePtr = pdfium.FPDF_LoadPage(docPtr, pageIndex);
+
+                  if (!pagePtr) {
+                    console.log(
+                      `Page ${pageIndex + 1}: LOAD FAILED`
+                    );
+                    continue;
+                  }
+
+                  try {
+                    const objectCount =
+                      pdfium.FPDFPage_CountObjects(pagePtr);
+
+                    console.log(
+                      `Page ${pageIndex + 1}: ${objectCount} objects`
+                    );
+
+                    for (
+                      let objectIndex = 0;
+                      objectIndex < objectCount;
+                      objectIndex++
+                    ) {
+                      const objectPtr = pdfium.FPDFPage_GetObject(
+                        pagePtr,
+                        objectIndex
+                      );
+
+                      if (!objectPtr) continue;
+
+                      const objectType =
+                        pdfium.FPDFPageObj_GetType(objectPtr);
+
+                      // PDFium image object type = 3
+                      if (objectType !== 3) continue;
+
+                      const widthPtr = mem.malloc(4);
+                      const heightPtr = mem.malloc(4);
+
+                      try {
+                        const pixelSizeOk =
+                          pdfium.FPDFImageObj_GetImagePixelSize(
+                            objectPtr,
+                            widthPtr,
+                            heightPtr
+                          );
+
+                        if (!pixelSizeOk) {
+                          console.log(
+                            `  Image ${objectIndex}: pixel size FAILED`
+                          );
+                          continue;
+                        }
+
+                        const width = pdfium.pdfium.getValue(
+                          widthPtr,
+                          "i32"
+                        );
+
+                        const height = pdfium.pdfium.getValue(
+                          heightPtr,
+                          "i32"
+                        );
+
+                        const filterCount =
+                          pdfium.FPDFImageObj_GetImageFilterCount(
+                            objectPtr
+                          );
+
+                        const filters: string[] = [];
+
+                        for (
+                          let filterIndex = 0;
+                          filterIndex < filterCount;
+                          filterIndex++
+                        ) {
+                          const nameBuffer = mem.malloc(256);
+
+                          try {
+                            const result =
+                              pdfium.FPDFImageObj_GetImageFilter(
+                                objectPtr,
+                                filterIndex,
+                                nameBuffer,
+                                255
+                              );
+
+                            if (result) {
+                              const filterName =
+                                pdfium.pdfium.UTF8ToString(
+                                  nameBuffer
+                                );
+
+                              filters.push(
+                                filterNames[Number(result)] ??
+                                  filterName ??
+                                  `filter-${result}`
+                              );
+                            }
+                          } finally {
+                            mem.free(nameBuffer);
+                          }
+                        }
+
+                        const info: ImageInfo = {
+                          page: pageIndex + 1,
+                          object: objectIndex,
+                          width,
+                          height,
+                          filterCount,
+                          filters,
+                        };
+
+                        images.push(info);
+
+                        console.log(
+                          `  IMAGE object=${objectIndex} ` +
+                            `${width}x${height} ` +
+                            `filters=${filterCount} ` +
+                            `[${filters.join(", ")}]`
+                        );
+                      } finally {
+                        mem.free(widthPtr);
+                        mem.free(heightPtr);
+                      }
+                    }
+                  } finally {
+                    pdfium.FPDF_ClosePage(pagePtr);
+                  }
+                }
+
+                output.push({
+                  name,
+                  bytes: bytes.byteLength,
+                  pages,
+                  images,
+                });
+              } finally {
+                pdfium.FPDF_CloseDocument(docPtr);
+              }
+            } finally {
+              mem.free(bufferPtr);
+            }
+          } catch (error) {
+            const message =
+              error instanceof Error
+                ? error.message
+                : String(error);
+
+            console.error(`${name}: ${message}`);
+
+            output.push({
+              name,
+              bytes: 0,
+              pages: 0,
+              images: [],
+              error: message,
+            });
+          }
+
+          if (!cancelled) {
+            setResults([...output]);
+          }
+        }
+
+        console.log("\n========== BC-09 INVENTORY RESULT ==========");
+
+        for (const result of output) {
+          console.log(
+            `${result.name}: ` +
+              `bytes=${result.bytes} ` +
+              `pages=${result.pages} ` +
+              `images=${result.images.length}` +
+              (result.error ? ` ERROR=${result.error}` : "")
+          );
+        }
+
+        console.log("========== BC-09 INVENTORY COMPLETE ==========");
+
+        if (!cancelled) {
+          setStatus("BC-09 inventory complete.");
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : String(error);
+
+        console.error("BC-09 FAILED:", error);
+        if (!cancelled) {
+          setStatus(`BC-09 FAILED: ${message}`);
+        }
+      }
+    }
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <main
+      style={{
+        padding: 32,
+        fontFamily: "Arial, sans-serif",
+        maxWidth: 1200,
+        margin: "0 auto",
+      }}
+    >
+      <h1>PDFium BC-09 — Read-Only Image Inventory</h1>
+
+      <p>{status}</p>
+
+      {results.map((result) => (
+        <section
+          key={result.name}
+          style={{
+            marginTop: 24,
+            padding: 20,
+            border: "1px solid #ccc",
+            borderRadius: 8,
+          }}
+        >
+          <h2>{result.name}</h2>
+
+          {result.error ? (
+            <p>ERROR: {result.error}</p>
+          ) : (
+            <>
+              <p>
+                Bytes: {result.bytes.toLocaleString()}
+                <br />
+                Pages: {result.pages}
+                <br />
+                Image objects: {result.images.length}
+              </p>
+
+              {result.images.length === 0 ? (
+                <p>NO IMAGE OBJECTS</p>
+              ) : (
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                  }}
+                >
+                  <thead>
+                    <tr>
+                      <th>Page</th>
+                      <th>Object</th>
+                      <th>Dimensions</th>
+                      <th>Filters</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {result.images.map((image, index) => (
+                      <tr key={index}>
+                        <td>{image.page}</td>
+                        <td>{image.object}</td>
+                        <td>
+                          {image.width} × {image.height}
+                        </td>
+                        <td>
+                          {image.filters.join(", ") || "None"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </>
+          )}
+        </section>
+      ))}
+    </main>
+  );
+}
+

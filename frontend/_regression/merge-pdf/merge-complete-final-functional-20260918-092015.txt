@@ -1,0 +1,65 @@
+iePDF MERGE PDF - COMPLETE FINAL FUNCTIONAL TEST
+Finished: 2026-09-18T03:50:50.229Z
+
+=== RESULTS ===
+PASS PRE-01 - exactly one file input
+PASS PRE-02 - Add PDF Files control present
+PASS PRE-03 - empty workspace Merge disabled
+FAIL T1-01 - A added: A-2-pages.pdf
+FAIL T1-02 - A+B present: A=true, B=true
+PASS T1-03 - remove controls=2
+PASS T1-04 - 2-PDF Merge enabled=true, ready=0, total=2
+FAIL T2-01 - A+B+C present: A=true, B=true, C=true
+PASS T2-02 - remove controls=3
+PASS T2-03 - 3-PDF Merge enabled=true, ready=0, total=3
+PASS T3-01 - A+B after repeated add: remove controls=2
+PASS T3-02 - one PDF remains after removal: remove controls=1
+PASS T3-03 - C present after remove/add: C-1-page.pdf
+PASS T3-04 - workspace recovered to >=2 PDFs: remove controls=2
+PASS T4-01 - all PDFs removed: remove controls=0
+PASS T4-02 - Merge disabled again after returning to empty workspace
+PASS T5-01 - A+B+C can be added again after complete removal
+PASS T5-02 - Merge enabled after re-add=true
+PASS T6-01 - visible draggable row controls/elements=3
+FAIL HEALTH-01 - page errors=3
+FAIL HEALTH-02 - failed requests=4
+FAIL HEALTH-03 - console errors=6
+
+=== CONSOLE ERRORS ===
+Failed to load resource: net::ERR_NAME_NOT_RESOLVED
+Warning: Error: Setting up fake worker failed: "Failed to fetch dynamically imported module: https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs".
+Warning: Error: Setting up fake worker failed: "Failed to fetch dynamically imported module: https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs".
+Warning: Error: Setting up fake worker failed: "Failed to fetch dynamically imported module: https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs".
+Warning: Error: Setting up fake worker failed: "Failed to fetch dynamically imported module: https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs".
+Warning: Error: Setting up fake worker failed: "Failed to fetch dynamically imported module: https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs".
+
+=== PAGE ERRORS ===
+ReferenceError: fileName is not defined
+    at eval (eval at predicate (eval at evaluate (:311:30)), <anonymous>:1:39)
+    at predicate (eval at evaluate (:311:30), <anonymous>:7:27)
+    at next (eval at evaluate (:311:30), <anonymous>:29:33)
+    at eval (eval at evaluate (:311:30), <anonymous>:42:13)
+    at UtilityScript.evaluate (<anonymous>:313:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+ReferenceError: fileName is not defined
+    at eval (eval at predicate (eval at evaluate (:311:30)), <anonymous>:3:16)
+    at predicate (eval at evaluate (:311:30), <anonymous>:7:27)
+    at next (eval at evaluate (:311:30), <anonymous>:29:33)
+    at eval (eval at evaluate (:311:30), <anonymous>:42:13)
+    at UtilityScript.evaluate (<anonymous>:313:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+ReferenceError: fileName is not defined
+    at eval (eval at predicate (eval at evaluate (:311:30)), <anonymous>:3:16)
+    at predicate (eval at evaluate (:311:30), <anonymous>:7:27)
+    at next (eval at evaluate (:311:30), <anonymous>:29:33)
+    at eval (eval at evaluate (:311:30), <anonymous>:42:13)
+    at UtilityScript.evaluate (<anonymous>:313:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+
+=== FAILED REQUESTS ===
+GET https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs :: net::ERR_NAME_NOT_RESOLVED
+GET https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs :: net::ERR_NAME_NOT_RESOLVED
+GET https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs :: net::ERR_NAME_NOT_RESOLVED
+GET https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs :: net::ERR_NAME_NOT_RESOLVED
+
+SUMMARY PASS=16 FAIL=6

@@ -1,0 +1,27 @@
+$ node .\node_modules\next\dist\bin\next build
+▲ Next.js 16.2.9 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 8.4s
+  Running TypeScript ...
+  Finished TypeScript in 6.0s ...
+  Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/9) ...
+  Generating static pages using 3 workers (2/9) 
+  Generating static pages using 3 workers (4/9) 
+  Generating static pages using 3 workers (6/9) 
+✓ Generating static pages using 3 workers (9/9) in 460ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /compress-pdf
+├ ○ /jpg-to-pdf
+├ ○ /merge-pdf
+├ ○ /pdf-to-jpg
+└ ○ /split-pdf
+
+
+○  (Static)  prerendered as static content
+

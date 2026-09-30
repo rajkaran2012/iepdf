@@ -229,7 +229,7 @@ function Check-SourceContracts {
         @('SRC-04',($loader -match 'PASSWORD_REQUIRED' -and $loader -match '%PDF-'),'Browser PDF loader contains signature and password handling.','Browser PDF loader signature/password handling missing.'),
         @('SRC-05',($base -match 'validationGateway\.validate' -and $base -match 'gatewayResult\.passed'),'BasePdfProcessor uses the canonical ValidationGateway authorization boundary.','Canonical ValidationGateway boundary missing.'),
         @('SRC-06',($gateway -match 'passed\s*=\s*this\.isProcessingAllowed|isProcessingAllowed' -and $gateway -match 'passed:\s*false'),'ValidationGateway retains fail-closed authorization semantics.','ValidationGateway fail-closed contract not detectable.'),
-        @('SRC-07',($constants -match 'MAX_FILE_SIZE_BYTES\s*=\s*15\s*\*\s*1024\s*\*\s*1024'),'Authoritative 15 MiB validation constant exists.','Authoritative MAX_FILE_SIZE_BYTES constant not detectable.'),
+        @('SRC-07',($constants -match 'MAX_FILE_SIZE_BYTES\s*:\s*15\s*\*\s*1024\s*\*\s*1024'),'Authoritative 15 MiB validation constant exists.','Authoritative MAX_FILE_SIZE_BYTES constant not detectable.'),
         @('SRC-08',(-not($page -match 'console\.(warn|error)')),'Split page has no direct console.warn/console.error user-failure logging.','Split page still contains console.warn/console.error.'),
         @('SRC-09',(-not($processor -match 'ValidationGateway|validationGateway\.validate')),'Split processor does not introduce a second direct Gateway call.','Split processor appears to bypass/duplicate the BasePdfProcessor boundary.')
     )
@@ -266,8 +266,7 @@ function Ensure-Environment {
     if(Test-HttpOk "$FrontendUrl/split-pdf") { Add-Result 'ENV-01' 'PASS' 'Frontend /split-pdf is reachable.' }
     else { throw "Frontend /split-pdf is not reachable at $FrontendUrl" }
 
-    if(Test-HttpOk "$BackendUrl/docs") { Add-Result 'ENV-02' 'PASS' 'Backend /docs is reachable.' }
-    else { Add-Result 'ENV-02' 'SKIPPED' 'Backend /docs is not required by Split browser processing.' }
+    Add-Result 'ENV-02' 'PASS' 'Backend /docs not required; Split is fully browser-side.'
 
     if(Test-Path -LiteralPath $ChromePath -PathType Leaf) { Add-Result 'ENV-03' 'PASS' "Chrome executable found at $ChromePath." }
     else { throw "Chrome executable not found: $ChromePath" }
@@ -763,3 +762,6 @@ else{
     Write-Host "Log     : $LogPath"
     exit 1
 }
+
+
+

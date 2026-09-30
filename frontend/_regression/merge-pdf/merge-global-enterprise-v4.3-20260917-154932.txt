@@ -1,0 +1,257 @@
+============================================================
+iePDF MERGE PDF - GLOBAL ENTERPRISE SOURCE/RUNTIME DIAGNOSTIC V4.3 FIXED
+============================================================
+BASE=http://127.0.0.1:3000
+CHROME=C:\Program Files\Google\Chrome\Application\chrome.exe
+FIXTURE=C:\IEPDF\frontend\_regression\merge-pdf\A-2-pages.pdf
+
+SOURCE EVIDENCE:
+SOURCE_PATTERN [BrowserPdfAnalyzer] = True
+SOURCE_PATTERN [analyzer.analyzeMany(files)] = True
+SOURCE_PATTERN [processSelectedFiles] = True
+SOURCE_PATTERN [handleFileChange] = True
+SOURCE_PATTERN [setWorkspaceFiles((previous) => [...previous, ...workspace])] = True
+SOURCE_PATTERN [fileInputRef.current.value = ""] = True
+SOURCE_PATTERN [await processSelectedFiles(files)] = True
+
+PROCESS SELECTED FILES SOURCE SNIPPET:
+const processSelectedFiles = async (
+    files: File[]
+) => {
+
+    if (files.length === 0) {
+        return;
+    }
+
+    const oversizedFile = files.find(
+        (file) => file.size > MAX_FILE_SIZE
+    );
+
+    if (oversizedFile) {
+        toast.error({
+          title: "Invalid PDF",
+          message: "File exceeds the maximum allowed size.",
+          fileName: oversizedFile.name,
+          fileSize: oversizedFile.size,
+        });
+        return;
+    }
+
+    const analyzer = new BrowserPdfAnalyzer();
+
+    const analysis =
+        await analyzer.analyzeMany(files);
+
+    const workspace = analysis.map(
+        (result, index) => ({
+
+            ...result,
+
+            // Original browser File
+            file: files[index],
+
+            // Workspace state
+            password: "",
+            showPassword: false,
+            skipped: false,
+
+        })
+    );
+
+    setWorkspaceFiles((previous) => [...previous, ...workspace]);
+
+    setShowWorkspace(true);
+
+};
+
+ENV-01 Browser launch: PASS
+ENV-02 Route status: 200
+ENV-03 Final URL: http://127.0.0.1:3000/merge-pdf
+ENV-04 Title: iePDF — Simple Online PDF Tools
+DOM initial: {"inputs":[{"type":"file","multiple":true,"accept":".pdf","value":"","files":[]}],"buttons":[{"text":"","aria":"Open navigation menu","disabled":false,"visible":false},{"text":"Add PDF Files\nDrop PDFs here\nor click to browse · Max 15 MiB each","aria":null,"disabled":false,"visible":true},{"text":"🔓 Unlock & Merge","aria":null,"disabled":true,"visible":true}],"removeCount":0,"dragHandles":[],"mergeButtons":[{"text":"🔓 Unlock & Merge","aria":null,"disabled":true,"visible":true}],"bodyTail":"iePDF\nMerge PDF\nSplit PDF\nCompress PDF\nPDF → JPG\nJPG → PDF\nMerge PDF\n\nCombine multiple PDF files into a single PDF securely and instantly.\n\nAdd PDF Files\nDrop PDFs here\nor click to browse · Max 15 MiB each\nPDF files\nDrag ⋮⋮ to reorder\n\nAdd your PDFs, reorder them, then tap Merge.\n\nFiles\n0\nTotal\n0\nReady\n0\nProtected\n0\nSkipped\n0\nCorrupted\n0\nInvalid\n🔓 Unlock & Merge\nProcessing happens in your browser. Files never leave your device."}
+UI-01 File input count: 1
+UI-02 Add PDF Files count: 1
+UI-03 Visible Add PDF Files -> chooser: NOT-CONCLUSIVE (page.waitForEvent: Timeout 7000ms exceeded while waiting for event "filechooser"
+=========================== logs ===========================
+waiting for event "filechooser"
+============================================================)
+DOM after-ui-attempt: {"inputs":[{"type":"file","multiple":true,"accept":".pdf","value":"","files":[]}],"buttons":[{"text":"","aria":"Open navigation menu","disabled":false,"visible":false},{"text":"Add PDF Files\nDrop PDFs here\nor click to browse · Max 15 MiB each","aria":null,"disabled":false,"visible":true},{"text":"🔓 Unlock & Merge","aria":null,"disabled":true,"visible":true}],"removeCount":0,"dragHandles":[],"mergeButtons":[{"text":"🔓 Unlock & Merge","aria":null,"disabled":true,"visible":true}],"bodyTail":"iePDF\nMerge PDF\nSplit PDF\nCompress PDF\nPDF → JPG\nJPG → PDF\nMerge PDF\n\nCombine multiple PDF files into a single PDF securely and instantly.\n\nAdd PDF Files\nDrop PDFs here\nor click to browse · Max 15 MiB each\nPDF files\nDrag ⋮⋮ to reorder\n\nAdd your PDFs, reorder them, then tap Merge.\n\nFiles\n0\nTotal\n0\nReady\n0\nProtected\n0\nSkipped\n0\nCorrupted\n0\nInvalid\n🔓 Unlock & Merge\nProcessing happens in your browser. Files never leave your device."}
+
+ATTEMPT B: deterministic real input + native change capture
+B-01 Input BEFORE: {"count":0,"names":[]}
+B-02 Input IMMEDIATE: {"count":1,"names":["A-2-pages.pdf"],"value":"C:\\fakepath\\A-2-pages.pdf"}
+B-03 change+100ms nativeChangeCount=1
+B-04 asyncErrors+100ms: {"rejections":[],"errors":[]}
+DOM B+100ms: {"inputs":[{"type":"file","multiple":true,"accept":".pdf","value":"C:\\fakepath\\A-2-pages.pdf","files":[{"name":"A-2-pages.pdf","size":544,"type":"application/pdf"}]}],"buttons":[{"text":"","aria":"Open navigation menu","disabled":false,"visible":false},{"text":"Add PDF Files\nDrop PDFs here\nor click to browse · Max 15 MiB each","aria":null,"disabled":false,"visible":true},{"text":"🔓 Unlock & Merge","aria":null,"disabled":true,"visible":true}],"removeCount":0,"dragHandles":[],"mergeButtons":[{"text":"🔓 Unlock & Merge","aria":null,"disabled":true,"visible":true}],"bodyTail":"iePDF\nMerge PDF\nSplit PDF\nCompress PDF\nPDF → JPG\nJPG → PDF\nMerge PDF\n\nCombine multiple PDF files into a single PDF securely and instantly.\n\nAdd PDF Files\nDrop PDFs here\nor click to browse · Max 15 MiB each\nPDF files\nDrag ⋮⋮ to reorder\n\nAdd your PDFs, reorder them, then tap Merge.\n\nFiles\n0\nTotal\n0\nReady\n0\nProtected\n0\nSkipped\n0\nCorrupted\n0\nInvalid\n🔓 Unlock & Merge\nProcessing happens in your browser. Files never leave your device."}
+B-03 change+250ms nativeChangeCount=1
+B-04 asyncErrors+250ms: {"rejections":[],"errors":[]}
+DOM B+250ms: {"inputs":[{"type":"file","multiple":true,"accept":".pdf","value":"C:\\fakepath\\A-2-pages.pdf","files":[{"name":"A-2-pages.pdf","size":544,"type":"application/pdf"}]}],"buttons":[{"text":"","aria":"Open navigation menu","disabled":false,"visible":false},{"text":"Add PDF Files\nDrop PDFs here\nor click to browse · Max 15 MiB each","aria":null,"disabled":false,"visible":true},{"text":"🔓 Unlock & Merge","aria":null,"disabled":true,"visible":true}],"removeCount":0,"dragHandles":[],"mergeButtons":[{"text":"🔓 Unlock & Merge","aria":null,"disabled":true,"visible":true}],"bodyTail":"iePDF\nMerge PDF\nSplit PDF\nCompress PDF\nPDF → JPG\nJPG → PDF\nMerge PDF\n\nCombine multiple PDF files into a single PDF securely and instantly.\n\nAdd PDF Files\nDrop PDFs here\nor click to browse · Max 15 MiB each\nPDF files\nDrag ⋮⋮ to reorder\n\nAdd your PDFs, reorder them, then tap Merge.\n\nFiles\n0\nTotal\n0\nReady\n0\nProtected\n0\nSkipped\n0\nCorrupted\n0\nInvalid\n🔓 Unlock & Merge\nProcessing happens in your browser. Files never leave your device."}
+B-03 change+500ms nativeChangeCount=1
+B-04 asyncErrors+500ms: {"rejections":[],"errors":[]}
+DOM B+500ms: {"inputs":[{"type":"file","multiple":true,"accept":".pdf","value":"C:\\fakepath\\A-2-pages.pdf","files":[{"name":"A-2-pages.pdf","size":544,"type":"application/pdf"}]}],"buttons":[{"text":"","aria":"Open navigation menu","disabled":false,"visible":false},{"text":"Add PDF Files\nDrop PDFs here\nor click to browse · Max 15 MiB each","aria":null,"disabled":false,"visible":true},{"text":"🔓 Unlock & Merge","aria":null,"disabled":true,"visible":true}],"removeCount":0,"dragHandles":[],"mergeButtons":[{"text":"🔓 Unlock & Merge","aria":null,"disabled":true,"visible":true}],"bodyTail":"iePDF\nMerge PDF\nSplit PDF\nCompress PDF\nPDF → JPG\nJPG → PDF\nMerge PDF\n\nCombine multiple PDF files into a single PDF securely and instantly.\n\nAdd PDF Files\nDrop PDFs here\nor click to browse · Max 15 MiB each\nPDF files\nDrag ⋮⋮ to reorder\n\nAdd your PDFs, reorder them, then tap Merge.\n\nFiles\n0\nTotal\n0\nReady\n0\nProtected\n0\nSkipped\n0\nCorrupted\n0\nInvalid\n🔓 Unlock & Merge\nProcessing happens in your browser. Files never leave your device."}
+B-03 change+1000ms nativeChangeCount=1
+B-04 asyncErrors+1000ms: {"rejections":[],"errors":[]}
+DOM B+1000ms: {"inputs":[{"type":"file","multiple":true,"accept":".pdf","value":"C:\\fakepath\\A-2-pages.pdf","files":[{"name":"A-2-pages.pdf","size":544,"type":"application/pdf"}]}],"buttons":[{"text":"","aria":"Open navigation menu","disabled":false,"visible":false},{"text":"Add PDF Files\nDrop PDFs here\nor click to browse · Max 15 MiB each","aria":null,"disabled":false,"visible":true},{"text":"🔓 Unlock & Merge","aria":null,"disabled":true,"visible":true}],"removeCount":0,"dragHandles":[],"mergeButtons":[{"text":"🔓 Unlock & Merge","aria":null,"disabled":true,"visible":true}],"bodyTail":"iePDF\nMerge PDF\nSplit PDF\nCompress PDF\nPDF → JPG\nJPG → PDF\nMerge PDF\n\nCombine multiple PDF files into a single PDF securely and instantly.\n\nAdd PDF Files\nDrop PDFs here\nor click to browse · Max 15 MiB each\nPDF files\nDrag ⋮⋮ to reorder\n\nAdd your PDFs, reorder them, then tap Merge.\n\nFiles\n0\nTotal\n0\nReady\n0\nProtected\n0\nSkipped\n0\nCorrupted\n0\nInvalid\n🔓 Unlock & Merge\nProcessing happens in your browser. Files never leave your device."}
+B-03 change+2000ms nativeChangeCount=1
+B-04 asyncErrors+2000ms: {"rejections":[],"errors":[]}
+DOM B+2000ms: {"inputs":[{"type":"file","multiple":true,"accept":".pdf","value":"C:\\fakepath\\A-2-pages.pdf","files":[{"name":"A-2-pages.pdf","size":544,"type":"application/pdf"}]}],"buttons":[{"text":"","aria":"Open navigation menu","disabled":false,"visible":false},{"text":"Add PDF Files\nDrop PDFs here\nor click to browse · Max 15 MiB each","aria":null,"disabled":false,"visible":true},{"text":"🔓 Unlock & Merge","aria":null,"disabled":true,"visible":true}],"removeCount":0,"dragHandles":[],"mergeButtons":[{"text":"🔓 Unlock & Merge","aria":null,"disabled":true,"visible":true}],"bodyTail":"iePDF\nMerge PDF\nSplit PDF\nCompress PDF\nPDF → JPG\nJPG → PDF\nMerge PDF\n\nCombine multiple PDF files into a single PDF securely and instantly.\n\nAdd PDF Files\nDrop PDFs here\nor click to browse · Max 15 MiB each\nPDF files\nDrag ⋮⋮ to reorder\n\nAdd your PDFs, reorder them, then tap Merge.\n\nFiles\n0\nTotal\n0\nReady\n0\nProtected\n0\nSkipped\n0\nCorrupted\n0\nInvalid\n🔓 Unlock & Merge\nProcessing happens in your browser. Files never leave your device."}
+B-03 change+4000ms nativeChangeCount=1
+B-04 asyncErrors+4000ms: {"rejections":[],"errors":[]}
+DOM B+4000ms: {"inputs":[{"type":"file","multiple":true,"accept":".pdf","value":"C:\\fakepath\\A-2-pages.pdf","files":[{"name":"A-2-pages.pdf","size":544,"type":"application/pdf"}]}],"buttons":[{"text":"","aria":"Open navigation menu","disabled":false,"visible":false},{"text":"Add PDF Files\nDrop PDFs here\nor click to browse · Max 15 MiB each","aria":null,"disabled":false,"visible":true},{"text":"🔓 Unlock & Merge","aria":null,"disabled":true,"visible":true}],"removeCount":0,"dragHandles":[],"mergeButtons":[{"text":"🔓 Unlock & Merge","aria":null,"disabled":true,"visible":true}],"bodyTail":"iePDF\nMerge PDF\nSplit PDF\nCompress PDF\nPDF → JPG\nJPG → PDF\nMerge PDF\n\nCombine multiple PDF files into a single PDF securely and instantly.\n\nAdd PDF Files\nDrop PDFs here\nor click to browse · Max 15 MiB each\nPDF files\nDrag ⋮⋮ to reorder\n\nAdd your PDFs, reorder them, then tap Merge.\n\nFiles\n0\nTotal\n0\nReady\n0\nProtected\n0\nSkipped\n0\nCorrupted\n0\nInvalid\n🔓 Unlock & Merge\nProcessing happens in your browser. Files never leave your device."}
+B-03 change+8000ms nativeChangeCount=1
+B-04 asyncErrors+8000ms: {"rejections":[],"errors":[]}
+DOM B+8000ms: {"inputs":[{"type":"file","multiple":true,"accept":".pdf","value":"C:\\fakepath\\A-2-pages.pdf","files":[{"name":"A-2-pages.pdf","size":544,"type":"application/pdf"}]}],"buttons":[{"text":"","aria":"Open navigation menu","disabled":false,"visible":false},{"text":"Add PDF Files\nDrop PDFs here\nor click to browse · Max 15 MiB each","aria":null,"disabled":false,"visible":true},{"text":"🔓 Unlock & Merge","aria":null,"disabled":true,"visible":true}],"removeCount":0,"dragHandles":[],"mergeButtons":[{"text":"🔓 Unlock & Merge","aria":null,"disabled":true,"visible":true}],"bodyTail":"iePDF\nMerge PDF\nSplit PDF\nCompress PDF\nPDF → JPG\nJPG → PDF\nMerge PDF\n\nCombine multiple PDF files into a single PDF securely and instantly.\n\nAdd PDF Files\nDrop PDFs here\nor click to browse · Max 15 MiB each\nPDF files\nDrag ⋮⋮ to reorder\n\nAdd your PDFs, reorder them, then tap Merge.\n\nFiles\n0\nTotal\n0\nReady\n0\nProtected\n0\nSkipped\n0\nCorrupted\n0\nInvalid\n🔓 Unlock & Merge\nProcessing happens in your browser. Files never leave your device."}
+
+FINAL DIAGNOSTIC EVIDENCE
+FINAL input={"count":1,"names":["A-2-pages.pdf"],"value":"C:\\fakepath\\A-2-pages.pdf"}
+FINAL nativeChangeCount=1
+FINAL asyncErrors={"rejections":[],"errors":[]}
+CHOOSER_WORKED=false
+CONSOLE_COUNT=16
+CONSOLE [info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+CONSOLE [error] WebSocket connection to 'ws://127.0.0.1:3000/_next/hmr?id=5sCO13LhLn7_FZ1vyMFcp' failed: Error during WebSocket handshake: net::ERR_INVALID_HTTP_RESPONSE
+CONSOLE [error] WebSocket connection to 'ws://127.0.0.1:3000/_next/hmr?id=5sCO13LhLn7_FZ1vyMFcp' failed: Error during WebSocket handshake: net::ERR_INVALID_HTTP_RESPONSE
+CONSOLE [error] WebSocket connection to 'ws://127.0.0.1:3000/_next/hmr?id=5sCO13LhLn7_FZ1vyMFcp' failed: Error during WebSocket handshake: net::ERR_INVALID_HTTP_RESPONSE
+CONSOLE [error] WebSocket connection to 'ws://127.0.0.1:3000/_next/hmr?id=5sCO13LhLn7_FZ1vyMFcp' failed: Error during WebSocket handshake: net::ERR_INVALID_HTTP_RESPONSE
+CONSOLE [error] WebSocket connection to 'ws://127.0.0.1:3000/_next/hmr?id=5sCO13LhLn7_FZ1vyMFcp' failed: Error during WebSocket handshake: net::ERR_INVALID_HTTP_RESPONSE
+CONSOLE [error] WebSocket connection to 'ws://127.0.0.1:3000/_next/hmr?id=5sCO13LhLn7_FZ1vyMFcp' failed: Error during WebSocket handshake: net::ERR_INVALID_HTTP_RESPONSE
+CONSOLE [info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+CONSOLE [error] WebSocket connection to 'ws://127.0.0.1:3000/_next/hmr?id=BBvY9dXKrPu12i82SMhIx' failed: Error during WebSocket handshake: net::ERR_INVALID_HTTP_RESPONSE
+CONSOLE [error] WebSocket connection to 'ws://127.0.0.1:3000/_next/hmr?id=BBvY9dXKrPu12i82SMhIx' failed: Error during WebSocket handshake: net::ERR_INVALID_HTTP_RESPONSE
+CONSOLE [error] WebSocket connection to 'ws://127.0.0.1:3000/_next/hmr?id=BBvY9dXKrPu12i82SMhIx' failed: Error during WebSocket handshake: net::ERR_INVALID_HTTP_RESPONSE
+CONSOLE [error] WebSocket connection to 'ws://127.0.0.1:3000/_next/hmr?id=BBvY9dXKrPu12i82SMhIx' failed: Error during WebSocket handshake: net::ERR_INVALID_HTTP_RESPONSE
+CONSOLE [error] WebSocket connection to 'ws://127.0.0.1:3000/_next/hmr?id=BBvY9dXKrPu12i82SMhIx' failed: Error during WebSocket handshake: net::ERR_INVALID_HTTP_RESPONSE
+CONSOLE [error] WebSocket connection to 'ws://127.0.0.1:3000/_next/hmr?id=BBvY9dXKrPu12i82SMhIx' failed: Error during WebSocket handshake: net::ERR_INVALID_HTTP_RESPONSE
+CONSOLE [error] WebSocket connection to 'ws://127.0.0.1:3000/_next/hmr?id=BBvY9dXKrPu12i82SMhIx' failed: Error during WebSocket handshake: net::ERR_INVALID_HTTP_RESPONSE
+CONSOLE [error] WebSocket connection to 'ws://127.0.0.1:3000/_next/hmr?id=BBvY9dXKrPu12i82SMhIx' failed: Error during WebSocket handshake: net::ERR_INVALID_HTTP_RESPONSE
+PAGEERROR_COUNT=0
+REQUEST_FAILURE_COUNT=0
+RELEVANT_REQUEST_COUNT=62
+REQUEST GET http://127.0.0.1:3000/merge-pdf
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/app_globals_0yg4wg8.css
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-client_ts_0na5m77._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_next-devtools_index_1bbmmap.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_react-dom_1oqsnil._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_react-server-dom-turbopack_00quvzw._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_2095l94._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_client_0j7u_2k._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_0rjkssv._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/0zix_%40swc_helpers_cjs_0hi-e47._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/_1anvha4._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/turbopack-_05dw8xj._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/_0smhbv4._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/node_modules__pnpm_1s15-g0._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/_12jj7rw._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/_19j0_e3._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/_17sw5kx._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/0v5y_pdf-lib_es_core_0nh83y-._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/0v5y_pdf-lib_es_api_0s0z1kb._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/0v5y_pdf-lib_es_1xiz50m._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/02wh_pako_0nlb_66._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/0tmm_%40pdf-lib_standard-fonts_es_0q06n5h._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/0v_2_%40embedpdf_pdfium_dist_0v5e5go._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_crypto-browserify_index_0eg-bg8.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_0ob0xhy._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_17e0sz1._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/0ifr_%40embedpdf_engines_dist_direct-engine-C8xTbxym_1_ltii5.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/0ifr_%40embedpdf_engines_dist_lib_1x2cb3j._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/0ifr_%40embedpdf_engines_dist_06i5cbg._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/node_modules__pnpm_1tuhhk8._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-client_ts_1mojsay._.js
+REQUEST GET http://127.0.0.1:3000/merge-pdf
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/app_globals_0yg4wg8.css
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-client_ts_0na5m77._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_next-devtools_index_1bbmmap.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_react-dom_1oqsnil._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_react-server-dom-turbopack_00quvzw._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_2095l94._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_client_0j7u_2k._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_0rjkssv._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/0zix_%40swc_helpers_cjs_0hi-e47._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/_1anvha4._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/turbopack-_05dw8xj._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/_0smhbv4._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/node_modules__pnpm_1s15-g0._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/_12jj7rw._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/_19j0_e3._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/_17sw5kx._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/0v5y_pdf-lib_es_core_0nh83y-._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/0v5y_pdf-lib_es_api_0s0z1kb._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/0v5y_pdf-lib_es_1xiz50m._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/02wh_pako_0nlb_66._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/0tmm_%40pdf-lib_standard-fonts_es_0q06n5h._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/0v_2_%40embedpdf_pdfium_dist_0v5e5go._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_crypto-browserify_index_0eg-bg8.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_0ob0xhy._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_17e0sz1._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/0ifr_%40embedpdf_engines_dist_direct-engine-C8xTbxym_1_ltii5.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/0ifr_%40embedpdf_engines_dist_lib_1x2cb3j._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/0ifr_%40embedpdf_engines_dist_06i5cbg._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/node_modules__pnpm_1tuhhk8._.js
+REQUEST GET http://127.0.0.1:3000/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-client_ts_1mojsay._.js
+RELEVANT_RESPONSE_COUNT=62
+RESPONSE 200 http://127.0.0.1:3000/merge-pdf
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-client_ts_0na5m77._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/app_globals_0yg4wg8.css
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_2095l94._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_0rjkssv._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/_1anvha4._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/0zix_%40swc_helpers_cjs_0hi-e47._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/turbopack-_05dw8xj._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/_0smhbv4._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/node_modules__pnpm_1s15-g0._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/_19j0_e3._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/_12jj7rw._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_react-server-dom-turbopack_00quvzw._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_react-dom_1oqsnil._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_next-devtools_index_1bbmmap.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_client_0j7u_2k._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/0v5y_pdf-lib_es_api_0s0z1kb._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/0v5y_pdf-lib_es_1xiz50m._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/_17sw5kx._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/0tmm_%40pdf-lib_standard-fonts_es_0q06n5h._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/0v5y_pdf-lib_es_core_0nh83y-._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_17e0sz1._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/0v_2_%40embedpdf_pdfium_dist_0v5e5go._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_0ob0xhy._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/02wh_pako_0nlb_66._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_crypto-browserify_index_0eg-bg8.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/0ifr_%40embedpdf_engines_dist_06i5cbg._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/0ifr_%40embedpdf_engines_dist_direct-engine-C8xTbxym_1_ltii5.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/0ifr_%40embedpdf_engines_dist_lib_1x2cb3j._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/node_modules__pnpm_1tuhhk8._.js
+RESPONSE 200 http://127.0.0.1:3000/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-client_ts_1mojsay._.js
+RESPONSE 200 http://127.0.0.1:3000/merge-pdf
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/app_globals_0yg4wg8.css
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-client_ts_0na5m77._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_next-devtools_index_1bbmmap.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_react-dom_1oqsnil._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_react-server-dom-turbopack_00quvzw._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_2095l94._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_client_0j7u_2k._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_0rjkssv._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/_1anvha4._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/turbopack-_05dw8xj._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/_0smhbv4._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/0zix_%40swc_helpers_cjs_0hi-e47._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/node_modules__pnpm_1s15-g0._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/_12jj7rw._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/_19j0_e3._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/_17sw5kx._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/0v5y_pdf-lib_es_core_0nh83y-._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/0v5y_pdf-lib_es_api_0s0z1kb._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/02wh_pako_0nlb_66._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/0v5y_pdf-lib_es_1xiz50m._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/0v_2_%40embedpdf_pdfium_dist_0v5e5go._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_crypto-browserify_index_0eg-bg8.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_compiled_0ob0xhy._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/0tmm_%40pdf-lib_standard-fonts_es_0q06n5h._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/1rr8_next_dist_17e0sz1._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/0ifr_%40embedpdf_engines_dist_direct-engine-C8xTbxym_1_ltii5.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/0ifr_%40embedpdf_engines_dist_lib_1x2cb3j._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/0ifr_%40embedpdf_engines_dist_06i5cbg._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/node_modules__pnpm_1tuhhk8._.js
+RESPONSE 304 http://127.0.0.1:3000/_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-client_ts_1mojsay._.js
+
+INTERPRETATION:
+INTERPRETATION=CHANGE_REACHED_APP_WITHOUT_BROWSER_EXCEPTION; ANALYZER_OR_STATE_PATH_NEEDS_DIRECT_SOURCE_CORRELATION

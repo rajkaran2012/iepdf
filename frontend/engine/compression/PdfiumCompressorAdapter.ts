@@ -100,7 +100,7 @@ export class PdfiumCompressorAdapter {
                                 "pdfium.wasm"
                             ) {
 
-                                return DEFAULT_PDFIUM_WASM_URL;
+                                return "/wasm/pdfium.wasm";
 
                             }
 
@@ -116,41 +116,7 @@ export class PdfiumCompressorAdapter {
 
         }
 
-        const path =
-            await import("node:path");
 
-        const fs =
-            await import("node:fs/promises");
-
-        const packageEntry =
-            require.resolve(
-                "@embedpdf/pdfium"
-            );
-
-        const packageDirectory =
-            path.dirname(
-                packageEntry
-            );
-
-        const wasmPath =
-            path.join(
-                packageDirectory,
-                "pdfium.wasm"
-            );
-
-        const wasmBinary =
-            await fs.readFile(
-                wasmPath
-            );
-
-        this.module =
-            await init({
-
-                wasmBinary,
-
-            });
-
-        this.module.PDFiumExt_Init();
 
     }
 
@@ -678,6 +644,7 @@ export class PdfiumCompressorAdapter {
     }
 
 }
+
 
 
 

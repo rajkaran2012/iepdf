@@ -1,0 +1,634 @@
+﻿"use client";
+
+import { useEffect, useState } from "react";
+import { init } from "@embedpdf/pdfium";
+
+type Result = {
+  name: string;
+  original: number;
+  output: number;
+  delta: number;
+  reduction: number;
+  images: number;
+  originalPages: number;
+  outputPages: number;
+  reopen: "PASS" | "FAIL";
+  status: "PASS" | "NO BENEFIT" | "FAIL";
+  error?: string;
+};
+
+const FIXTURES = [
+  "C-01-small-text.pdf",
+  "C-02-multipage.pdf",
+  "C-03-text-heavy.pdf",
+  "C-04-image-heavy.pdf",
+  "C-05-mixed-pages.pdf",
+];
+
+export default function PdfiumBC07Page() {
+  const [logs, setLogs] = useState<string[]>(["Starting BC-07..."]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const log = (message: string) => {
+      console.log(message);
+      if (!cancelled) {
+        setLogs((prev) => [...prev, message]);
+      }
+    };
+
+    const run = async () => {
+      const results: Result[] = [];
+
+      try {
+        log("=== BC-07 PDFium SetBitmap Corpus Test ===");
+
+        const pdfium = await init({});
+
+
+        log("PDFium wrapper initialized.");
+
+        pdfium.PDFiumExt_Init();
+        log("PDFiumExt_Init completed.");
+
+        const mem = pdfium.pdfium.wasmExports;
+        const runtime = pdfium.pdfium as unknown as {
+          HEAPU8: Uint8Array;
+          getValue: (ptr: number, type: string) => number;
+          setValue: (ptr: number, value: number, type: string) => void;
+        };
+
+        const saveDocument = (
+          docPtr: number,
+          label: string
+        ): { bytes: Uint8Array; size: number } => {
+          log(`${label}: opening file writer...`);
+
+          const writerPtr = pdfium.PDFiumExt_OpenFileWriter();
+          if (!writerPtr) {
+            throw new Error(`${label}: file writer creation failed`);
+          }
+
+          const saved = pdfium.PDFiumExt_SaveAsCopy(
+            docPtr,
+            writerPtr,
+            0
+          );
+
+          log(`${label}: SaveAsCopy: ${saved}`);
+
+          if (!saved) {
+            pdfium.PDFiumExt_CloseFileWriter(writerPtr);
+            throw new Error(`${label}: SaveAsCopy failed`);
+          }
+
+          const size = pdfium.PDFiumExt_GetFileWriterDataSize(
+            writerPtr
+          );
+
+          const dataPtr =
+            pdfium.PDFiumExt_GetFileWriterData(writerPtr);
+
+          if (!dataPtr || size <= 0) {
+            pdfium.PDFiumExt_CloseFileWriter(writerPtr);
+            throw new Error(`${label}: invalid saved data`);
+          }
+
+          const currentHeap = runtime.HEAPU8;
+
+          if (dataPtr + size > currentHeap.byteLength) {
+            pdfium.PDFiumExt_CloseFileWriter(writerPtr);
+            throw new Error(`${label}: saved data outside WASM memory`);
+          }
+
+          const bytes = new Uint8Array(size);
+          bytes.set(currentHeap.subarray(dataPtr, dataPtr + size));
+
+          const header = String.fromCharCode(
+            ...Array.from(bytes.subarray(0, 5))
+          );
+
+          log(`${label}: saved size: ${size}`);
+          log(`${label}: header: ${header}`);
+
+          pdfium.PDFiumExt_CloseFileWriter(writerPtr);
+
+          if (header !== "%PDF-") {
+            throw new Error(`${label}: invalid PDF header`);
+          }
+
+          return { bytes, size };
+        };
+
+        const loadDocument = async (name: string) => {
+          const response = await fetch(
+            `/_regression/compress-pdf/${name}`
+          );
+
+          if (!response.ok) {
+            throw new Error(
+              `Fixture fetch failed: ${response.status} ${response.statusText}`
+            );
+          }
+
+          const buffer = await response.arrayBuffer();
+          const inputBytes = new Uint8Array(buffer);
+
+          log(`${name}: input bytes: ${inputBytes.length}`);
+
+          const pdfPtr = mem.malloc(inputBytes.length);
+
+          if (!pdfPtr) {
+            throw new Error(`${name}: malloc failed`);
+          }
+
+          const currentHeap = runtime.HEAPU8;
+
+          if (
+            pdfPtr < 0 ||
+            pdfPtr + inputBytes.length > currentHeap.byteLength
+          ) {
+            mem.free(pdfPtr);
+            throw new Error(`${name}: input outside WASM memory`);
+          }
+
+          currentHeap.set(inputBytes, pdfPtr);
+
+          const docPtr = pdfium.FPDF_LoadMemDocument(
+            pdfPtr,
+            inputBytes.length,
+            0
+          );
+
+          if (!docPtr) {
+            mem.free(pdfPtr);
+            throw new Error(`${name}: FPDF_LoadMemDocument failed`);
+          }
+
+          return {
+            pdfPtr,
+            docPtr,
+            originalBytes: inputBytes.length,
+          };
+        };
+
+        const getImageObjects = (docPtr: number) => {
+          const images: {
+            pagePtr: number;
+            objectPtr: number;
+            objectIndex: number;
+          }[] = [];
+
+          const pageCount = pdfium.FPDF_GetPageCount(docPtr);
+
+          for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
+            const pagePtr = pdfium.FPDF_LoadPage(
+              docPtr,
+              pageIndex
+            );
+
+            if (!pagePtr) {
+              throw new Error(
+                `Could not load page ${pageIndex}`
+              );
+            }
+
+            const objectCount =
+              pdfium.FPDFPage_CountObjects(pagePtr);
+
+            for (
+              let objectIndex = 0;
+              objectIndex < objectCount;
+              objectIndex++
+            ) {
+              const objectPtr =
+                pdfium.FPDFPage_GetObject(
+                  pagePtr,
+                  objectIndex
+                );
+
+              if (!objectPtr) continue;
+
+              const type =
+                pdfium.FPDFPageObj_GetType(objectPtr);
+
+              if (type === 3) {
+                images.push({
+                  pagePtr,
+                  objectPtr,
+                  objectIndex,
+                });
+              }
+            }
+          }
+
+          return {
+            images,
+            pageCount,
+          };
+        };
+
+        for (const name of FIXTURES) {
+          if (cancelled) return;
+
+          log("");
+          log("========================================");
+          log(`CASE: ${name}`);
+          log("========================================");
+
+          let originalDocPtr = 0;
+          let originalPdfPtr = 0;
+
+          try {
+            const original = await loadDocument(name);
+
+            originalDocPtr = original.docPtr;
+            originalPdfPtr = original.pdfPtr;
+
+            const originalInfo = getImageObjects(originalDocPtr);
+
+            log(
+              `${name}: original pages: ${originalInfo.pageCount}`
+            );
+            log(
+              `${name}: image objects: ${originalInfo.images.length}`
+            );
+
+            if (originalInfo.images.length === 0) {
+              results.push({
+                name,
+                original: original.originalBytes,
+                output: original.originalBytes,
+                delta: 0,
+                reduction: 0,
+                images: 0,
+                originalPages: originalInfo.pageCount,
+                outputPages: originalInfo.pageCount,
+                reopen: "PASS",
+                status: "NO BENEFIT",
+              });
+
+              log(`${name}: no image objects — NO BENEFIT`);
+              continue;
+            }
+
+            for (const image of originalInfo.images) {
+              const bitmapPtr =
+                pdfium.FPDFImageObj_GetBitmap(
+                  image.objectPtr
+                );
+
+              if (!bitmapPtr) {
+                log(
+                  `${name}: image ${image.objectIndex}: no bitmap`
+                );
+                continue;
+              }
+
+              const width =
+                pdfium.FPDFBitmap_GetWidth(bitmapPtr);
+              const height =
+                pdfium.FPDFBitmap_GetHeight(bitmapPtr);
+              const stride =
+                pdfium.FPDFBitmap_GetStride(bitmapPtr);
+
+              log(
+                `${name}: image ${image.objectIndex}: ${width}x${height}, stride ${stride}`
+              );
+
+              const bufferPtr =
+                pdfium.FPDFBitmap_GetBuffer(bitmapPtr);
+
+              const bitmapBytes = stride * height;
+
+              if (!bufferPtr || bitmapBytes <= 0) {
+                throw new Error(
+                  `${name}: invalid bitmap buffer`
+                );
+              }
+
+              const bitmapHeap = runtime.HEAPU8;
+
+              if (
+                bufferPtr < 0 ||
+                bufferPtr + bitmapBytes > bitmapHeap.byteLength
+              ) {
+                throw new Error(
+                  `${name}: bitmap outside WASM memory`
+                );
+              }
+
+              const pixels = new Uint8Array(bitmapBytes);
+
+              pixels.set(
+                bitmapHeap.subarray(
+                  bufferPtr,
+                  bufferPtr + bitmapBytes
+                )
+              );
+
+              const newBitmapPtr =
+                pdfium.FPDFBitmap_CreateEx(
+                  width,
+                  height,
+                  2,
+                  0,
+                  stride
+                );
+
+              if (!newBitmapPtr) {
+                throw new Error(
+                  `${name}: FPDFBitmap_CreateEx failed`
+                );
+              }
+
+              const destinationHeap = runtime.HEAPU8;
+
+              if (
+                pixels.length > destinationHeap.byteLength
+              ) {
+                pdfium.FPDFBitmap_Destroy(
+                  newBitmapPtr
+                );
+                throw new Error(
+                  `${name}: bitmap copy invalid`
+                );
+              }
+
+              /*
+               * Reacquire WASM memory immediately before copying.
+               * PDFium/Embind may grow or detach the previous view.
+               */
+              const refreshedHeap = runtime.HEAPU8;
+
+              const destinationPtr =
+                pdfium.FPDFBitmap_GetBuffer(
+                  newBitmapPtr
+                );
+
+              if (
+                !destinationPtr ||
+                destinationPtr + pixels.length >
+                  refreshedHeap.byteLength
+              ) {
+                pdfium.FPDFBitmap_Destroy(
+                  newBitmapPtr
+                );
+                throw new Error(
+                  `${name}: destination bitmap outside WASM memory`
+                );
+              }
+
+              for (let i = 0; i < pixels.length; i++) {
+                runtime.setValue(
+                  destinationPtr + i,
+                  pixels[i],
+                  "i8"
+                );
+              }
+
+              const setResult =
+                pdfium.FPDFImageObj_SetBitmap(
+                  image.pagePtr,
+                  image.objectIndex,
+                  image.objectPtr,
+                  newBitmapPtr
+                );
+
+              log(
+                `${name}: image ${image.objectIndex}: SetBitmap=${setResult}`
+              );
+
+              if (!setResult) {
+                pdfium.FPDFBitmap_Destroy(
+                  newBitmapPtr
+                );
+                throw new Error(
+                  `${name}: SetBitmap failed`
+                );
+              }
+
+              const generated =
+                pdfium.FPDFPage_GenerateContent(
+                  image.pagePtr
+                );
+
+              log(
+                `${name}: image ${image.objectIndex}: GenerateContent=${generated}`
+              );
+
+              if (!generated) {
+                pdfium.FPDFBitmap_Destroy(
+                  newBitmapPtr
+                );
+                throw new Error(
+                  `${name}: GenerateContent failed`
+                );
+              }
+
+              pdfium.FPDFBitmap_Destroy(
+                newBitmapPtr
+              );
+            }
+
+            const saved = saveDocument(
+              originalDocPtr,
+              `${name}: output`
+            );
+
+            const outputBytes = saved.bytes;
+
+            const delta =
+              outputBytes.length - original.originalBytes;
+
+            const reduction =
+              ((original.originalBytes - outputBytes.length) /
+                original.originalBytes) *
+              100;
+
+            log(
+              `${name}: delta: ${delta} bytes`
+            );
+            log(
+              `${name}: reduction: ${reduction.toFixed(2)}%`
+            );
+
+            /*
+             * Reopen the generated PDF.
+             */
+            const reopenPtr = mem.malloc(
+              outputBytes.length
+            );
+
+            if (!reopenPtr) {
+              throw new Error(
+                `${name}: reopen malloc failed`
+              );
+            }
+
+            const reopenHeap = runtime.HEAPU8;
+
+            if (
+              reopenPtr + outputBytes.length >
+              reopenHeap.byteLength
+            ) {
+              mem.free(reopenPtr);
+              throw new Error(
+                `${name}: reopen data outside WASM memory`
+              );
+            }
+
+            reopenHeap.set(outputBytes, reopenPtr);
+
+            const reopenedDoc =
+              pdfium.FPDF_LoadMemDocument(
+                reopenPtr,
+                outputBytes.length,
+                0
+              );
+
+            if (!reopenedDoc) {
+              mem.free(reopenPtr);
+              throw new Error(
+                `${name}: output PDF failed to reopen`
+              );
+            }
+
+            const outputPages =
+              pdfium.FPDF_GetPageCount(
+                reopenedDoc
+              );
+
+            log(
+              `${name}: reopened page count: ${outputPages}`
+            );
+
+            const reopenStatus =
+              outputPages === originalInfo.pageCount
+                ? "PASS"
+                : "FAIL";
+
+            const status =
+              reopenStatus === "PASS" && delta < 0
+                ? "PASS"
+                : reopenStatus === "PASS"
+                  ? "NO BENEFIT"
+                  : "FAIL";
+
+            results.push({
+              name,
+              original: original.originalBytes,
+              output: outputBytes.length,
+              delta,
+              reduction,
+              images: originalInfo.images.length,
+              originalPages: originalInfo.pageCount,
+              outputPages,
+              reopen: reopenStatus,
+              status,
+            });
+
+            log(`${name}: status: ${status}`);
+          } catch (error) {
+            const message =
+              error instanceof Error
+                ? error.message
+                : String(error);
+
+            log(`${name}: ERROR: ${message}`);
+
+            results.push({
+              name,
+              original: 0,
+              output: 0,
+              delta: 0,
+              reduction: 0,
+              images: 0,
+              originalPages: 0,
+              outputPages: 0,
+              reopen: "FAIL",
+              status: "FAIL",
+              error: message,
+            });
+          } finally {
+            if (originalDocPtr) {
+              pdfium.FPDF_CloseDocument(
+                originalDocPtr
+              );
+            }
+
+            if (originalPdfPtr) {
+              mem.free(originalPdfPtr);
+            }
+          }
+        }
+
+        log("");
+        log("========================================");
+        log("=== BC-07 CORPUS RESULT ===");
+        log("========================================");
+
+        for (const result of results) {
+          log(
+            `${result.name} | ` +
+              `Original=${result.original} | ` +
+              `Output=${result.output} | ` +
+              `Delta=${result.delta} | ` +
+              `Reduction=${result.reduction.toFixed(2)}% | ` +
+              `Images=${result.images} | ` +
+              `Pages=${result.originalPages}->${result.outputPages} | ` +
+              `Reopen=${result.reopen} | ` +
+              `Status=${result.status}`
+          );
+        }
+
+        const pass = results.filter(
+          (r) => r.status === "PASS"
+        ).length;
+
+        const noBenefit = results.filter(
+          (r) => r.status === "NO BENEFIT"
+        ).length;
+
+        const fail = results.filter(
+          (r) => r.status === "FAIL"
+        ).length;
+
+        log("");
+        log(
+          `PASS=${pass} NO BENEFIT=${noBenefit} FAIL=${fail}`
+        );
+        log("=== BC-07 COMPLETE ===");
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : String(error);
+
+        log(`POC FAILED: ${message}`);
+      }
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <main
+      style={{
+        padding: 24,
+        fontFamily: "monospace",
+        whiteSpace: "pre-wrap",
+      }}
+    >
+      {logs.join("\n")}
+    </main>
+  );
+}
+
+
+

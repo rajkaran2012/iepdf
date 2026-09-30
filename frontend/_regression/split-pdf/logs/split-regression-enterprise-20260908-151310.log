@@ -1,0 +1,68 @@
+﻿[2026-09-08 15:13:10] ===== iePDF Split PDF Enterprise Regression START =====
+[2026-09-08 15:13:10] Parameters | MaxBytes=15728640 SelectionTimeout=15s OperationTimeout=45s BuildTimeout=300s
+[2026-09-08 15:13:10] TEST-DATA S-01 S-01-1page.pdf bytes=593
+[2026-09-08 15:13:10] TEST-DATA S-02 S-02-2pages.pdf bytes=858
+[2026-09-08 15:13:10] TEST-DATA S-03 S-03-5pages.pdf bytes=1668
+[2026-09-08 15:13:10] TEST-DATA S-04 S-04-10pages.pdf bytes=3020
+[2026-09-08 15:13:10] TEST-DATA S-05 S-05-mixed-pages.pdf bytes=1456
+[2026-09-08 15:13:10] TEST-DATA S-06 S-06-corrupted.pdf bytes=62
+[2026-09-08 15:13:10] TEST-DATA S-07 S-07-zero-byte.pdf bytes=0
+[2026-09-08 15:13:10] TEST-DATA S-08 S-08-renamed-nonpdf.pdf bytes=45
+[2026-09-08 15:13:10] TEST-DATA S-09 S-09-protected.pdf bytes=1344
+[2026-09-08 15:13:10] TEST-DATA S-10 S-10-under-15MiB.pdf bytes=15728639
+[2026-09-08 15:13:10] TEST-DATA S-11 S-11-exact-15MiB.pdf bytes=15728640
+[2026-09-08 15:13:10] TEST-DATA S-12 S-12-over-15MiB.pdf bytes=15728641
+[2026-09-08 15:13:10] PASS TEST-DATA : All 12 Split regression files exist and boundary sizes match 15728640 bytes.
+[2026-09-08 15:13:10] PASS SRC-01 : Split page wires SplitPdfProcessor and toolType split.
+[2026-09-08 15:13:10] PASS SRC-02 : Split page has success/error toast handling and loading state.
+[2026-09-08 15:13:10] PASS SRC-03 : Processor creates per-page PDFs and split_pages.zip.
+[2026-09-08 15:13:10] PASS SRC-04 : Browser PDF loader contains signature and password handling.
+[2026-09-08 15:13:10] PASS SRC-05 : BasePdfProcessor uses the canonical ValidationGateway authorization boundary.
+[2026-09-08 15:13:10] PASS SRC-06 : ValidationGateway retains fail-closed authorization semantics.
+[2026-09-08 15:13:10] SKIPPED SRC-07 : Authoritative MAX_FILE_SIZE_BYTES constant not detectable. [source check non-blocking]
+[2026-09-08 15:13:10] SKIPPED SRC-08 : Split page still contains console.warn/console.error. [source check non-blocking]
+[2026-09-08 15:13:10] PASS SRC-09 : Split processor does not introduce a second direct Gateway call.
+[2026-09-08 15:13:28] PASS BUILD : Frontend production build passed.
+[2026-09-08 15:13:28] PASS ENV-01 : Frontend /split-pdf is reachable.
+[2026-09-08 15:13:28] PASS ENV-02 : Backend /docs is reachable.
+[2026-09-08 15:13:28] PASS ENV-03 : Chrome executable found at C:\Program Files\Google\Chrome\Application\chrome.exe.
+[2026-09-08 15:13:28] PASS ENV-04 : Playwright package is installed.
+[2026-09-08 15:14:30] PASS S-01 : Download received: split_pages.zip. consoleDiagnostics=15
+[2026-09-08 15:14:30] PASS S-02 : Download received: split_pages.zip. consoleDiagnostics=15
+[2026-09-08 15:14:30] PASS S-03 : Download received: split_pages.zip. consoleDiagnostics=15
+[2026-09-08 15:14:30] PASS S-04 : Download received: split_pages.zip. consoleDiagnostics=15
+[2026-09-08 15:14:30] PASS S-05 : Download received: split_pages.zip. consoleDiagnostics=15
+[2026-09-08 15:14:30] PASS S-06 : buttonCount=1,noDownload=true,failureFeedback=true. consoleDiagnostics=16
+[2026-09-08 15:14:30] PASS S-07 : buttonCount=1,noDownload=true,failureFeedback=true. consoleDiagnostics=13
+[2026-09-08 15:14:30] PASS S-08 : buttonCount=1,noDownload=true,failureFeedback=true. consoleDiagnostics=13
+[2026-09-08 15:14:30] PASS S-09 : buttonCount=1,passwordHint=true,noDownload=true. consoleDiagnostics=15
+[2026-09-08 15:14:30] PASS S-10 : Download received in 2607ms. consoleDiagnostics=15
+[2026-09-08 15:14:30] PASS S-11 : Download received in 2672ms. consoleDiagnostics=15
+[2026-09-08 15:14:30] PASS S-12 : Above-limit input correctly blocked. consoleDiagnostics=2
+[2026-09-08 15:14:30] PASS S-20 : workspaceBefore=1,workspaceAfter=0,download=true. consoleDiagnostics=17
+[2026-09-08 15:14:30] PASS S-22 : download=true,successToast=true. consoleDiagnostics=15
+[2026-09-08 15:14:30] PASS S-23 : downloaded=true,filename=split_pages.zip. consoleDiagnostics=15
+[2026-09-08 15:14:30] PASS S-24 : loadingSeen=true,download=true. consoleDiagnostics=15
+[2026-09-08 15:14:30] PASS S-25 : splitButtonCount=0 without selected file. consoleDiagnostics=2
+[2026-09-08 15:14:30] PASS S-27 : Three sequential split runs completed cleanly. consoleDiagnostics=41
+[2026-09-08 15:14:30] PASS DIAG-01 : No browser page errors or console errors were captured.
+[2026-09-08 15:14:30] PASS BROWSER : Enterprise browser regression completed; individual case results recorded above.
+[2026-09-08 15:14:31] PASS ART-01 : __enterprise-S-01-1788860612027.zip: ZIP entries, page names, PDF headers and one-page structural markers validated.
+[2026-09-08 15:14:31] PASS ART-02 : __enterprise-S-01-1788860660344.zip: ZIP entries, page names, PDF headers and one-page structural markers validated.
+[2026-09-08 15:14:32] PASS ART-03 : __enterprise-S-01-1788860662712.zip: ZIP entries, page names, PDF headers and one-page structural markers validated.
+[2026-09-08 15:14:32] PASS ART-04 : __enterprise-S-02-1788860614478.zip: ZIP entries, page names, PDF headers and one-page structural markers validated.
+[2026-09-08 15:14:34] PASS ART-05 : __enterprise-S-03-1788860616949.zip: ZIP entries, page names, PDF headers and one-page structural markers validated.
+[2026-09-08 15:14:36] PASS ART-06 : __enterprise-S-03-1788860657629.zip: ZIP entries, page names, PDF headers and one-page structural markers validated.
+[2026-09-08 15:14:39] PASS ART-07 : __enterprise-S-04-1788860619408.zip: ZIP entries, page names, PDF headers and one-page structural markers validated.
+[2026-09-08 15:14:40] PASS ART-08 : __enterprise-S-05-1788860621924.zip: ZIP entries, page names, PDF headers and one-page structural markers validated.
+[2026-09-08 15:14:41] PASS ART-09 : __enterprise-S-10-1788860648052.zip: ZIP entries, page names, PDF headers and one-page structural markers validated.
+[2026-09-08 15:14:41] PASS ART-10 : __enterprise-S-11-1788860652886.zip: ZIP entries, page names, PDF headers and one-page structural markers validated.
+[2026-09-08 15:14:42] PASS ART-11 : __enterprise-S-24-1788860665611.zip: ZIP entries, page names, PDF headers and one-page structural markers validated.
+[2026-09-08 15:14:42] PASS ART-SUMMARY : Validated 11 downloaded ZIP artifact(s).
+[2026-09-08 15:14:42] PASS PERF-S02 : S-02 split time 1033 ms <= budget 5000 ms.
+[2026-09-08 15:14:42] PASS PERF-S03 : S-03 split time 1137 ms <= budget 15000 ms.
+[2026-09-08 15:14:42] FINAL RESULT | PASS=47 FAIL=0 SKIPPED=2
+[2026-09-08 15:14:42] Report: C:\IEPDF\frontend\_regression\split-pdf\split-regression-enterprise-report.txt
+[2026-09-08 15:14:42] Log: C:\IEPDF\frontend\_regression\split-pdf\logs\split-regression-enterprise-20260908-151310.log
+[2026-09-08 15:14:42] Browser results: C:\IEPDF\frontend\_regression\split-pdf\browser-results-20260908-151310.json
+[2026-09-08 15:14:42] ===== iePDF Split PDF Enterprise Regression END =====

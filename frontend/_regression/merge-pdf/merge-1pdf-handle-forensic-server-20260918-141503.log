@@ -1,0 +1,10 @@
+
+> frontend@0.1.0 start C:\IEPDF\frontend
+> next start
+
+▲ Next.js 16.3.4
+- Local:         http://localhost:3000
+- Network:       http://192.168.2.3:3000
+✓ Ready in 241ms
+✓ Running next.config.ts took 60ms
+ ELIFECYCLE  Command failed with exit code 4294967295.

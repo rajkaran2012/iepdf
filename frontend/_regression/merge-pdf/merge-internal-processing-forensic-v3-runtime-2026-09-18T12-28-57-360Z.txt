@@ -1,0 +1,6 @@
+iePDF Merge PDF - Internal Merge Processing Forensic Gate V3
+Target|http://127.0.0.1:3000/merge-pdf
+Users|50
+HardSLAms|30000
+WatchdogMs|120000
+Fixtures|C:\IEPDF\frontend\_regression\merge-pdf\A-2-pages.pdf|C:\IEPDF\frontend\_regression\merge-pdf\B-1-page.pdf

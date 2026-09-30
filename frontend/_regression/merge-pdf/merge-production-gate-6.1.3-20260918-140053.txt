@@ -1,0 +1,24 @@
+iePDF MERGE PDF - PRODUCTION GATE 6.1.3
+REAL FIXTURES + VISIBILITY + ROBUST REORDER
+Started: 2026-09-18T14:01:34.8469082+05:30
+READ-ONLY / NO SOURCE CHANGES / NO GIT / NO DEPLOYMENT
+
+PASS PRE-01 Chrome found
+PASS PRE-02 Port 3000 clean
+PASS PRE-03 TypeScript
+PASS PRE-04 Production build 10851ms
+PASS PRE-05 Clean production server ready
+PASS PRE-FIX-A-2-pages.pdf C:\IEPDF\frontend\_regression\merge-pdf\A-2-pages.pdf
+PASS PRE-FIX-B-1-page.pdf C:\IEPDF\frontend\_regression\merge-pdf\B-1-page.pdf
+PASS PRE-FIX-C-01-small-text.pdf C:\IEPDF\frontend\_regression\compress-pdf\C-01-small-text.pdf
+PASS BROWSER-01 Browser runner exit code=0
+PASS VIS-01 0 PDFs: no visible handles; Merge disabled
+FAIL VIS-02 1-PDF visibility/readiness failed
+PASS VIS-03 2 PDFs: both handles visible; Merge enabled
+PASS VIS-04 3 PDFs: all handles visible; Merge enabled
+PASS REORDER-01 Exact C -> A verified: C,A,B
+PASS REORDER-02 Exact B -> A verified: C,B,A
+PASS REORDER-03 Merge remains enabled after reorder
+PASS REMOVE-01 After one removal: 2 visible handles
+PASS REMOVE-02 Empty state clean
+PASS HEALTH-01 No page/request/console errors

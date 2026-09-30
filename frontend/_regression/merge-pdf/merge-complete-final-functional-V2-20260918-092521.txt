@@ -1,0 +1,35 @@
+iePDF MERGE PDF - COMPLETE FINAL FUNCTIONAL TEST V2
+Finished: 2026-09-18T03:56:10.786Z
+
+=== RESULTS ===
+PASS PRE-01 - exactly one file input
+PASS PRE-02 - Add PDF Files control present
+PASS PRE-03 - empty workspace Merge disabled
+FAIL T1-01 - A added: A-2-pages.pdf; remove controls=0
+FAIL T1-02 - A+B present; remove controls=1
+FAIL T1-03 - 2-PDF Merge enabled=false; total=1; ready=0
+PASS T2-01 - A+B+C present; remove controls=3
+PASS T2-02 - 3-PDF Merge enabled=true; total=3; ready=0
+PASS T3-01 - one PDF remains after remove; remove controls=1
+PASS T3-02 - C added after removal; remove controls=2
+PASS T4-01 - all PDFs removed
+PASS T4-02 - Merge disabled in empty state
+PASS T5-01 - A+B+C re-added after empty; remove controls=3
+PASS T5-02 - Merge enabled after re-add=true
+PASS T6-01 - visible draggable elements=3
+PASS HEALTH-01 - page errors=0
+FAIL HEALTH-02 - failed requests=2
+FAIL HEALTH-03 - console errors=2
+
+=== CONSOLE ERRORS ===
+Failed to load resource: net::ERR_NAME_NOT_RESOLVED
+Warning: Error: Setting up fake worker failed: "Failed to fetch dynamically imported module: https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs".
+
+=== PAGE ERRORS ===
+NONE
+
+=== FAILED REQUESTS ===
+GET https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs :: net::ERR_NAME_NOT_RESOLVED
+GET https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs :: net::ERR_NAME_NOT_RESOLVED
+
+SUMMARY PASS=13 FAIL=5

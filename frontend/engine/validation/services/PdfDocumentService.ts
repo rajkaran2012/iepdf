@@ -89,7 +89,7 @@ export class PdfDocumentService implements IPdfDocumentService {
         ) {
 
             GlobalWorkerOptions.workerSrc =
-                `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
+                `/pdf.worker.min.mjs`;
 
         }
 

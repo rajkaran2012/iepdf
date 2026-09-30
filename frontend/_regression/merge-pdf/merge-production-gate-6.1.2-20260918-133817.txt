@@ -1,0 +1,18 @@
+iePDF MERGE PDF - PRODUCTION GATE 6.1.2
+FUNCTIONAL REORDER VERIFICATION - HIDDEN INPUT FIX
+Started: 2026-09-18T13:42:10.3269039+05:30
+READ-ONLY / NO SOURCE CHANGES / NO GIT / NO DEPLOYMENT
+
+PASS PRE-01 Chrome found
+PASS PRE-02 Port 3000 clean
+PASS PRE-03 TypeScript
+PASS PRE-04 Production build 9950ms
+PASS PRE-05 Clean production server ready
+PASS BROWSER-01 Browser runner exit code=0
+PASS R-01 Hidden file input attached; empty Merge disabled
+FAIL R-02 1 PDF state failed
+FAIL R-03 A+B+C state failed
+FAIL R-04 C -> A not verified
+FAIL R-05 B -> A not verified
+PASS R-06 Empty workspace clean
+PASS HEALTH-01 No page/request/console errors

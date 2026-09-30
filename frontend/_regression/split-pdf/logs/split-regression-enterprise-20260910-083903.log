@@ -1,0 +1,142 @@
+﻿[2026-09-10 08:39:03] ===== iePDF Split PDF Enterprise Regression START =====
+[2026-09-10 08:39:03] Parameters | MaxBytes=15728640 SelectionTimeout=15s OperationTimeout=45s BuildTimeout=300s
+[2026-09-10 08:39:03] TEST-DATA S-01 S-01-1page.pdf bytes=593
+[2026-09-10 08:39:03] TEST-DATA S-02 S-02-2pages.pdf bytes=858
+[2026-09-10 08:39:03] TEST-DATA S-03 S-03-5pages.pdf bytes=1668
+[2026-09-10 08:39:03] TEST-DATA S-04 S-04-10pages.pdf bytes=3020
+[2026-09-10 08:39:03] TEST-DATA S-05 S-05-mixed-pages.pdf bytes=1456
+[2026-09-10 08:39:03] TEST-DATA S-06 S-06-corrupted.pdf bytes=62
+[2026-09-10 08:39:03] TEST-DATA S-07 S-07-zero-byte.pdf bytes=0
+[2026-09-10 08:39:03] TEST-DATA S-08 S-08-renamed-nonpdf.pdf bytes=45
+[2026-09-10 08:39:03] TEST-DATA S-09 S-09-protected.pdf bytes=1344
+[2026-09-10 08:39:03] TEST-DATA S-10 S-10-under-15MiB.pdf bytes=15728639
+[2026-09-10 08:39:03] TEST-DATA S-11 S-11-exact-15MiB.pdf bytes=15728640
+[2026-09-10 08:39:03] TEST-DATA S-12 S-12-over-15MiB.pdf bytes=15728641
+[2026-09-10 08:39:03] PASS TEST-DATA : All 12 Split regression files exist and boundary sizes match 15728640 bytes.
+[2026-09-10 08:39:03] PASS SRC-01 : Split page wires SplitPdfProcessor and toolType split.
+[2026-09-10 08:39:03] PASS SRC-02 : Split page has success/error toast handling and loading state.
+[2026-09-10 08:39:03] PASS SRC-03 : Processor creates per-page PDFs and split_pages.zip.
+[2026-09-10 08:39:03] PASS SRC-04 : Browser PDF loader contains signature and password handling.
+[2026-09-10 08:39:03] PASS SRC-05 : BasePdfProcessor uses the canonical ValidationGateway authorization boundary.
+[2026-09-10 08:39:03] PASS SRC-06 : ValidationGateway retains fail-closed authorization semantics.
+[2026-09-10 08:39:03] PASS SRC-07 : Authoritative 15 MiB validation constant exists.
+[2026-09-10 08:39:03] PASS SRC-08 : Split page has no direct console.warn/console.error user-failure logging.
+[2026-09-10 08:39:03] PASS SRC-09 : Split processor does not introduce a second direct Gateway call.
+[2026-09-10 08:39:31] PASS BUILD : Frontend production build passed.
+[2026-09-10 08:39:37] PASS ENV-01 : Frontend /split-pdf is reachable.
+[2026-09-10 08:39:37] PASS ENV-02 : Backend /docs not required; Split is fully browser-side.
+[2026-09-10 08:39:37] PASS ENV-03 : Chrome executable found at C:\Program Files\Google\Chrome\Application\chrome.exe.
+[2026-09-10 08:39:37] PASS ENV-04 : Playwright package is installed.
+[2026-09-10 08:56:47] FAIL S-01 : No Split button after selecting S-01. body=iePDF Merge PDF Split PDF Compress PDF Split PDF Split a PDF into separate PDF files securely and instantly. Select PDF
+[2026-09-10 08:56:47] FAIL S-02 : EXCEPTION: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://127.0.0.1:3000/split-pdf", waiting until "domcontentloaded"[22m
+
+    at caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:81:16)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:156:16)
+[2026-09-10 08:56:47] FAIL S-03 : EXCEPTION: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://127.0.0.1:3000/split-pdf", waiting until "domcontentloaded"[22m
+
+    at caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:81:16)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:156:16)
+[2026-09-10 08:56:47] FAIL S-04 : EXCEPTION: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://127.0.0.1:3000/split-pdf", waiting until "domcontentloaded"[22m
+
+    at caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:81:16)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:156:16)
+[2026-09-10 08:56:47] FAIL S-05 : EXCEPTION: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://127.0.0.1:3000/split-pdf", waiting until "domcontentloaded"[22m
+
+    at caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:81:16)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:162:14)
+[2026-09-10 08:56:47] FAIL S-06 : EXCEPTION: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://127.0.0.1:3000/split-pdf", waiting until "domcontentloaded"[22m
+
+    at caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:81:16)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:168:16)
+[2026-09-10 08:56:47] FAIL S-07 : EXCEPTION: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://127.0.0.1:3000/split-pdf", waiting until "domcontentloaded"[22m
+
+    at caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:81:16)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:168:16)
+[2026-09-10 08:56:47] FAIL S-08 : EXCEPTION: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://127.0.0.1:3000/split-pdf", waiting until "domcontentloaded"[22m
+
+    at caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:81:16)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:168:16)
+[2026-09-10 08:56:47] FAIL S-09 : EXCEPTION: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://127.0.0.1:3000/split-pdf", waiting until "domcontentloaded"[22m
+
+    at caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:81:16)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:171:14)
+[2026-09-10 08:56:47] FAIL S-10 : EXCEPTION: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://127.0.0.1:3000/split-pdf", waiting until "domcontentloaded"[22m
+
+    at caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:81:16)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:188:16)
+[2026-09-10 08:56:47] FAIL S-11 : EXCEPTION: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://127.0.0.1:3000/split-pdf", waiting until "domcontentloaded"[22m
+
+    at caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:81:16)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:188:16)
+[2026-09-10 08:56:47] FAIL S-12 : EXCEPTION: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://127.0.0.1:3000/split-pdf", waiting until "domcontentloaded"[22m
+
+    at caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:81:16)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:188:16)
+[2026-09-10 08:56:47] FAIL S-20 : EXCEPTION: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://127.0.0.1:3000/split-pdf", waiting until "domcontentloaded"[22m
+
+    at caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:81:16)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:201:14)
+[2026-09-10 08:56:47] FAIL S-22 : EXCEPTION: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://127.0.0.1:3000/split-pdf", waiting until "domcontentloaded"[22m
+
+    at caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:81:16)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:212:14)
+[2026-09-10 08:56:47] FAIL S-23 : EXCEPTION: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://127.0.0.1:3000/split-pdf", waiting until "domcontentloaded"[22m
+
+    at caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:81:16)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:218:14)
+[2026-09-10 08:56:47] FAIL S-24 : EXCEPTION: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://127.0.0.1:3000/split-pdf", waiting until "domcontentloaded"[22m
+
+    at caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:81:16)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:223:14)
+[2026-09-10 08:56:47] FAIL S-25 : EXCEPTION: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://127.0.0.1:3000/split-pdf", waiting until "domcontentloaded"[22m
+
+    at caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:81:16)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:237:14)
+[2026-09-10 08:56:47] FAIL S-27 : EXCEPTION: page.goto: Timeout 30000ms exceeded.
+Call log:
+[2m  - navigating to "http://127.0.0.1:3000/split-pdf", waiting until "domcontentloaded"[22m
+
+    at caseRun (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:81:16)
+    at async run (C:\IEPDF\frontend\_regression\split-pdf\_split-browser-runner-enterprise.js:242:14)
+[2026-09-10 08:56:47] PASS DIAG-01 : No browser page errors or console errors were captured.
+[2026-09-10 08:56:47] PASS BROWSER : Enterprise browser regression completed; individual case results recorded above.
+[2026-09-10 08:56:47] FAIL ART-00 : No Split ZIP artifacts were produced for artifact validation.
+[2026-09-10 08:56:48] FAIL PERF-S02 : S-02 operation timing was not captured.
+[2026-09-10 08:56:48] FAIL PERF-S03 : S-03 operation timing was not captured.
+[2026-09-10 08:56:48] FINAL RESULT | PASS=17 FAIL=21 SKIPPED=0
+[2026-09-10 08:56:48] Report: C:\IEPDF\frontend\_regression\split-pdf\split-regression-enterprise-report.txt
+[2026-09-10 08:56:48] Log: C:\IEPDF\frontend\_regression\split-pdf\logs\split-regression-enterprise-20260910-083903.log
+[2026-09-10 08:56:48] Browser results: C:\IEPDF\frontend\_regression\split-pdf\browser-results-20260910-083903.json
+[2026-09-10 08:56:48] ===== iePDF Split PDF Enterprise Regression END =====

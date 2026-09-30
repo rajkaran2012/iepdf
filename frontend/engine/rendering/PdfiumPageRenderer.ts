@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import {
-    DEFAULT_PDFIUM_WASM_URL,
     init,
     type WrappedPdfiumModule,
 } from "@embedpdf/pdfium";
@@ -27,7 +26,7 @@ export class PdfiumPageRenderer {
         this.module = await init({
             locateFile: (filename: string) =>
                 filename === "pdfium.wasm"
-                    ? DEFAULT_PDFIUM_WASM_URL
+                    ? "/wasm/pdfium.wasm"
                     : filename,
         });
 

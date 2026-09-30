@@ -1,0 +1,28 @@
+iePDF MERGE PDF - V12 PARENT STATE -> PROP HANDOFF AUDIT
+Finished: 2026-09-17T11:55:43.967Z
+
+=== LOGS ===
+ROUTE_TITLE iePDF — Simple Online PDF Tools
+ROUTE_URL http://localhost:3000/merge-pdf
+FILE_INPUT_COUNT 1
+SET_INPUT_FILE C:\IEPDF\frontend\_regression\merge-pdf\A-2-pages.pdf
+STATE_100MS {"files0":false,"files1":false,"total0":false,"total1":false,"ready0":false,"ready1":false,"removeButtons":0,"mergeButtons":[{"text":"🔓 Unlock & Merge","disabled":true}]}
+APP IEPDF_V12_PAGE|BEFORE_RENDER {workspaceFilesLength: 0, workspaceFiles: Array(0)}
+APP IEPDF_V12_PAGE|BEFORE_RENDER {workspaceFilesLength: 0, workspaceFiles: Array(0)}
+STATE_250MS {"files0":false,"files1":false,"total0":false,"total1":false,"ready0":false,"ready1":false,"removeButtons":0,"mergeButtons":[{"text":"🔓 Unlock & Merge","disabled":true}]}
+STATE_500MS {"files0":false,"files1":false,"total0":false,"total1":false,"ready0":false,"ready1":false,"removeButtons":0,"mergeButtons":[{"text":"🔓 Unlock & Merge","disabled":true}]}
+STATE_1000MS {"files0":false,"files1":false,"total0":false,"total1":false,"ready0":false,"ready1":false,"removeButtons":0,"mergeButtons":[{"text":"🔓 Unlock & Merge","disabled":true}]}
+STATE_2000MS {"files0":false,"files1":false,"total0":false,"total1":false,"ready0":false,"ready1":false,"removeButtons":0,"mergeButtons":[{"text":"🔓 Unlock & Merge","disabled":true}]}
+STATE_4000MS {"files0":false,"files1":false,"total0":false,"total1":false,"ready0":false,"ready1":false,"removeButtons":0,"mergeButtons":[{"text":"🔓 Unlock & Merge","disabled":true}]}
+STATE_8000MS {"files0":false,"files1":false,"total0":false,"total1":false,"ready0":false,"ready1":false,"removeButtons":0,"mergeButtons":[{"text":"🔓 Unlock & Merge","disabled":true}]}
+FINAL_STATE {"bodyText":"iePDF\nMerge PDF\nSplit PDF\nCompress PDF\nPDF → JPG\nJPG → PDF\nMerge PDF\n\nCombine multiple PDF files into a single PDF securely and instantly.\n\nAdd PDF Files\nDrop PDFs here\nor click to browse · Max 15 MiB each\nPDF files\nDrag ⋮⋮ to reorder\n\nAdd your PDFs, reorder them, then tap Merge.\n\nFiles\n0\nTotal\n0\nReady\n0\nProtected\n0\nSkipped\n0\nCorrupted\n0\nInvalid\n🔓 Unlock & Merge\nProcessing happens in your browser. Files never leave your device.","removeButtons":0,"mergeButtons":[{"text":"🔓 Unlock & Merge","disabled":true}]}
+PAGE_ERRORS_COUNT 0
+FAILED_REQUESTS_COUNT 0
+
+=== PAGE ERRORS ===
+
+=== FAILED REQUESTS ===
+SOURCE RESTORED: YES
+NO GIT
+NO DEPLOYMENT
+NO CACHE DELETION

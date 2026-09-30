@@ -1,0 +1,72 @@
+﻿const { chromium } = require("playwright");
+const path = require("path");
+
+const TOOL = "http://localhost:3000/pdf-to-jpg";
+const FIXTURE = "C:\\iepdf\\frontend\\_regression\\pdf-to-jpg\\fixtures\\J01-one-page.pdf";
+
+(async () => {
+  const browser = await chromium.launch({
+    headless: true,
+    args: ["--disable-dev-shm-usage"]
+  });
+
+  const page = await browser.newPage();
+
+  page.on("console", msg => {
+    console.log(`[CONSOLE ${msg.type()}] ${msg.text()}`);
+  });
+
+  page.on("pageerror", err => {
+    console.log(`[PAGEERROR] ${err.message}`);
+  });
+
+  await page.goto(TOOL, { waitUntil: "domcontentloaded" });
+
+  const input = page.locator('input[type="file"]').first();
+
+  console.log("BEFORE FILE:");
+  console.log(await page.locator("body").innerText());
+
+  await input.setInputFiles(FIXTURE);
+
+  console.log("FILE SET");
+
+  for (let i = 1; i <= 20; i++) {
+    await page.waitForTimeout(1000);
+
+    const state = await page.evaluate(() => {
+      const buttons = [...document.querySelectorAll("button")];
+
+      const convert = buttons.find(b =>
+        /Convert to JPG/i.test(b.textContent || "")
+      );
+
+      const body = document.body.innerText;
+
+      return {
+        convertExists: !!convert,
+        convertVisible: !!convert && !!(convert.offsetWidth || convert.offsetHeight),
+        convertDisabled: convert ? convert.disabled : null,
+        buttons: buttons.map(b => ({
+          text: (b.textContent || "").trim(),
+          disabled: b.disabled
+        })),
+        bodyTail: body.slice(-2500)
+      };
+    });
+
+    console.log(`\n--- SECOND ${i} ---`);
+    console.log(JSON.stringify(state, null, 2));
+
+    if (
+      state.convertExists &&
+      state.convertVisible &&
+      state.convertDisabled === false
+    ) {
+      console.log("\nCONVERT BUTTON ENABLED");
+      break;
+    }
+  }
+
+  await browser.close();
+})();

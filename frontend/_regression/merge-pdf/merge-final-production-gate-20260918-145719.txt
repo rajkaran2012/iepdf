@@ -1,0 +1,16 @@
+﻿============================================================
+iePDF MERGE PDF - FINAL PRODUCTION GATE
+FUNCTIONAL + VISIBILITY + REORDER + REMOVE + SECURITY HEALTH
+============================================================
+READ-ONLY / NO SOURCE CHANGES / NO GIT / NO DEPLOYMENT
+PASS PRE-01 Chrome found
+PASS PRE-02 Port 3000 clean
+PASS PRE-03 TypeScript
+PASS PRE-04 Production build 11894ms
+PASS PRE-05 Clean production server ready
+PASS PRE-06 Real A/B/C fixtures found
+RUNNER_FATAL ReferenceError: document is not defined
+    at getRows (C:\IEPDF\frontend\_regression\merge-pdf\_merge_final_gate_runner_20260918-145719.js:35:19)
+    at handleFor (C:\IEPDF\frontend\_regression\merge-pdf\_merge_final_gate_runner_20260918-145719.js:68:16)
+    at drag (C:\IEPDF\frontend\_regression\merge-pdf\_merge_final_gate_runner_20260918-145719.js:118:18)
+    at C:\IEPDF\frontend\_regression\merge-pdf\_merge_final_gate_runner_20260918-145719.js:165:18

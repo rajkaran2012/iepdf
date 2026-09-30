@@ -1,4 +1,4 @@
-/**
+﻿/**
  * =============================================================================
  * iePDF Validation Engine
  * =============================================================================
@@ -49,8 +49,12 @@ export class LaunchActionDetector implements ILaunchActionDetector {
                 const openAction =
                     await document.getOpenAction();
 
+                // PDF.js returns `openAction` for several action/destination
+                // types. Presence alone does NOT mean a /Launch action.
                 structuralDetection =
-                    openAction !== null;
+                    !!openAction &&
+                    typeof openAction === "object" &&
+                    openAction.action === "Launch";
 
             } finally {
 

@@ -1,0 +1,37 @@
+VIEWPORT|desktop-1366x768|FAIL|HARNESS_ERROR|Error: page.evaluate: ReferenceError: visible is not defined
+    at eval (eval at evaluate (:311:30), <anonymous>:25:9)
+    at UtilityScript.evaluate (<anonymous>:313:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+VIEWPORT|desktop-1920x1080|FAIL|HARNESS_ERROR|Error: page.evaluate: ReferenceError: visible is not defined
+    at eval (eval at evaluate (:311:30), <anonymous>:25:9)
+    at UtilityScript.evaluate (<anonymous>:313:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+VIEWPORT|laptop-1280x720|FAIL|HARNESS_ERROR|Error: page.evaluate: ReferenceError: visible is not defined
+    at eval (eval at evaluate (:311:30), <anonymous>:25:9)
+    at UtilityScript.evaluate (<anonymous>:313:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+VIEWPORT|tablet-1024x768|FAIL|HARNESS_ERROR|Error: page.evaluate: ReferenceError: visible is not defined
+    at eval (eval at evaluate (:311:30), <anonymous>:25:9)
+    at UtilityScript.evaluate (<anonymous>:313:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+VIEWPORT|ipad-820x1180|FAIL|HARNESS_ERROR|Error: page.evaluate: ReferenceError: visible is not defined
+    at eval (eval at evaluate (:311:30), <anonymous>:25:9)
+    at UtilityScript.evaluate (<anonymous>:313:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+VIEWPORT|android-360x800|FAIL|HARNESS_ERROR|Error: page.evaluate: ReferenceError: visible is not defined
+    at eval (eval at evaluate (:311:30), <anonymous>:25:9)
+    at UtilityScript.evaluate (<anonymous>:313:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+VIEWPORT|android-412x915|FAIL|HARNESS_ERROR|Error: page.evaluate: ReferenceError: visible is not defined
+    at eval (eval at evaluate (:311:30), <anonymous>:25:9)
+    at UtilityScript.evaluate (<anonymous>:313:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+VIEWPORT|iphone-390x844|FAIL|HARNESS_ERROR|Error: page.evaluate: ReferenceError: visible is not defined
+    at eval (eval at evaluate (:311:30), <anonymous>:25:9)
+    at UtilityScript.evaluate (<anonymous>:313:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+VIEWPORT|iphone-430x932|FAIL|HARNESS_ERROR|Error: page.evaluate: ReferenceError: visible is not defined
+    at eval (eval at evaluate (:311:30), <anonymous>:25:9)
+    at UtilityScript.evaluate (<anonymous>:313:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+SUMMARY|PASS=0|FAIL=9

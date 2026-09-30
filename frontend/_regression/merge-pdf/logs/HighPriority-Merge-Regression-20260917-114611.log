@@ -1,0 +1,73 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260917114611
+Username: DESKTOP-PVDVQ84\WELCOME
+RunAs User: DESKTOP-PVDVQ84\WELCOME
+Configuration Name: 
+Machine: DESKTOP-PVDVQ84 (Microsoft Windows NT 10.0.19045.0)
+Host Application: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+Process ID: 7688
+PSVersion: 5.1.19041.6456
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.19041.6456
+BuildVersion: 10.0.19041.6456
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+============================================================
+ iePDF - Merge PDF High-Priority Regression
+============================================================
+PASS     PRE-01 - Required Merge project files
+FAIL     SEC-01 - Merge security/validation invariants
+         15 MiB constant not confirmed
+FAIL     M-06 - 15 MiB maximum file-size rule
+FAIL     M-07 - Exactly 15 MiB boundary definition
+PASS     BROWSER - Playwright + installed Chrome
+PASS     SERVER - Local Merge PDF server
+         127.0.0.1:3000
+FAIL     M-01 - Canonical browser regression
+         2 valid PDFs -> merge/download/toast|Merge button is disabled.
+FAIL     M-02 - Canonical browser regression
+         3 valid PDFs -> merge/download/toast|Merge button is disabled.
+FAIL     M-04 - Canonical browser regression
+         Password PDF + correct password -> merge/download|page.waitForEvent: Timeout 30000ms exceeded while waiting for event "download"
+FAIL     M-05 - Canonical browser regression
+         Password PDF + wrong password -> blocked|locator.fill: Timeout 30000ms exceeded.
+FAIL     M-06 - Canonical browser regression
+         Oversized PDF -> blocked|Maximum file size validation message was not shown.
+PASS     M-03 - Canonical browser regression
+         Corrupted PDF -> blocked|Corrupted state shown, merge disabled, no download.
+PASS     BROWSER-RUNNER - Canonical browser regression execution
+
+Running verified direct Node production build...
+▲ Next.js 16.3.4 (Turbopack)
+✓ Running next.config.ts took 44ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 9.8s
+✓ Finished TypeScript in 5.7s
+✓ Collecting page data using 3 workers in 1444ms
+✓ Generating static pages using 3 workers (9/9) in 643ms
+✓ Finalizing page optimization in 13ms
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /compress-pdf
+├ ○ /jpg-to-pdf
+├ ○ /merge-pdf
+├ ○ /pdf-to-jpg
+└ ○ /split-pdf
+
+
+○  (Static)  prerendered as static content
+PASS     M-10 - Production build
+         Direct Node Next.js build
+REPORT: C:\IEPDF\frontend\_regression\merge-pdf\HighPriority-Merge-Regression-20260917-114611.txt
+PASS=6 FAIL=8 SKIPPED=0
+**********************
+Windows PowerShell transcript end
+End time: 20260917114804
+**********************

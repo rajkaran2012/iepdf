@@ -1,0 +1,62 @@
+$ErrorActionPreference = "Stop"
+
+$file = ".\components\MergeWorkspace.tsx"
+
+if (-not (Test-Path $file)) {
+    throw "File not found: $file"
+}
+
+$backupDir = ".\_ui-backups\MERGE-EYE-ENCODING-BEFORE-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
+Copy-Item $file "$backupDir\MergeWorkspace.tsx" -Force
+
+$content = Get-Content $file -Raw
+
+# Build the mojibake sequence without putting corrupted Unicode
+# directly into this PowerShell script.
+$badEye = (
+    [char]0x00F0 +
+    [char]0x0178 +
+    [char]0x2018 +
+    [char]0x0081
+)
+
+$replacement = "&#128065;"
+
+$count = ([regex]::Matches($content, [regex]::Escape($badEye))).Count
+
+if ($count -eq 0) {
+    Write-Host "[INFO] Mojibake eye icon not found."
+}
+else {
+    $content = $content.Replace($badEye, $replacement)
+
+    # UTF-8 without BOM
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText(
+        (Resolve-Path $file),
+        $content,
+        $utf8NoBom
+    )
+
+    Write-Host "[FIX] Eye icon replaced: $count occurrence(s)"
+}
+
+# Verify
+$verify = Get-Content $file -Raw
+
+if ($verify.Contains($replacement)) {
+    Write-Host "[OK] HTML eye entity present: $replacement"
+}
+
+if ($verify.Contains($badEye)) {
+    throw "[FAIL] Mojibake eye icon still exists."
+}
+
+Write-Host ""
+Write-Host "=============================================="
+Write-Host "MERGE EYE ENCODING FIX COMPLETE"
+Write-Host "=============================================="
+Write-Host "Backup: $backupDir"
+Write-Host "No Git commands."
+Write-Host "No deployment."

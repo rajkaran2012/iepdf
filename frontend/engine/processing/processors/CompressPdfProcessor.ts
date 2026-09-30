@@ -5,23 +5,26 @@
  *
  * File       : CompressPdfProcessor.ts
  * Module     : Processing
- * Layer      : Server-backed Processor
+ * Layer      : Browser-first / Server-backed Fallback
  *
- * ----------------------------------------------------------------------------- 
+ * -----------------------------------------------------------------------------
  * Purpose
- * ----------------------------------------------------------------------------- 
- * Browser-side processing boundary for PDF compression.
+ * -----------------------------------------------------------------------------
+ * Browser-first PDF compression boundary.
  *
  * Canonical validation is enforced by BasePdfProcessor before this processor
  * reaches processCore().
  *
- * Actual PDF recompression is delegated to the backend Ghostscript engine.
+ * Browser compression is attempted first through BrowserPdfCompressor.
+ * If the browser result is rejected or the browser engine fails, the original
+ * PDF is sent to the backend Ghostscript compression service.
  * =============================================================================
  */
 
 import { API_URL } from "@/lib/api";
 
 import { BasePdfProcessor } from "./BasePdfProcessor";
+import { BrowserPdfCompressor } from "@/engine/compression/BrowserPdfCompressor";
 
 import type { ProcessingContext } from "../ProcessingContext";
 import type { ProcessingResult } from "../results/ProcessingResult";
@@ -47,6 +50,49 @@ export class CompressPdfProcessor extends BasePdfProcessor {
             };
 
         }
+
+        /*
+         * ---------------------------------------------------------------------
+         * C-31: Browser-first compression
+         * ---------------------------------------------------------------------
+         */
+
+        try {
+
+            const browserResult =
+                await new BrowserPdfCompressor().compress(
+                    workspaceFile.file
+                );
+
+            if (
+                browserResult.accepted &&
+                browserResult.outputFile
+            ) {
+
+                return {
+                    success: true,
+                    outputFile:
+                        browserResult.outputFile
+                };
+
+            }
+
+        } catch (_error: unknown) {
+
+            /*
+             * Browser compression is an optimization path.
+             *
+             * Any browser-side failure must fall through to the
+             * established Ghostscript backend fallback.
+             */
+
+        }
+
+        /*
+         * ---------------------------------------------------------------------
+         * Existing Ghostscript fallback
+         * ---------------------------------------------------------------------
+         */
 
         const formData =
             new FormData();
@@ -100,7 +146,9 @@ export class CompressPdfProcessor extends BasePdfProcessor {
                 }
 
             } catch (_error: unknown) {
+
                 // Keep the controlled fallback message.
+
             }
 
             return {

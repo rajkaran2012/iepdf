@@ -1,0 +1,5041 @@
+iePDF MERGE PDF - RENDER PATH SOURCE AUDIT V6
+Started: 09/17/2026 16:43:21
+Frontend: C:\IEPDF\frontend
+Page: C:\IEPDF\frontend\app\merge-pdf\page.tsx
+Workspace: C:\IEPDF\frontend\components\MergeWorkspace.tsx
+
+IMPORTANT:
+This script is READ-ONLY.
+No source files will be modified.
+No Git operations will be performed.
+No live deployment will be performed.
+
+==============================================================================
+1. FILE EXISTENCE
+==============================================================================
+Page file exists      : True
+Workspace file exists : True
+
+--- 2. WORKSPACE STATE / RENDER CONDITIONS ---
+
+PATTERN: workspaceFiles
+  MATCH:
+oolLayout from "@/components/layout/ToolLayout";
+import MergeWorkspace from "@/components/MergeWorkspace";
+
+export default function MergePDF() {
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [workspaceFiles, setWorkspaceFiles] = useState<any[]>([]);
+  const [showWorkspace, setShowWorkspace] = useState(true);
+
+  const toast = useToast();
+  const MAX_FILE_SIZE = ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES;
+  
+  const handlePasswordChange = (
+    id: string,
+    password: string
+) => {
+
+    setWorkspaceFiles((prev) =>
+        prev.map((file) =>
+            file.id === id
+                ? {
+                      ...file,
+              
+  ---
+  MATCH:
+omponents/layout/ToolLayout";
+import MergeWorkspace from "@/components/MergeWorkspace";
+
+export default function MergePDF() {
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [workspaceFiles, setWorkspaceFiles] = useState<any[]>([]);
+  const [showWorkspace, setShowWorkspace] = useState(true);
+
+  const toast = useToast();
+  const MAX_FILE_SIZE = ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES;
+  
+  const handlePasswordChange = (
+    id: string,
+    password: string
+) => {
+
+    setWorkspaceFiles((prev) =>
+        prev.map((file) =>
+            file.id === id
+                ? {
+                      ...file,
+                      password,
+
+  ---
+  MATCH:
+(true);
+
+  const toast = useToast();
+  const MAX_FILE_SIZE = ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES;
+  
+  const handlePasswordChange = (
+    id: string,
+    password: string
+) => {
+
+    setWorkspaceFiles((prev) =>
+        prev.map((file) =>
+            file.id === id
+                ? {
+                      ...file,
+                      password,
+                  }
+                : file
+        )
+    );
+
+};
+
+  const handlePasswordBlur = async (
+    id: string
+  ) => {
+
+    const targetFile =
+      workspaceFiles.find(
+        (file) => file.id === id
+      );
+
+    if (!targetFile) {
+      return;
+    }
+
+    const password =
+      
+  ---
+  MATCH:
+         ...file,
+                      password,
+                  }
+                : file
+        )
+    );
+
+};
+
+  const handlePasswordBlur = async (
+    id: string
+  ) => {
+
+    const targetFile =
+      workspaceFiles.find(
+        (file) => file.id === id
+      );
+
+    if (!targetFile) {
+      return;
+    }
+
+    const password =
+      targetFile.password?.trim();
+
+    if (!password) {
+      return;
+    }
+
+    if (
+      targetFile.status !==
+      "password_required"
+    ) {
+      return;
+    }
+
+    try {
+
+      const unlockService =
+        new BrowserPdfUnlockService();
+
+      const result =
+        await unlockService.unlock(
+          target
+  ---
+  MATCH:
+    password
+        );
+
+      const unlockedFile =
+        new File(
+          [result.bytes],
+          targetFile.filename,
+          {
+            type: "application/pdf"
+          }
+        );
+
+      setWorkspaceFiles((previous) =>
+        previous.map((file) =>
+          file.id === id
+            ? {
+                ...file,
+
+                file:
+                  unlockedFile,
+
+                size:
+                  unlockedFile.size,
+
+                status:
+                  "ready",
+
+                encrypted:
+                  result.encrypted,
+
+                corrupted:
+                  false,
+
+                message:
+                  "Pas
+  ---
+  MATCH:
+Error
+            ? error.message
+            : "Unable to unlock PDF.",
+      });
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to unlock PDF.";
+
+      setWorkspaceFiles((previous) =>
+        previous.map((file) =>
+          file.id === id
+            ? {
+                ...file,
+
+                status:
+                  "password_required",
+
+                message,
+            }
+          : file
+        )
+      );
+
+    }
+
+  };
+  const handleTogglePassword = (id: string) => {
+    setWorkspaceFiles((prev) =>
+      prev.map((file) =>
+        file.id === id
+          ? {
+              ...file,
+           
+  ---
+  MATCH:
+               status:
+                  "password_required",
+
+                message,
+            }
+          : file
+        )
+      );
+
+    }
+
+  };
+  const handleTogglePassword = (id: string) => {
+    setWorkspaceFiles((prev) =>
+      prev.map((file) =>
+        file.id === id
+          ? {
+              ...file,
+              showPassword: !file.showPassword,
+            }
+          : file
+      )
+    );
+  };
+  const handleSkipFile = (id: string) => {
+  setWorkspaceFiles((prev) =>
+    prev.map((file) =>
+      file.id === id
+        ? {
+            ...file,
+            skipped: !file.skipped,
+          }
+        : file
+    )
+  );
+};
+
+const handleReorder
+  ---
+  MATCH:
+>
+        file.id === id
+          ? {
+              ...file,
+              showPassword: !file.showPassword,
+            }
+          : file
+      )
+    );
+  };
+  const handleSkipFile = (id: string) => {
+  setWorkspaceFiles((prev) =>
+    prev.map((file) =>
+      file.id === id
+        ? {
+            ...file,
+            skipped: !file.skipped,
+          }
+        : file
+    )
+  );
+};
+
+const handleReorderFiles = (
+    draggedId: string,
+    targetId: string
+) => {
+
+    if (!draggedId || !targetId || draggedId === targetId) {
+        return;
+    }
+
+    setWorkspaceFiles((previous) => {
+
+        const draggedIndex = previous.findIndex(
+            (file) => f
+  ---
+  MATCH:
+ }
+        : file
+    )
+  );
+};
+
+const handleReorderFiles = (
+    draggedId: string,
+    targetId: string
+) => {
+
+    if (!draggedId || !targetId || draggedId === targetId) {
+        return;
+    }
+
+    setWorkspaceFiles((previous) => {
+
+        const draggedIndex = previous.findIndex(
+            (file) => file.id === draggedId
+        );
+
+        const targetIndex = previous.findIndex(
+            (file) => file.id === targetId
+        );
+
+        if (
+            draggedIndex === -1 ||
+            targetIndex === -1 ||
+            draggedIndex === targetIndex
+        ) {
+            return previous;
+        }
+
+        const updated = [...previous];
+
+     
+  ---
+  MATCH:
+      1
+        );
+
+        updated.splice(
+            targetIndex,
+            0,
+            movedFile
+        );
+
+        return updated;
+
+    });
+};
+const handleRemoveFile = (id: string) => {
+
+    setWorkspaceFiles((previous) => {
+
+        const updated = previous.filter(
+            (file) => file.id !== id
+        );
+
+        if (updated.length === 0) {
+
+            setShowWorkspace(true);
+
+            if (fileInputRef.current) {
+
+                fileInputRef.current.value = "";
+
+            }
+
+        }
+
+        return updated;
+
+    });
+
+};
+    const handleUnlockMerge = async () => {
+
+    try {
+
+
+        const processor =
+            new Br
+  ---
+  MATCH:
+   const handleUnlockMerge = async () => {
+
+    try {
+
+
+        const processor =
+            new BrowserMergeProcessor();
+
+        const result =
+            await processor.process({
+
+                files: workspaceFiles,
+
+                toolType: "merge",
+
+            });
+
+        if (!result.success || !result.outputFile) {
+
+            toast.error({
+              title: "Merge failed",
+              message:
+                result.error ||
+                "Unable to merge the selected PDFs.",
+            });
+
+            return;
+
+        }
+
+        const url =
+            URL.createObjectURL(result.outputFile);
+
+        const link =
+            docume
+  ---
+  MATCH:
+ick();
+
+        link.remove();
+
+        toast.success({
+          title: "Merge completed",
+          message: "Your PDFs were merged successfully.",
+        });
+
+        URL.revokeObjectURL(url);
+
+        setWorkspaceFiles([]);
+
+        setShowWorkspace(true);
+
+        if (fileInputRef.current) {
+
+            fileInputRef.current.value = "";
+
+        }
+
+    } catch (error) {
+
+        toast.error({
+          title: "Merge failed",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to merge the selected PDFs.",
+        });
+
+    }
+
+};
+  const handleSelectFiles = () => {
+  fileInputRef.current?.click();
+  ---
+  MATCH:
+      // Original browser File
+            file: files[index],
+
+            // Workspace state
+            password: "",
+            showPassword: false,
+            skipped: false,
+
+        })
+    );
+
+    setWorkspaceFiles((previous) => [...previous, ...workspace]);
+
+    setShowWorkspace(true);
+
+};
+const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+) => {
+
+    const files = Array.from(
+        event.target.files ?? []
+    );
+
+    await processSelectedFiles(files);
+
+    if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
+
+};
+  return (
+    <ToolLayout
+      title="Merge PDF"
+      description="Combine multi
+  ---
+  MATCH:
+             <div className="mt-1 text-sm text-gray-500">
+                    Release to add PDFs to your merge workspace
+                </div>
+            </div>
+        </div>
+    )}
+<MergeWorkspace
+    files={workspaceFiles}
+    onPasswordChange={handlePasswordChange}
+    onPasswordBlur={handlePasswordBlur}
+    onTogglePassword={handleTogglePassword}
+    onSkipFile={handleSkipFile}
+    onRemoveFile={handleRemoveFile}
+          onAddFiles={handleSelectFiles}
+          onReorderFiles={handleReorderFiles}
+    onUnlockMerge={handleUnlockMerge}
+/>
+</div>
+)}
+
+
+
+      </div>
+
+    </ToolLayout>
+  );
+}
+
+
+
+
+
+
+
+  ---
+
+PATTERN: showWorkspace
+  MATCH:
+ace from "@/components/MergeWorkspace";
+
+export default function MergePDF() {
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [workspaceFiles, setWorkspaceFiles] = useState<any[]>([]);
+  const [showWorkspace, setShowWorkspace] = useState(true);
+
+  const toast = useToast();
+  const MAX_FILE_SIZE = ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES;
+  
+  const handlePasswordChange = (
+    id: string,
+    password: string
+) => {
+
+    setWorkspaceFiles((prev) =>
+        prev.map((file) =>
+            file.id === id
+                ? {
+                      ...file,
+                      password,
+                  }
+                : file
+    
+  ---
+  MATCH:
+ents/MergeWorkspace";
+
+export default function MergePDF() {
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [workspaceFiles, setWorkspaceFiles] = useState<any[]>([]);
+  const [showWorkspace, setShowWorkspace] = useState(true);
+
+  const toast = useToast();
+  const MAX_FILE_SIZE = ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES;
+  
+  const handlePasswordChange = (
+    id: string,
+    password: string
+) => {
+
+    setWorkspaceFiles((prev) =>
+        prev.map((file) =>
+            file.id === id
+                ? {
+                      ...file,
+                      password,
+                  }
+                : file
+        )
+    );
+
+}
+  ---
+  MATCH:
+oveFile = (id: string) => {
+
+    setWorkspaceFiles((previous) => {
+
+        const updated = previous.filter(
+            (file) => file.id !== id
+        );
+
+        if (updated.length === 0) {
+
+            setShowWorkspace(true);
+
+            if (fileInputRef.current) {
+
+                fileInputRef.current.value = "";
+
+            }
+
+        }
+
+        return updated;
+
+    });
+
+};
+    const handleUnlockMerge = async () => {
+
+    try {
+
+
+        const processor =
+            new BrowserMergeProcessor();
+
+        const result =
+            await processor.process({
+
+                files: workspaceFiles,
+
+                toolType: "merge",
+
+           
+  ---
+  MATCH:
+
+        toast.success({
+          title: "Merge completed",
+          message: "Your PDFs were merged successfully.",
+        });
+
+        URL.revokeObjectURL(url);
+
+        setWorkspaceFiles([]);
+
+        setShowWorkspace(true);
+
+        if (fileInputRef.current) {
+
+            fileInputRef.current.value = "";
+
+        }
+
+    } catch (error) {
+
+        toast.error({
+          title: "Merge failed",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to merge the selected PDFs.",
+        });
+
+    }
+
+};
+  const handleSelectFiles = () => {
+  fileInputRef.current?.click();
+};
+const handleWorkspaceDragEnte
+  ---
+  MATCH:
+          // Workspace state
+            password: "",
+            showPassword: false,
+            skipped: false,
+
+        })
+    );
+
+    setWorkspaceFiles((previous) => [...previous, ...workspace]);
+
+    setShowWorkspace(true);
+
+};
+const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+) => {
+
+    const files = Array.from(
+        event.target.files ?? []
+    );
+
+    await processSelectedFiles(files);
+
+    if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
+
+};
+  return (
+    <ToolLayout
+      title="Merge PDF"
+      description="Combine multiple PDF files into a single PDF securely and instantly."
+      wide
+  ---
+  MATCH:
+ justify-start">
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+		{showWorkspace && (
+ <div
+    onDragEnter={handleWorkspaceDragEnter}
+    onDragOver={handleWorkspaceDragOver}
+    onDragLeave={handleWorkspaceDragLeave}
+    onDrop={handleWorkspaceDrop}
+    className="relative w-full"
+>
+
+    {isWorkspaceDragOver && (
+        <div
+            className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center rounded-3xl border-2 border-dashed border-blue-400 bg-blue-50/90"
+        >
+            <div className="ro
+  ---
+
+PATTERN: setShowWorkspace
+  MATCH:
+ponents/MergeWorkspace";
+
+export default function MergePDF() {
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [workspaceFiles, setWorkspaceFiles] = useState<any[]>([]);
+  const [showWorkspace, setShowWorkspace] = useState(true);
+
+  const toast = useToast();
+  const MAX_FILE_SIZE = ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES;
+  
+  const handlePasswordChange = (
+    id: string,
+    password: string
+) => {
+
+    setWorkspaceFiles((prev) =>
+        prev.map((file) =>
+            file.id === id
+                ? {
+                      ...file,
+                      password,
+                  }
+                : file
+        )
+    );
+
+  ---
+  MATCH:
+RemoveFile = (id: string) => {
+
+    setWorkspaceFiles((previous) => {
+
+        const updated = previous.filter(
+            (file) => file.id !== id
+        );
+
+        if (updated.length === 0) {
+
+            setShowWorkspace(true);
+
+            if (fileInputRef.current) {
+
+                fileInputRef.current.value = "";
+
+            }
+
+        }
+
+        return updated;
+
+    });
+
+};
+    const handleUnlockMerge = async () => {
+
+    try {
+
+
+        const processor =
+            new BrowserMergeProcessor();
+
+        const result =
+            await processor.process({
+
+                files: workspaceFiles,
+
+                toolType: "merge",
+
+        
+  ---
+  MATCH:
+;
+
+        toast.success({
+          title: "Merge completed",
+          message: "Your PDFs were merged successfully.",
+        });
+
+        URL.revokeObjectURL(url);
+
+        setWorkspaceFiles([]);
+
+        setShowWorkspace(true);
+
+        if (fileInputRef.current) {
+
+            fileInputRef.current.value = "";
+
+        }
+
+    } catch (error) {
+
+        toast.error({
+          title: "Merge failed",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to merge the selected PDFs.",
+        });
+
+    }
+
+};
+  const handleSelectFiles = () => {
+  fileInputRef.current?.click();
+};
+const handleWorkspaceDragE
+  ---
+  MATCH:
+
+            // Workspace state
+            password: "",
+            showPassword: false,
+            skipped: false,
+
+        })
+    );
+
+    setWorkspaceFiles((previous) => [...previous, ...workspace]);
+
+    setShowWorkspace(true);
+
+};
+const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+) => {
+
+    const files = Array.from(
+        event.target.files ?? []
+    );
+
+    await processSelectedFiles(files);
+
+    if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
+
+};
+  return (
+    <ToolLayout
+      title="Merge PDF"
+      description="Combine multiple PDF files into a single PDF securely and instantly."
+      wi
+  ---
+
+PATTERN: setWorkspaceFiles
+  MATCH:
+@/components/layout/ToolLayout";
+import MergeWorkspace from "@/components/MergeWorkspace";
+
+export default function MergePDF() {
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [workspaceFiles, setWorkspaceFiles] = useState<any[]>([]);
+  const [showWorkspace, setShowWorkspace] = useState(true);
+
+  const toast = useToast();
+  const MAX_FILE_SIZE = ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES;
+  
+  const handlePasswordChange = (
+    id: string,
+    password: string
+) => {
+
+    setWorkspaceFiles((prev) =>
+        prev.map((file) =>
+            file.id === id
+                ? {
+                      ...file,
+                      password
+  ---
+  MATCH:
+ate(true);
+
+  const toast = useToast();
+  const MAX_FILE_SIZE = ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES;
+  
+  const handlePasswordChange = (
+    id: string,
+    password: string
+) => {
+
+    setWorkspaceFiles((prev) =>
+        prev.map((file) =>
+            file.id === id
+                ? {
+                      ...file,
+                      password,
+                  }
+                : file
+        )
+    );
+
+};
+
+  const handlePasswordBlur = async (
+    id: string
+  ) => {
+
+    const targetFile =
+      workspaceFiles.find(
+        (file) => file.id === id
+      );
+
+    if (!targetFile) {
+      return;
+    }
+
+    const password =
+   
+  ---
+  MATCH:
+       password
+        );
+
+      const unlockedFile =
+        new File(
+          [result.bytes],
+          targetFile.filename,
+          {
+            type: "application/pdf"
+          }
+        );
+
+      setWorkspaceFiles((previous) =>
+        previous.map((file) =>
+          file.id === id
+            ? {
+                ...file,
+
+                file:
+                  unlockedFile,
+
+                size:
+                  unlockedFile.size,
+
+                status:
+                  "ready",
+
+                encrypted:
+                  result.encrypted,
+
+                corrupted:
+                  false,
+
+                message:
+                  "
+  ---
+  MATCH:
+of Error
+            ? error.message
+            : "Unable to unlock PDF.",
+      });
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to unlock PDF.";
+
+      setWorkspaceFiles((previous) =>
+        previous.map((file) =>
+          file.id === id
+            ? {
+                ...file,
+
+                status:
+                  "password_required",
+
+                message,
+            }
+          : file
+        )
+      );
+
+    }
+
+  };
+  const handleTogglePassword = (id: string) => {
+    setWorkspaceFiles((prev) =>
+      prev.map((file) =>
+        file.id === id
+          ? {
+              ...file,
+        
+  ---
+  MATCH:
+
+                status:
+                  "password_required",
+
+                message,
+            }
+          : file
+        )
+      );
+
+    }
+
+  };
+  const handleTogglePassword = (id: string) => {
+    setWorkspaceFiles((prev) =>
+      prev.map((file) =>
+        file.id === id
+          ? {
+              ...file,
+              showPassword: !file.showPassword,
+            }
+          : file
+      )
+    );
+  };
+  const handleSkipFile = (id: string) => {
+  setWorkspaceFiles((prev) =>
+    prev.map((file) =>
+      file.id === id
+        ? {
+            ...file,
+            skipped: !file.skipped,
+          }
+        : file
+    )
+  );
+};
+
+const handleReor
+  ---
+  MATCH:
+) =>
+        file.id === id
+          ? {
+              ...file,
+              showPassword: !file.showPassword,
+            }
+          : file
+      )
+    );
+  };
+  const handleSkipFile = (id: string) => {
+  setWorkspaceFiles((prev) =>
+    prev.map((file) =>
+      file.id === id
+        ? {
+            ...file,
+            skipped: !file.skipped,
+          }
+        : file
+    )
+  );
+};
+
+const handleReorderFiles = (
+    draggedId: string,
+    targetId: string
+) => {
+
+    if (!draggedId || !targetId || draggedId === targetId) {
+        return;
+    }
+
+    setWorkspaceFiles((previous) => {
+
+        const draggedIndex = previous.findIndex(
+            (file) =
+  ---
+  MATCH:
+    }
+        : file
+    )
+  );
+};
+
+const handleReorderFiles = (
+    draggedId: string,
+    targetId: string
+) => {
+
+    if (!draggedId || !targetId || draggedId === targetId) {
+        return;
+    }
+
+    setWorkspaceFiles((previous) => {
+
+        const draggedIndex = previous.findIndex(
+            (file) => file.id === draggedId
+        );
+
+        const targetIndex = previous.findIndex(
+            (file) => file.id === targetId
+        );
+
+        if (
+            draggedIndex === -1 ||
+            targetIndex === -1 ||
+            draggedIndex === targetIndex
+        ) {
+            return previous;
+        }
+
+        const updated = [...previous];
+
+  
+  ---
+  MATCH:
+         1
+        );
+
+        updated.splice(
+            targetIndex,
+            0,
+            movedFile
+        );
+
+        return updated;
+
+    });
+};
+const handleRemoveFile = (id: string) => {
+
+    setWorkspaceFiles((previous) => {
+
+        const updated = previous.filter(
+            (file) => file.id !== id
+        );
+
+        if (updated.length === 0) {
+
+            setShowWorkspace(true);
+
+            if (fileInputRef.current) {
+
+                fileInputRef.current.value = "";
+
+            }
+
+        }
+
+        return updated;
+
+    });
+
+};
+    const handleUnlockMerge = async () => {
+
+    try {
+
+
+        const processor =
+            new
+  ---
+  MATCH:
+.click();
+
+        link.remove();
+
+        toast.success({
+          title: "Merge completed",
+          message: "Your PDFs were merged successfully.",
+        });
+
+        URL.revokeObjectURL(url);
+
+        setWorkspaceFiles([]);
+
+        setShowWorkspace(true);
+
+        if (fileInputRef.current) {
+
+            fileInputRef.current.value = "";
+
+        }
+
+    } catch (error) {
+
+        toast.error({
+          title: "Merge failed",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to merge the selected PDFs.",
+        });
+
+    }
+
+};
+  const handleSelectFiles = () => {
+  fileInputRef.current?.click(
+  ---
+  MATCH:
+         // Original browser File
+            file: files[index],
+
+            // Workspace state
+            password: "",
+            showPassword: false,
+            skipped: false,
+
+        })
+    );
+
+    setWorkspaceFiles((previous) => [...previous, ...workspace]);
+
+    setShowWorkspace(true);
+
+};
+const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+) => {
+
+    const files = Array.from(
+        event.target.files ?? []
+    );
+
+    await processSelectedFiles(files);
+
+    if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
+
+};
+  return (
+    <ToolLayout
+      title="Merge PDF"
+      description="Combine mu
+  ---
+
+PATTERN: workspaceFiles\.length
+  NOT FOUND
+
+PATTERN: workspaceFiles\.map
+  NOT FOUND
+
+PATTERN: workspaceFiles\.filter
+  NOT FOUND
+
+PATTERN: workspaceFiles\.some
+  NOT FOUND
+
+--- 3. MERGEWORKSPACE CALL SITE ---
+
+PATTERN: <MergeWorkspace
+  MATCH:
+               </div>
+
+                <div className="mt-1 text-sm text-gray-500">
+                    Release to add PDFs to your merge workspace
+                </div>
+            </div>
+        </div>
+    )}
+<MergeWorkspace
+    files={workspaceFiles}
+    onPasswordChange={handlePasswordChange}
+    onPasswordBlur={handlePasswordBlur}
+    onTogglePassword={handleTogglePassword}
+    onSkipFile={handleSkipFile}
+    onRemoveFile={handleRemoveFile}
+          onAddFiles={handleSelectFiles}
+          onReorderFiles={handleReorderFiles}
+    onUnlockMerge={handleUnlockMerge}
+/>
+</div>
+)}
+
+
+
+      </div>
+
+    </ToolLayout>
+  );
+}
+
+
+
+
+
+
+
+  ---
+
+PATTERN: files=\{workspaceFiles\}
+  MATCH:
+
+
+                <div className="mt-1 text-sm text-gray-500">
+                    Release to add PDFs to your merge workspace
+                </div>
+            </div>
+        </div>
+    )}
+<MergeWorkspace
+    files={workspaceFiles}
+    onPasswordChange={handlePasswordChange}
+    onPasswordBlur={handlePasswordBlur}
+    onTogglePassword={handleTogglePassword}
+    onSkipFile={handleSkipFile}
+    onRemoveFile={handleRemoveFile}
+          onAddFiles={handleSelectFiles}
+          onReorderFiles={handleReorderFiles}
+    onUnlockMerge={handleUnlockMerge}
+/>
+</div>
+)}
+
+
+
+      </div>
+
+    </ToolLayout>
+  );
+}
+
+
+
+
+
+
+
+  ---
+
+PATTERN: files=\{
+  MATCH:
+
+
+                <div className="mt-1 text-sm text-gray-500">
+                    Release to add PDFs to your merge workspace
+                </div>
+            </div>
+        </div>
+    )}
+<MergeWorkspace
+    files={workspaceFiles}
+    onPasswordChange={handlePasswordChange}
+    onPasswordBlur={handlePasswordBlur}
+    onTogglePassword={handleTogglePassword}
+    onSkipFile={handleSkipFile}
+    onRemoveFile={handleRemoveFile}
+          onAddFiles={handleSelectFiles}
+          onReorderFiles={handleReorderFiles}
+    onUnlockMerge={handleUnlockMerge}
+/>
+</div>
+)}
+
+
+
+      </div>
+
+    </ToolLayout>
+  );
+}
+
+
+
+
+
+
+
+  ---
+  MATCH:
+s}
+    onPasswordChange={handlePasswordChange}
+    onPasswordBlur={handlePasswordBlur}
+    onTogglePassword={handleTogglePassword}
+    onSkipFile={handleSkipFile}
+    onRemoveFile={handleRemoveFile}
+          onAddFiles={handleSelectFiles}
+          onReorderFiles={handleReorderFiles}
+    onUnlockMerge={handleUnlockMerge}
+/>
+</div>
+)}
+
+
+
+      </div>
+
+    </ToolLayout>
+  );
+}
+
+
+
+
+
+
+
+  ---
+  MATCH:
+}
+    onPasswordBlur={handlePasswordBlur}
+    onTogglePassword={handleTogglePassword}
+    onSkipFile={handleSkipFile}
+    onRemoveFile={handleRemoveFile}
+          onAddFiles={handleSelectFiles}
+          onReorderFiles={handleReorderFiles}
+    onUnlockMerge={handleUnlockMerge}
+/>
+</div>
+)}
+
+
+
+      </div>
+
+    </ToolLayout>
+  );
+}
+
+
+
+
+
+
+
+  ---
+
+PATTERN: onAddFiles=
+  MATCH:
+eFiles}
+    onPasswordChange={handlePasswordChange}
+    onPasswordBlur={handlePasswordBlur}
+    onTogglePassword={handleTogglePassword}
+    onSkipFile={handleSkipFile}
+    onRemoveFile={handleRemoveFile}
+          onAddFiles={handleSelectFiles}
+          onReorderFiles={handleReorderFiles}
+    onUnlockMerge={handleUnlockMerge}
+/>
+</div>
+)}
+
+
+
+      </div>
+
+    </ToolLayout>
+  );
+}
+
+
+
+
+
+
+
+  ---
+
+PATTERN: onReorderFiles=
+  MATCH:
+ordChange}
+    onPasswordBlur={handlePasswordBlur}
+    onTogglePassword={handleTogglePassword}
+    onSkipFile={handleSkipFile}
+    onRemoveFile={handleRemoveFile}
+          onAddFiles={handleSelectFiles}
+          onReorderFiles={handleReorderFiles}
+    onUnlockMerge={handleUnlockMerge}
+/>
+</div>
+)}
+
+
+
+      </div>
+
+    </ToolLayout>
+  );
+}
+
+
+
+
+
+
+
+  ---
+
+PATTERN: onUnlockMerge=
+  MATCH:
+swordBlur}
+    onTogglePassword={handleTogglePassword}
+    onSkipFile={handleSkipFile}
+    onRemoveFile={handleRemoveFile}
+          onAddFiles={handleSelectFiles}
+          onReorderFiles={handleReorderFiles}
+    onUnlockMerge={handleUnlockMerge}
+/>
+</div>
+)}
+
+
+
+      </div>
+
+    </ToolLayout>
+  );
+}
+
+
+
+
+
+
+
+  ---
+
+--- 4. FILE INPUT AND PROCESSING PATH ---
+
+PATTERN: fileInputRef
+  MATCH:
+"@/engine/validation/common/validationConstants";
+
+import ToolLayout from "@/components/layout/ToolLayout";
+import MergeWorkspace from "@/components/MergeWorkspace";
+
+export default function MergePDF() {
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [workspaceFiles, setWorkspaceFiles] = useState<any[]>([]);
+  const [showWorkspace, setShowWorkspace] = useState(true);
+
+  const toast = useToast();
+  const MAX_FILE_SIZE = ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES;
+  
+  const handlePasswordChange = (
+    id: string,
+    password: string
+) => {
+
+    setWorkspaceFiles((prev) =>
+        prev.map((file) =>
+            file.id === id
+      
+  ---
+  MATCH:
+rkspaceFiles((previous) => {
+
+        const updated = previous.filter(
+            (file) => file.id !== id
+        );
+
+        if (updated.length === 0) {
+
+            setShowWorkspace(true);
+
+            if (fileInputRef.current) {
+
+                fileInputRef.current.value = "";
+
+            }
+
+        }
+
+        return updated;
+
+    });
+
+};
+    const handleUnlockMerge = async () => {
+
+    try {
+
+
+        const processor =
+            new BrowserMergeProcessor();
+
+        const result =
+            await processor.process({
+
+                files: workspaceFiles,
+
+                toolType: "merge",
+
+            });
+
+        if (!result.success || !
+  ---
+  MATCH:
+st updated = previous.filter(
+            (file) => file.id !== id
+        );
+
+        if (updated.length === 0) {
+
+            setShowWorkspace(true);
+
+            if (fileInputRef.current) {
+
+                fileInputRef.current.value = "";
+
+            }
+
+        }
+
+        return updated;
+
+    });
+
+};
+    const handleUnlockMerge = async () => {
+
+    try {
+
+
+        const processor =
+            new BrowserMergeProcessor();
+
+        const result =
+            await processor.process({
+
+                files: workspaceFiles,
+
+                toolType: "merge",
+
+            });
+
+        if (!result.success || !result.outputFile) {
+
+            toast.e
+  ---
+  MATCH:
+ title: "Merge completed",
+          message: "Your PDFs were merged successfully.",
+        });
+
+        URL.revokeObjectURL(url);
+
+        setWorkspaceFiles([]);
+
+        setShowWorkspace(true);
+
+        if (fileInputRef.current) {
+
+            fileInputRef.current.value = "";
+
+        }
+
+    } catch (error) {
+
+        toast.error({
+          title: "Merge failed",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to merge the selected PDFs.",
+        });
+
+    }
+
+};
+  const handleSelectFiles = () => {
+  fileInputRef.current?.click();
+};
+const handleWorkspaceDragEnter = (
+    event: React.DragEvent<HT
+  ---
+  MATCH:
+essage: "Your PDFs were merged successfully.",
+        });
+
+        URL.revokeObjectURL(url);
+
+        setWorkspaceFiles([]);
+
+        setShowWorkspace(true);
+
+        if (fileInputRef.current) {
+
+            fileInputRef.current.value = "";
+
+        }
+
+    } catch (error) {
+
+        toast.error({
+          title: "Merge failed",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to merge the selected PDFs.",
+        });
+
+    }
+
+};
+  const handleSelectFiles = () => {
+  fileInputRef.current?.click();
+};
+const handleWorkspaceDragEnter = (
+    event: React.DragEvent<HTMLDivElement>
+) => {
+
+    event.prev
+  ---
+  MATCH:
+ failed",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to merge the selected PDFs.",
+        });
+
+    }
+
+};
+  const handleSelectFiles = () => {
+  fileInputRef.current?.click();
+};
+const handleWorkspaceDragEnter = (
+    event: React.DragEvent<HTMLDivElement>
+) => {
+
+    event.preventDefault();
+
+    if (event.dataTransfer.types.includes("application/x-iepdf-reorder")) {
+        return;
+    }
+
+    if (event.dataTransfer.types.includes("Files")) {
+        setIsWorkspaceDragOver(true);
+    }
+
+};
+
+const handleWorkspaceDragOver = (
+    event: React.DragEvent<HTMLDivElement>
+) => {
+
+    event.preventDefault
+  ---
+  MATCH:
+;
+const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+) => {
+
+    const files = Array.from(
+        event.target.files ?? []
+    );
+
+    await processSelectedFiles(files);
+
+    if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
+
+};
+  return (
+    <ToolLayout
+      title="Merge PDF"
+      description="Combine multiple PDF files into a single PDF securely and instantly."
+      wide
+    >
+
+      <div className="flex w-full flex-col items-center justify-start">
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf"
+          className="hidden"
+          onChan
+  ---
+  MATCH:
+ (
+    event: React.ChangeEvent<HTMLInputElement>
+) => {
+
+    const files = Array.from(
+        event.target.files ?? []
+    );
+
+    await processSelectedFiles(files);
+
+    if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
+
+};
+  return (
+    <ToolLayout
+      title="Merge PDF"
+      description="Combine multiple PDF files into a single PDF securely and instantly."
+      wide
+    >
+
+      <div className="flex w-full flex-col items-center justify-start">
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+  ---
+  MATCH:
+"
+      description="Combine multiple PDF files into a single PDF securely and instantly."
+      wide
+    >
+
+      <div className="flex w-full flex-col items-center justify-start">
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+		{showWorkspace && (
+ <div
+    onDragEnter={handleWorkspaceDragEnter}
+    onDragOver={handleWorkspaceDragOver}
+    onDragLeave={handleWorkspaceDragLeave}
+    onDrop={handleWorkspaceDrop}
+    className="relative w-full"
+>
+
+    {isWorkspaceDragOver && (
+        <div
+            className="pointer-events
+  ---
+
+PATTERN: handleSelectFiles
+  MATCH:
+rror({
+          title: "Merge failed",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to merge the selected PDFs.",
+        });
+
+    }
+
+};
+  const handleSelectFiles = () => {
+  fileInputRef.current?.click();
+};
+const handleWorkspaceDragEnter = (
+    event: React.DragEvent<HTMLDivElement>
+) => {
+
+    event.preventDefault();
+
+    if (event.dataTransfer.types.includes("application/x-iepdf-reorder")) {
+        return;
+    }
+
+    if (event.dataTransfer.types.includes("Files")) {
+        setIsWorkspaceDragOver(true);
+    }
+
+};
+
+const handleWorkspaceDragOver = (
+    event: React.DragEvent<HTMLDivElement>
+) =
+  ---
+  MATCH:
+ onPasswordChange={handlePasswordChange}
+    onPasswordBlur={handlePasswordBlur}
+    onTogglePassword={handleTogglePassword}
+    onSkipFile={handleSkipFile}
+    onRemoveFile={handleRemoveFile}
+          onAddFiles={handleSelectFiles}
+          onReorderFiles={handleReorderFiles}
+    onUnlockMerge={handleUnlockMerge}
+/>
+</div>
+)}
+
+
+
+      </div>
+
+    </ToolLayout>
+  );
+}
+
+
+
+
+
+
+
+  ---
+
+PATTERN: handleFileChange
+  MATCH:
+        password: "",
+            showPassword: false,
+            skipped: false,
+
+        })
+    );
+
+    setWorkspaceFiles((previous) => [...previous, ...workspace]);
+
+    setShowWorkspace(true);
+
+};
+const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+) => {
+
+    const files = Array.from(
+        event.target.files ?? []
+    );
+
+    await processSelectedFiles(files);
+
+    if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
+
+};
+  return (
+    <ToolLayout
+      title="Merge PDF"
+      description="Combine multiple PDF files into a single PDF securely and instantly."
+      wide
+    >
+
+      <div className="fl
+  ---
+  MATCH:
+e="flex w-full flex-col items-center justify-start">
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+		{showWorkspace && (
+ <div
+    onDragEnter={handleWorkspaceDragEnter}
+    onDragOver={handleWorkspaceDragOver}
+    onDragLeave={handleWorkspaceDragLeave}
+    onDrop={handleWorkspaceDrop}
+    className="relative w-full"
+>
+
+    {isWorkspaceDragOver && (
+        <div
+            className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center rounded-3xl border-2 border-dashed border-blue-400 bg-blue-50/90"
+     
+  ---
+
+PATTERN: processSelectedFiles
+  MATCH:
+ation();
+        return;
+    }
+
+    setIsWorkspaceDragOver(false);
+
+    const files = Array.from(
+        event.dataTransfer.files ?? []
+    );
+
+    if (files.length === 0) {
+        return;
+    }
+
+    await processSelectedFiles(files);
+
+};
+
+
+const [isWorkspaceDragOver, setIsWorkspaceDragOver] =
+    useState(false);
+const processSelectedFiles = async (
+    files: File[]
+) => {
+
+    if (files.length === 0) {
+        return;
+    }
+
+    const oversizedFile = files.find(
+        (file) => file.size > MAX_FILE_SIZE
+    );
+
+    if (oversizedFile) {
+        toast.error({
+          title: "Invalid PDF",
+          message: "File exceeds the maximum allowed size.",
+ 
+  ---
+  MATCH:
+ansfer.files ?? []
+    );
+
+    if (files.length === 0) {
+        return;
+    }
+
+    await processSelectedFiles(files);
+
+};
+
+
+const [isWorkspaceDragOver, setIsWorkspaceDragOver] =
+    useState(false);
+const processSelectedFiles = async (
+    files: File[]
+) => {
+
+    if (files.length === 0) {
+        return;
+    }
+
+    const oversizedFile = files.find(
+        (file) => file.size > MAX_FILE_SIZE
+    );
+
+    if (oversizedFile) {
+        toast.error({
+          title: "Invalid PDF",
+          message: "File exceeds the maximum allowed size.",
+          fileName: oversizedFile.name,
+          fileSize: oversizedFile.size,
+        });
+        return;
+    }
+
+   
+  ---
+  MATCH:
+e]);
+
+    setShowWorkspace(true);
+
+};
+const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+) => {
+
+    const files = Array.from(
+        event.target.files ?? []
+    );
+
+    await processSelectedFiles(files);
+
+    if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
+
+};
+  return (
+    <ToolLayout
+      title="Merge PDF"
+      description="Combine multiple PDF files into a single PDF securely and instantly."
+      wide
+    >
+
+      <div className="flex w-full flex-col items-center justify-start">
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf"
+      
+  ---
+
+PATTERN: BrowserPdfAnalyzer
+  MATCH:
+"use client";
+
+import { useRef, useState } from "react";
+import { BrowserPdfAnalyzer } from "@/engine/analysis/BrowserPdfAnalyzer";
+import { BrowserMergeProcessor } from "@/engine/processing/processors/BrowserMergeProcessor";
+import { BrowserPdfUnlockService } from "@/engine/unlock/BrowserPdfUnlockService";
+import useToast from "@/hooks/useToast";
+import { ValidationConstants } from "@/engine/validation/common/validationConstants";
+
+import ToolLayout from "@/components/layout/ToolLayout";
+import MergeWorkspace from "@/components/MergeWorkspace";
+
+export default function MergePDF() {
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [workspaceFiles, setWorkspa
+  ---
+  MATCH:
+"use client";
+
+import { useRef, useState } from "react";
+import { BrowserPdfAnalyzer } from "@/engine/analysis/BrowserPdfAnalyzer";
+import { BrowserMergeProcessor } from "@/engine/processing/processors/BrowserMergeProcessor";
+import { BrowserPdfUnlockService } from "@/engine/unlock/BrowserPdfUnlockService";
+import useToast from "@/hooks/useToast";
+import { ValidationConstants } from "@/engine/validation/common/validationConstants";
+
+import ToolLayout from "@/components/layout/ToolLayout";
+import MergeWorkspace from "@/components/MergeWorkspace";
+
+export default function MergePDF() {
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [workspaceFiles, setWorkspa
+  ---
+  MATCH:
+alid PDF",
+          message: "File exceeds the maximum allowed size.",
+          fileName: oversizedFile.name,
+          fileSize: oversizedFile.size,
+        });
+        return;
+    }
+
+    const analyzer = new BrowserPdfAnalyzer();
+
+    const analysis =
+        await analyzer.analyzeMany(files);
+
+    const workspace = analysis.map(
+        (result, index) => ({
+
+            ...result,
+
+            // Original browser File
+            file: files[index],
+
+            // Workspace state
+            password: "",
+            showPassword: false,
+            skipped: false,
+
+        })
+    );
+
+    setWorkspaceFiles((previous) => [...previous, ...workspace]);
+
+   
+  ---
+
+PATTERN: analyzeMany
+  MATCH:
+",
+          fileName: oversizedFile.name,
+          fileSize: oversizedFile.size,
+        });
+        return;
+    }
+
+    const analyzer = new BrowserPdfAnalyzer();
+
+    const analysis =
+        await analyzer.analyzeMany(files);
+
+    const workspace = analysis.map(
+        (result, index) => ({
+
+            ...result,
+
+            // Original browser File
+            file: files[index],
+
+            // Workspace state
+            password: "",
+            showPassword: false,
+            skipped: false,
+
+        })
+    );
+
+    setWorkspaceFiles((previous) => [...previous, ...workspace]);
+
+    setShowWorkspace(true);
+
+};
+const handleFileChange = async (
+    
+  ---
+
+PATTERN: setWorkspaceFiles
+  MATCH:
+@/components/layout/ToolLayout";
+import MergeWorkspace from "@/components/MergeWorkspace";
+
+export default function MergePDF() {
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [workspaceFiles, setWorkspaceFiles] = useState<any[]>([]);
+  const [showWorkspace, setShowWorkspace] = useState(true);
+
+  const toast = useToast();
+  const MAX_FILE_SIZE = ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES;
+  
+  const handlePasswordChange = (
+    id: string,
+    password: string
+) => {
+
+    setWorkspaceFiles((prev) =>
+        prev.map((file) =>
+            file.id === id
+                ? {
+                      ...file,
+                      password
+  ---
+  MATCH:
+ate(true);
+
+  const toast = useToast();
+  const MAX_FILE_SIZE = ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES;
+  
+  const handlePasswordChange = (
+    id: string,
+    password: string
+) => {
+
+    setWorkspaceFiles((prev) =>
+        prev.map((file) =>
+            file.id === id
+                ? {
+                      ...file,
+                      password,
+                  }
+                : file
+        )
+    );
+
+};
+
+  const handlePasswordBlur = async (
+    id: string
+  ) => {
+
+    const targetFile =
+      workspaceFiles.find(
+        (file) => file.id === id
+      );
+
+    if (!targetFile) {
+      return;
+    }
+
+    const password =
+   
+  ---
+  MATCH:
+       password
+        );
+
+      const unlockedFile =
+        new File(
+          [result.bytes],
+          targetFile.filename,
+          {
+            type: "application/pdf"
+          }
+        );
+
+      setWorkspaceFiles((previous) =>
+        previous.map((file) =>
+          file.id === id
+            ? {
+                ...file,
+
+                file:
+                  unlockedFile,
+
+                size:
+                  unlockedFile.size,
+
+                status:
+                  "ready",
+
+                encrypted:
+                  result.encrypted,
+
+                corrupted:
+                  false,
+
+                message:
+                  "
+  ---
+  MATCH:
+of Error
+            ? error.message
+            : "Unable to unlock PDF.",
+      });
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to unlock PDF.";
+
+      setWorkspaceFiles((previous) =>
+        previous.map((file) =>
+          file.id === id
+            ? {
+                ...file,
+
+                status:
+                  "password_required",
+
+                message,
+            }
+          : file
+        )
+      );
+
+    }
+
+  };
+  const handleTogglePassword = (id: string) => {
+    setWorkspaceFiles((prev) =>
+      prev.map((file) =>
+        file.id === id
+          ? {
+              ...file,
+        
+  ---
+  MATCH:
+
+                status:
+                  "password_required",
+
+                message,
+            }
+          : file
+        )
+      );
+
+    }
+
+  };
+  const handleTogglePassword = (id: string) => {
+    setWorkspaceFiles((prev) =>
+      prev.map((file) =>
+        file.id === id
+          ? {
+              ...file,
+              showPassword: !file.showPassword,
+            }
+          : file
+      )
+    );
+  };
+  const handleSkipFile = (id: string) => {
+  setWorkspaceFiles((prev) =>
+    prev.map((file) =>
+      file.id === id
+        ? {
+            ...file,
+            skipped: !file.skipped,
+          }
+        : file
+    )
+  );
+};
+
+const handleReor
+  ---
+  MATCH:
+) =>
+        file.id === id
+          ? {
+              ...file,
+              showPassword: !file.showPassword,
+            }
+          : file
+      )
+    );
+  };
+  const handleSkipFile = (id: string) => {
+  setWorkspaceFiles((prev) =>
+    prev.map((file) =>
+      file.id === id
+        ? {
+            ...file,
+            skipped: !file.skipped,
+          }
+        : file
+    )
+  );
+};
+
+const handleReorderFiles = (
+    draggedId: string,
+    targetId: string
+) => {
+
+    if (!draggedId || !targetId || draggedId === targetId) {
+        return;
+    }
+
+    setWorkspaceFiles((previous) => {
+
+        const draggedIndex = previous.findIndex(
+            (file) =
+  ---
+  MATCH:
+    }
+        : file
+    )
+  );
+};
+
+const handleReorderFiles = (
+    draggedId: string,
+    targetId: string
+) => {
+
+    if (!draggedId || !targetId || draggedId === targetId) {
+        return;
+    }
+
+    setWorkspaceFiles((previous) => {
+
+        const draggedIndex = previous.findIndex(
+            (file) => file.id === draggedId
+        );
+
+        const targetIndex = previous.findIndex(
+            (file) => file.id === targetId
+        );
+
+        if (
+            draggedIndex === -1 ||
+            targetIndex === -1 ||
+            draggedIndex === targetIndex
+        ) {
+            return previous;
+        }
+
+        const updated = [...previous];
+
+  
+  ---
+  MATCH:
+         1
+        );
+
+        updated.splice(
+            targetIndex,
+            0,
+            movedFile
+        );
+
+        return updated;
+
+    });
+};
+const handleRemoveFile = (id: string) => {
+
+    setWorkspaceFiles((previous) => {
+
+        const updated = previous.filter(
+            (file) => file.id !== id
+        );
+
+        if (updated.length === 0) {
+
+            setShowWorkspace(true);
+
+            if (fileInputRef.current) {
+
+                fileInputRef.current.value = "";
+
+            }
+
+        }
+
+        return updated;
+
+    });
+
+};
+    const handleUnlockMerge = async () => {
+
+    try {
+
+
+        const processor =
+            new
+  ---
+  MATCH:
+.click();
+
+        link.remove();
+
+        toast.success({
+          title: "Merge completed",
+          message: "Your PDFs were merged successfully.",
+        });
+
+        URL.revokeObjectURL(url);
+
+        setWorkspaceFiles([]);
+
+        setShowWorkspace(true);
+
+        if (fileInputRef.current) {
+
+            fileInputRef.current.value = "";
+
+        }
+
+    } catch (error) {
+
+        toast.error({
+          title: "Merge failed",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to merge the selected PDFs.",
+        });
+
+    }
+
+};
+  const handleSelectFiles = () => {
+  fileInputRef.current?.click(
+  ---
+  MATCH:
+         // Original browser File
+            file: files[index],
+
+            // Workspace state
+            password: "",
+            showPassword: false,
+            skipped: false,
+
+        })
+    );
+
+    setWorkspaceFiles((previous) => [...previous, ...workspace]);
+
+    setShowWorkspace(true);
+
+};
+const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+) => {
+
+    const files = Array.from(
+        event.target.files ?? []
+    );
+
+    await processSelectedFiles(files);
+
+    if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
+
+};
+  return (
+    <ToolLayout
+      title="Merge PDF"
+      description="Combine mu
+  ---
+
+--- 5. POSSIBLE OLD TWO-STATE WORKSPACE FLOW ---
+
+PATTERN: showWorkspace
+  MATCH:
+ace from "@/components/MergeWorkspace";
+
+export default function MergePDF() {
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [workspaceFiles, setWorkspaceFiles] = useState<any[]>([]);
+  const [showWorkspace, setShowWorkspace] = useState(true);
+
+  const toast = useToast();
+  const MAX_FILE_SIZE = ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES;
+  
+  const handlePasswordChange = (
+    id: string,
+    password: string
+) => {
+
+    setWorkspaceFiles((prev) =>
+        prev.map((file) =>
+            file.id === id
+                ? {
+                      ...file,
+                      password,
+                  }
+                : file
+    
+  ---
+  MATCH:
+ents/MergeWorkspace";
+
+export default function MergePDF() {
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [workspaceFiles, setWorkspaceFiles] = useState<any[]>([]);
+  const [showWorkspace, setShowWorkspace] = useState(true);
+
+  const toast = useToast();
+  const MAX_FILE_SIZE = ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES;
+  
+  const handlePasswordChange = (
+    id: string,
+    password: string
+) => {
+
+    setWorkspaceFiles((prev) =>
+        prev.map((file) =>
+            file.id === id
+                ? {
+                      ...file,
+                      password,
+                  }
+                : file
+        )
+    );
+
+}
+  ---
+  MATCH:
+oveFile = (id: string) => {
+
+    setWorkspaceFiles((previous) => {
+
+        const updated = previous.filter(
+            (file) => file.id !== id
+        );
+
+        if (updated.length === 0) {
+
+            setShowWorkspace(true);
+
+            if (fileInputRef.current) {
+
+                fileInputRef.current.value = "";
+
+            }
+
+        }
+
+        return updated;
+
+    });
+
+};
+    const handleUnlockMerge = async () => {
+
+    try {
+
+
+        const processor =
+            new BrowserMergeProcessor();
+
+        const result =
+            await processor.process({
+
+                files: workspaceFiles,
+
+                toolType: "merge",
+
+           
+  ---
+  MATCH:
+
+        toast.success({
+          title: "Merge completed",
+          message: "Your PDFs were merged successfully.",
+        });
+
+        URL.revokeObjectURL(url);
+
+        setWorkspaceFiles([]);
+
+        setShowWorkspace(true);
+
+        if (fileInputRef.current) {
+
+            fileInputRef.current.value = "";
+
+        }
+
+    } catch (error) {
+
+        toast.error({
+          title: "Merge failed",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to merge the selected PDFs.",
+        });
+
+    }
+
+};
+  const handleSelectFiles = () => {
+  fileInputRef.current?.click();
+};
+const handleWorkspaceDragEnte
+  ---
+  MATCH:
+          // Workspace state
+            password: "",
+            showPassword: false,
+            skipped: false,
+
+        })
+    );
+
+    setWorkspaceFiles((previous) => [...previous, ...workspace]);
+
+    setShowWorkspace(true);
+
+};
+const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+) => {
+
+    const files = Array.from(
+        event.target.files ?? []
+    );
+
+    await processSelectedFiles(files);
+
+    if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
+
+};
+  return (
+    <ToolLayout
+      title="Merge PDF"
+      description="Combine multiple PDF files into a single PDF securely and instantly."
+      wide
+  ---
+  MATCH:
+ justify-start">
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+		{showWorkspace && (
+ <div
+    onDragEnter={handleWorkspaceDragEnter}
+    onDragOver={handleWorkspaceDragOver}
+    onDragLeave={handleWorkspaceDragLeave}
+    onDrop={handleWorkspaceDrop}
+    className="relative w-full"
+>
+
+    {isWorkspaceDragOver && (
+        <div
+            className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center rounded-3xl border-2 border-dashed border-blue-400 bg-blue-50/90"
+        >
+            <div className="ro
+  ---
+
+PATTERN: Select PDF Files
+  NOT FOUND
+
+PATTERN: Select PDF
+  NOT FOUND
+
+PATTERN: No PDFs
+  NOT FOUND
+
+PATTERN: Get started
+  NOT FOUND
+
+PATTERN: Add PDF Files
+  NOT FOUND
+
+--- 6. MERGEWORKSPACE PROPS ---
+
+PATTERN: interface MergeWorkspaceProps
+  NOT FOUND
+
+PATTERN: type MergeWorkspaceProps
+  NOT FOUND
+
+PATTERN: files:
+  MATCH:
+;
+
+    status: string;
+
+    encrypted: boolean;
+
+    corrupted: boolean;
+
+    password?: string;
+
+    showPassword?: boolean;
+
+    skipped?: boolean;
+
+    message?: string;
+
+}
+
+interface Props {
+
+    files: PDFFile[];
+
+    onPasswordChange: (
+        id: string,
+        password: string
+    ) => void;
+
+    onPasswordBlur: (
+        id: string
+    ) => void;
+
+    onTogglePassword: (
+        id: string
+    ) => void;
+
+    onSkipFile: (
+        id: string
+    ) => void;
+
+    onRemoveFile: (
+        id: string
+    ) => void;
+
+    onAddFiles: () => void;
+
+    onReorderFiles: (
+        draggedId: string,
+        targetId: string
+    ) => void;
+
+   
+  ---
+  MATCH:
+  id: string
+    ) => void;
+
+    onTogglePassword: (
+        id: string
+    ) => void;
+
+    onSkipFile: (
+        id: string
+    ) => void;
+
+    onRemoveFile: (
+        id: string
+    ) => void;
+
+    onAddFiles: () => void;
+
+    onReorderFiles: (
+        draggedId: string,
+        targetId: string
+    ) => void;
+
+    onUnlockMerge: () => void;
+
+}
+
+export default function MergeWorkspace({
+
+    files,
+
+    onPasswordChange,
+
+    onPasswordBlur,
+
+    onTogglePassword,
+
+    onSkipFile,
+
+    onRemoveFile,
+
+    onAddFiles,
+
+    onReorderFiles,
+
+    onUnlockMerge,
+
+}: Props) {
+
+    const summary = useMemo(() => {
+
+        let ready = 0;
+
+        l
+  ---
+  MATCH:
+ onTogglePassword: (
+        id: string
+    ) => void;
+
+    onSkipFile: (
+        id: string
+    ) => void;
+
+    onRemoveFile: (
+        id: string
+    ) => void;
+
+    onAddFiles: () => void;
+
+    onReorderFiles: (
+        draggedId: string,
+        targetId: string
+    ) => void;
+
+    onUnlockMerge: () => void;
+
+}
+
+export default function MergeWorkspace({
+
+    files,
+
+    onPasswordChange,
+
+    onPasswordBlur,
+
+    onTogglePassword,
+
+    onSkipFile,
+
+    onRemoveFile,
+
+    onAddFiles,
+
+    onReorderFiles,
+
+    onUnlockMerge,
+
+}: Props) {
+
+    const summary = useMemo(() => {
+
+        let ready = 0;
+
+        let protectedFiles = 0;
+
+        l
+  ---
+
+PATTERN: onAddFiles
+  MATCH:
+       id: string
+    ) => void;
+
+    onTogglePassword: (
+        id: string
+    ) => void;
+
+    onSkipFile: (
+        id: string
+    ) => void;
+
+    onRemoveFile: (
+        id: string
+    ) => void;
+
+    onAddFiles: () => void;
+
+    onReorderFiles: (
+        draggedId: string,
+        targetId: string
+    ) => void;
+
+    onUnlockMerge: () => void;
+
+}
+
+export default function MergeWorkspace({
+
+    files,
+
+    onPasswordChange,
+
+    onPasswordBlur,
+
+    onTogglePassword,
+
+    onSkipFile,
+
+    onRemoveFile,
+
+    onAddFiles,
+
+    onReorderFiles,
+
+    onUnlockMerge,
+
+}: Props) {
+
+    const summary = useMemo(() => {
+
+        let ready = 0;
+
+    
+  ---
+  MATCH:
+d;
+
+    onUnlockMerge: () => void;
+
+}
+
+export default function MergeWorkspace({
+
+    files,
+
+    onPasswordChange,
+
+    onPasswordBlur,
+
+    onTogglePassword,
+
+    onSkipFile,
+
+    onRemoveFile,
+
+    onAddFiles,
+
+    onReorderFiles,
+
+    onUnlockMerge,
+
+}: Props) {
+
+    const summary = useMemo(() => {
+
+        let ready = 0;
+
+        let protectedFiles = 0;
+
+        let skipped = 0;
+
+        let corrupted = 0;
+
+        let invalid = 0;
+
+        files.forEach((file) => {
+
+            if (file.skipped) {
+
+                skipped++;
+
+                return;
+
+            }
+
+            switch (file.status) {
+
+                case "ready":
+
+  
+  ---
+  MATCH:
+ min-w-0 flex-col overflow-hidden border-r border-dashed border-slate-300 p-4 lg:col-start-1 lg:row-start-1">
+        <div className="shrink-0">
+            <button
+                type="button"
+                onClick={onAddFiles}
+                className="group flex min-h-[150px] w-full flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-5 text-center transition hover:border-blue-400 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="mb-2 h-9 w-9 text-slate-500 t
+  ---
+
+PATTERN: onReorderFiles
+  MATCH:
+d;
+
+    onTogglePassword: (
+        id: string
+    ) => void;
+
+    onSkipFile: (
+        id: string
+    ) => void;
+
+    onRemoveFile: (
+        id: string
+    ) => void;
+
+    onAddFiles: () => void;
+
+    onReorderFiles: (
+        draggedId: string,
+        targetId: string
+    ) => void;
+
+    onUnlockMerge: () => void;
+
+}
+
+export default function MergeWorkspace({
+
+    files,
+
+    onPasswordChange,
+
+    onPasswordBlur,
+
+    onTogglePassword,
+
+    onSkipFile,
+
+    onRemoveFile,
+
+    onAddFiles,
+
+    onReorderFiles,
+
+    onUnlockMerge,
+
+}: Props) {
+
+    const summary = useMemo(() => {
+
+        let ready = 0;
+
+        let protectedFiles = 0;
+
+
+  ---
+  MATCH:
+erge: () => void;
+
+}
+
+export default function MergeWorkspace({
+
+    files,
+
+    onPasswordChange,
+
+    onPasswordBlur,
+
+    onTogglePassword,
+
+    onSkipFile,
+
+    onRemoveFile,
+
+    onAddFiles,
+
+    onReorderFiles,
+
+    onUnlockMerge,
+
+}: Props) {
+
+    const summary = useMemo(() => {
+
+        let ready = 0;
+
+        let protectedFiles = 0;
+
+        let skipped = 0;
+
+        let corrupted = 0;
+
+        let invalid = 0;
+
+        files.forEach((file) => {
+
+            if (file.skipped) {
+
+                skipped++;
+
+                return;
+
+            }
+
+            switch (file.status) {
+
+                case "ready":
+
+                    r
+  ---
+  MATCH:
+pagation();
+
+        const draggedId =
+            event.dataTransfer.getData("text/plain") ||
+            draggedFileId;
+
+        if (
+            draggedId &&
+            draggedId !== targetId
+        ) {
+            onReorderFiles(
+                draggedId,
+                targetId
+            );
+        }
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+    };
+
+    const handleDragEnd = () => {
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+
+    };
+    const canMerge = useMemo(() => {
+
+        const activeFiles = files.filter(file => !file.skipped);
+
+        if (activeFiles.length < 2) {
+            return false;
+        }
+
+        re
+  ---
+
+PATTERN: onUnlockMerge
+  MATCH:
+ id: string
+    ) => void;
+
+    onRemoveFile: (
+        id: string
+    ) => void;
+
+    onAddFiles: () => void;
+
+    onReorderFiles: (
+        draggedId: string,
+        targetId: string
+    ) => void;
+
+    onUnlockMerge: () => void;
+
+}
+
+export default function MergeWorkspace({
+
+    files,
+
+    onPasswordChange,
+
+    onPasswordBlur,
+
+    onTogglePassword,
+
+    onSkipFile,
+
+    onRemoveFile,
+
+    onAddFiles,
+
+    onReorderFiles,
+
+    onUnlockMerge,
+
+}: Props) {
+
+    const summary = useMemo(() => {
+
+        let ready = 0;
+
+        let protectedFiles = 0;
+
+        let skipped = 0;
+
+        let corrupted = 0;
+
+        let invalid = 0;
+
+        f
+  ---
+  MATCH:
+
+
+export default function MergeWorkspace({
+
+    files,
+
+    onPasswordChange,
+
+    onPasswordBlur,
+
+    onTogglePassword,
+
+    onSkipFile,
+
+    onRemoveFile,
+
+    onAddFiles,
+
+    onReorderFiles,
+
+    onUnlockMerge,
+
+}: Props) {
+
+    const summary = useMemo(() => {
+
+        let ready = 0;
+
+        let protectedFiles = 0;
+
+        let skipped = 0;
+
+        let corrupted = 0;
+
+        let invalid = 0;
+
+        files.forEach((file) => {
+
+            if (file.skipped) {
+
+                skipped++;
+
+                return;
+
+            }
+
+            switch (file.status) {
+
+                case "ready":
+
+                    ready++;
+
+            
+  ---
+  MATCH:
+div className="mt-auto border-t border-dashed border-slate-200 pt-4">
+
+                    <button
+                        type="button"
+                        disabled={!canMerge}
+                        onClick={onUnlockMerge}
+                        className={`w-full rounded-xl px-5 py-3.5 text-base font-semibold text-white shadow-lg transition ${
+                            !canMerge
+                                ? "cursor-not-allowed bg-gray-400"
+                                : "bg-red-600 hover:bg-red-700"
+                        }`}
+                    >
+                        &#128275; Unlock & Merge
+                    </button>
+
+                </div>
+        
+  ---
+
+--- 7. MERGEWORKSPACE FILE RENDERING ---
+
+PATTERN: files\.map
+  MATCH:
+ text-slate-500">Drag &#8942;&#8942; to reorder</span>
+            </div>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto pr-1 pt-3">
+            <div className="space-y-3">
+
+                    {files.map((file, index) => (
+
+                        <div
+                            key={file.id}
+                            onDragOver={(event) =>
+                                handleDragOver(event, file.id)
+                            }
+                            onDragLeave={handleDragLeave}
+                            onDrop={(event) =>
+                                handleDrop(event, file.id)
+                            }
+                            cl
+  ---
+
+PATTERN: files\.length
+  MATCH:
+    corrupted++;
+
+                    break;
+
+                case "invalid":
+
+                    invalid++;
+
+                    break;
+
+            }
+
+        });
+
+        return {
+
+            total: files.length,
+
+            ready,
+
+            protectedFiles,
+
+            skipped,
+
+            corrupted,
+
+            invalid,
+
+        };
+
+    }, [files]);
+
+    const [draggedFileId, setDraggedFileId] = useState<string | null>(null);
+
+    const [dragOverFileId, setDragOverFileId] = useState<string | null>(null);
+
+    const handleDragStart = (
+        event: React.DragEvent<HTMLDivElement>,
+        id: string
+    ) => {
+
+        setDraggedFileId(i
+  ---
+  MATCH:
+End = () => {
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+
+    };
+    const canMerge = useMemo(() => {
+
+        const activeFiles = files.filter(file => !file.skipped);
+
+        if (activeFiles.length < 2) {
+            return false;
+        }
+
+        return activeFiles.every(
+            file => file.status === "ready" || (
+                file.status === "password_required" &&
+                Boolean(file.password?.trim())
+            )
+        );
+
+    }, [files]);
+
+    return (
+
+        <div className="relative mt-2 grid h-[calc(100vh-205px)] min-h-[560px] w-full max-w-none grid-cols-1 grid-rows-[minmax(0,1fr)] overflow-hidden rounded-2xl bo
+  ---
+  MATCH:
+          tabIndex={0}
+                                    aria-label={`Drag PDF ${index + 1} to reorder`}
+                                    title="Drag to reorder"
+                                    className={`${files.length > 1 ? "" : "invisible pointer-events-none"}flex h-10 w-10 shrink-0 cursor-grab select-none items-center justify-center rounded-lg border border-slate-300 bg-slate-50 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 active:cursor-grab select-nonebing ${
+                                        draggedFileId === file.id
+                                            ? "bg-blue-50 text-blue-600"
+                                            : ""
+     
+  ---
+
+PATTERN: activeFiles
+  MATCH:
+d(null);
+        setDragOverFileId(null);
+    };
+
+    const handleDragEnd = () => {
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+
+    };
+    const canMerge = useMemo(() => {
+
+        const activeFiles = files.filter(file => !file.skipped);
+
+        if (activeFiles.length < 2) {
+            return false;
+        }
+
+        return activeFiles.every(
+            file => file.status === "ready" || (
+                file.status === "password_required" &&
+                Boolean(file.password?.trim())
+            )
+        );
+
+    }, [files]);
+
+    return (
+
+        <div className="relative mt-2 grid h-[calc(100vh-205px)] min-h-[560px] w-full max-w-n
+  ---
+  MATCH:
+leDragEnd = () => {
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+
+    };
+    const canMerge = useMemo(() => {
+
+        const activeFiles = files.filter(file => !file.skipped);
+
+        if (activeFiles.length < 2) {
+            return false;
+        }
+
+        return activeFiles.every(
+            file => file.status === "ready" || (
+                file.status === "password_required" &&
+                Boolean(file.password?.trim())
+            )
+        );
+
+    }, [files]);
+
+    return (
+
+        <div className="relative mt-2 grid h-[calc(100vh-205px)] min-h-[560px] w-full max-w-none grid-cols-1 grid-rows-[minmax(0,1fr)] overflow-hidden rounded-
+  ---
+  MATCH:
+null);
+
+    };
+    const canMerge = useMemo(() => {
+
+        const activeFiles = files.filter(file => !file.skipped);
+
+        if (activeFiles.length < 2) {
+            return false;
+        }
+
+        return activeFiles.every(
+            file => file.status === "ready" || (
+                file.status === "password_required" &&
+                Boolean(file.password?.trim())
+            )
+        );
+
+    }, [files]);
+
+    return (
+
+        <div className="relative mt-2 grid h-[calc(100vh-205px)] min-h-[560px] w-full max-w-none grid-cols-1 grid-rows-[minmax(0,1fr)] overflow-hidden rounded-2xl border border-dashed border-slate-300 bg-white shadow-sm lg:grid-cols-[minmax(
+  ---
+
+PATTERN: filteredFiles
+  NOT FOUND
+
+PATTERN: workspaceFiles
+  NOT FOUND
+
+PATTERN: PDF files
+  MATCH:
+<path strokeLinecap="round" strokeLinejoin="round" d="M4 15.5v2A2.5 2.5 0 0 0 6.5 20h11a2.5 2.5 0 0 0 2.5-2.5v-2" />
+                </svg>
+                <span className="mb-1 text-sm font-semibold text-slate-700">Add PDF Files</span>
+                <span className="text-xl font-semibold text-slate-800">Drop PDFs here</span>
+                <span className="mt-1 text-sm text-slate-500">or click to browse &#183; Max 15 MiB each</span>
+            </button>
+            <div className="mt-3 flex items-center justify-between border-b border-dashed border-slate-200 pb-2">
+                <span className="text-sm font-semibold text-slate-800">PDF files</span>
+                <span className="t
+  ---
+  MATCH:
+ each</span>
+            </button>
+            <div className="mt-3 flex items-center justify-between border-b border-dashed border-slate-200 pb-2">
+                <span className="text-sm font-semibold text-slate-800">PDF files</span>
+                <span className="text-xs text-slate-500">Drag &#8942;&#8942; to reorder</span>
+            </div>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto pr-1 pt-3">
+            <div className="space-y-3">
+
+                    {files.map((file, index) => (
+
+                        <div
+                            key={file.id}
+                            onDragOver={(event) =>
+                                handleDragOver
+  ---
+
+PATTERN: Drag
+  MATCH:
+ (
+        id: string
+    ) => void;
+
+    onSkipFile: (
+        id: string
+    ) => void;
+
+    onRemoveFile: (
+        id: string
+    ) => void;
+
+    onAddFiles: () => void;
+
+    onReorderFiles: (
+        draggedId: string,
+        targetId: string
+    ) => void;
+
+    onUnlockMerge: () => void;
+
+}
+
+export default function MergeWorkspace({
+
+    files,
+
+    onPasswordChange,
+
+    onPasswordBlur,
+
+    onTogglePassword,
+
+    onSkipFile,
+
+    onRemoveFile,
+
+    onAddFiles,
+
+    onReorderFiles,
+
+    onUnlockMerge,
+
+}: Props) {
+
+    const summary = useMemo(() => {
+
+        let ready = 0;
+
+        let protectedFiles = 0;
+
+        let skipped = 0;
+
+  ---
+  MATCH:
+return {
+
+            total: files.length,
+
+            ready,
+
+            protectedFiles,
+
+            skipped,
+
+            corrupted,
+
+            invalid,
+
+        };
+
+    }, [files]);
+
+    const [draggedFileId, setDraggedFileId] = useState<string | null>(null);
+
+    const [dragOverFileId, setDragOverFileId] = useState<string | null>(null);
+
+    const handleDragStart = (
+        event: React.DragEvent<HTMLDivElement>,
+        id: string
+    ) => {
+
+        setDraggedFileId(id);
+        setDragOverFileId(null);
+
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData(
+            "text/plain",
+            id
+        );
+    
+  ---
+  MATCH:
+      total: files.length,
+
+            ready,
+
+            protectedFiles,
+
+            skipped,
+
+            corrupted,
+
+            invalid,
+
+        };
+
+    }, [files]);
+
+    const [draggedFileId, setDraggedFileId] = useState<string | null>(null);
+
+    const [dragOverFileId, setDragOverFileId] = useState<string | null>(null);
+
+    const handleDragStart = (
+        event: React.DragEvent<HTMLDivElement>,
+        id: string
+    ) => {
+
+        setDraggedFileId(id);
+        setDragOverFileId(null);
+
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData(
+            "text/plain",
+            id
+        );
+        event.dataTran
+  ---
+  MATCH:
+  protectedFiles,
+
+            skipped,
+
+            corrupted,
+
+            invalid,
+
+        };
+
+    }, [files]);
+
+    const [draggedFileId, setDraggedFileId] = useState<string | null>(null);
+
+    const [dragOverFileId, setDragOverFileId] = useState<string | null>(null);
+
+    const handleDragStart = (
+        event: React.DragEvent<HTMLDivElement>,
+        id: string
+    ) => {
+
+        setDraggedFileId(id);
+        setDragOverFileId(null);
+
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData(
+            "text/plain",
+            id
+        );
+        event.dataTransfer.setData("application/x-iepdf-reorder", "1");
+
+    };
+
+  ---
+  MATCH:
+
+            skipped,
+
+            corrupted,
+
+            invalid,
+
+        };
+
+    }, [files]);
+
+    const [draggedFileId, setDraggedFileId] = useState<string | null>(null);
+
+    const [dragOverFileId, setDragOverFileId] = useState<string | null>(null);
+
+    const handleDragStart = (
+        event: React.DragEvent<HTMLDivElement>,
+        id: string
+    ) => {
+
+        setDraggedFileId(id);
+        setDragOverFileId(null);
+
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData(
+            "text/plain",
+            id
+        );
+        event.dataTransfer.setData("application/x-iepdf-reorder", "1");
+
+    };
+
+    const handleDr
+  ---
+  MATCH:
+lid,
+
+        };
+
+    }, [files]);
+
+    const [draggedFileId, setDraggedFileId] = useState<string | null>(null);
+
+    const [dragOverFileId, setDragOverFileId] = useState<string | null>(null);
+
+    const handleDragStart = (
+        event: React.DragEvent<HTMLDivElement>,
+        id: string
+    ) => {
+
+        setDraggedFileId(id);
+        setDragOverFileId(null);
+
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData(
+            "text/plain",
+            id
+        );
+        event.dataTransfer.setData("application/x-iepdf-reorder", "1");
+
+    };
+
+    const handleDragOver = (
+        event: React.DragEvent<HTMLDivElement>,
+       
+  ---
+  MATCH:
+);
+
+    const [draggedFileId, setDraggedFileId] = useState<string | null>(null);
+
+    const [dragOverFileId, setDragOverFileId] = useState<string | null>(null);
+
+    const handleDragStart = (
+        event: React.DragEvent<HTMLDivElement>,
+        id: string
+    ) => {
+
+        setDraggedFileId(id);
+        setDragOverFileId(null);
+
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData(
+            "text/plain",
+            id
+        );
+        event.dataTransfer.setData("application/x-iepdf-reorder", "1");
+
+    };
+
+    const handleDragOver = (
+        event: React.DragEvent<HTMLDivElement>,
+        id: string
+    ) => {
+
+        e
+  ---
+  MATCH:
+l>(null);
+
+    const [dragOverFileId, setDragOverFileId] = useState<string | null>(null);
+
+    const handleDragStart = (
+        event: React.DragEvent<HTMLDivElement>,
+        id: string
+    ) => {
+
+        setDraggedFileId(id);
+        setDragOverFileId(null);
+
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData(
+            "text/plain",
+            id
+        );
+        event.dataTransfer.setData("application/x-iepdf-reorder", "1");
+
+    };
+
+    const handleDragOver = (
+        event: React.DragEvent<HTMLDivElement>,
+        id: string
+    ) => {
+
+        event.preventDefault();
+
+        if (
+            draggedFileId &&
+   
+  ---
+  MATCH:
+rFileId, setDragOverFileId] = useState<string | null>(null);
+
+    const handleDragStart = (
+        event: React.DragEvent<HTMLDivElement>,
+        id: string
+    ) => {
+
+        setDraggedFileId(id);
+        setDragOverFileId(null);
+
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData(
+            "text/plain",
+            id
+        );
+        event.dataTransfer.setData("application/x-iepdf-reorder", "1");
+
+    };
+
+    const handleDragOver = (
+        event: React.DragEvent<HTMLDivElement>,
+        id: string
+    ) => {
+
+        event.preventDefault();
+
+        if (
+            draggedFileId &&
+            draggedFileId !== id
+
+  ---
+  MATCH:
+r.effectAllowed = "move";
+        event.dataTransfer.setData(
+            "text/plain",
+            id
+        );
+        event.dataTransfer.setData("application/x-iepdf-reorder", "1");
+
+    };
+
+    const handleDragOver = (
+        event: React.DragEvent<HTMLDivElement>,
+        id: string
+    ) => {
+
+        event.preventDefault();
+
+        if (
+            draggedFileId &&
+            draggedFileId !== id
+        ) {
+            setDragOverFileId(id);
+            event.dataTransfer.dropEffect = "move";
+        }
+
+    };
+
+    const handleDragLeave = (
+        event: React.DragEvent<HTMLDivElement>
+    ) => {
+
+        const currentTarget = event.currentTarget;
+
+  ---
+  MATCH:
+event.dataTransfer.setData(
+            "text/plain",
+            id
+        );
+        event.dataTransfer.setData("application/x-iepdf-reorder", "1");
+
+    };
+
+    const handleDragOver = (
+        event: React.DragEvent<HTMLDivElement>,
+        id: string
+    ) => {
+
+        event.preventDefault();
+
+        if (
+            draggedFileId &&
+            draggedFileId !== id
+        ) {
+            setDragOverFileId(id);
+            event.dataTransfer.dropEffect = "move";
+        }
+
+    };
+
+    const handleDragLeave = (
+        event: React.DragEvent<HTMLDivElement>
+    ) => {
+
+        const currentTarget = event.currentTarget;
+
+        if (
+            event.r
+  ---
+  MATCH:
+lication/x-iepdf-reorder", "1");
+
+    };
+
+    const handleDragOver = (
+        event: React.DragEvent<HTMLDivElement>,
+        id: string
+    ) => {
+
+        event.preventDefault();
+
+        if (
+            draggedFileId &&
+            draggedFileId !== id
+        ) {
+            setDragOverFileId(id);
+            event.dataTransfer.dropEffect = "move";
+        }
+
+    };
+
+    const handleDragLeave = (
+        event: React.DragEvent<HTMLDivElement>
+    ) => {
+
+        const currentTarget = event.currentTarget;
+
+        if (
+            event.relatedTarget instanceof Node &&
+            currentTarget.contains(event.relatedTarget)
+        ) {
+            return;
+  ---
+  MATCH:
+);
+
+    };
+
+    const handleDragOver = (
+        event: React.DragEvent<HTMLDivElement>,
+        id: string
+    ) => {
+
+        event.preventDefault();
+
+        if (
+            draggedFileId &&
+            draggedFileId !== id
+        ) {
+            setDragOverFileId(id);
+            event.dataTransfer.dropEffect = "move";
+        }
+
+    };
+
+    const handleDragLeave = (
+        event: React.DragEvent<HTMLDivElement>
+    ) => {
+
+        const currentTarget = event.currentTarget;
+
+        if (
+            event.relatedTarget instanceof Node &&
+            currentTarget.contains(event.relatedTarget)
+        ) {
+            return;
+        }
+
+        setDragO
+  ---
+  MATCH:
+    event: React.DragEvent<HTMLDivElement>,
+        id: string
+    ) => {
+
+        event.preventDefault();
+
+        if (
+            draggedFileId &&
+            draggedFileId !== id
+        ) {
+            setDragOverFileId(id);
+            event.dataTransfer.dropEffect = "move";
+        }
+
+    };
+
+    const handleDragLeave = (
+        event: React.DragEvent<HTMLDivElement>
+    ) => {
+
+        const currentTarget = event.currentTarget;
+
+        if (
+            event.relatedTarget instanceof Node &&
+            currentTarget.contains(event.relatedTarget)
+        ) {
+            return;
+        }
+
+        setDragOverFileId(null);
+
+    };
+
+    const handleDrop
+  ---
+  MATCH:
+
+        if (
+            draggedFileId &&
+            draggedFileId !== id
+        ) {
+            setDragOverFileId(id);
+            event.dataTransfer.dropEffect = "move";
+        }
+
+    };
+
+    const handleDragLeave = (
+        event: React.DragEvent<HTMLDivElement>
+    ) => {
+
+        const currentTarget = event.currentTarget;
+
+        if (
+            event.relatedTarget instanceof Node &&
+            currentTarget.contains(event.relatedTarget)
+        ) {
+            return;
+        }
+
+        setDragOverFileId(null);
+
+    };
+
+    const handleDrop = (
+        event: React.DragEvent<HTMLDivElement>,
+        targetId: string
+    ) => {
+        const isInternal
+  ---
+  MATCH:
+leId &&
+            draggedFileId !== id
+        ) {
+            setDragOverFileId(id);
+            event.dataTransfer.dropEffect = "move";
+        }
+
+    };
+
+    const handleDragLeave = (
+        event: React.DragEvent<HTMLDivElement>
+    ) => {
+
+        const currentTarget = event.currentTarget;
+
+        if (
+            event.relatedTarget instanceof Node &&
+            currentTarget.contains(event.relatedTarget)
+        ) {
+            return;
+        }
+
+        setDragOverFileId(null);
+
+    };
+
+    const handleDrop = (
+        event: React.DragEvent<HTMLDivElement>,
+        targetId: string
+    ) => {
+        const isInternalReorder =
+            event.dataTran
+  ---
+  MATCH:
+urrentTarget = event.currentTarget;
+
+        if (
+            event.relatedTarget instanceof Node &&
+            currentTarget.contains(event.relatedTarget)
+        ) {
+            return;
+        }
+
+        setDragOverFileId(null);
+
+    };
+
+    const handleDrop = (
+        event: React.DragEvent<HTMLDivElement>,
+        targetId: string
+    ) => {
+        const isInternalReorder =
+            event.dataTransfer.types.includes(
+                "application/x-iepdf-reorder"
+            );
+
+        // External files must continue bubbling to the workspace drop target.
+        if (!isInternalReorder) {
+            return;
+        }
+
+        event.preventDefault();
+        event.sto
+  ---
+  MATCH:
+get instanceof Node &&
+            currentTarget.contains(event.relatedTarget)
+        ) {
+            return;
+        }
+
+        setDragOverFileId(null);
+
+    };
+
+    const handleDrop = (
+        event: React.DragEvent<HTMLDivElement>,
+        targetId: string
+    ) => {
+        const isInternalReorder =
+            event.dataTransfer.types.includes(
+                "application/x-iepdf-reorder"
+            );
+
+        // External files must continue bubbling to the workspace drop target.
+        if (!isInternalReorder) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const draggedId =
+            event.dataTransfer.getData
+  ---
+  MATCH:
+    // External files must continue bubbling to the workspace drop target.
+        if (!isInternalReorder) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const draggedId =
+            event.dataTransfer.getData("text/plain") ||
+            draggedFileId;
+
+        if (
+            draggedId &&
+            draggedId !== targetId
+        ) {
+            onReorderFiles(
+                draggedId,
+                targetId
+            );
+        }
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+    };
+
+    const handleDragEnd = () => {
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+
+    };
+    
+  ---
+  MATCH:
+   if (!isInternalReorder) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const draggedId =
+            event.dataTransfer.getData("text/plain") ||
+            draggedFileId;
+
+        if (
+            draggedId &&
+            draggedId !== targetId
+        ) {
+            onReorderFiles(
+                draggedId,
+                targetId
+            );
+        }
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+    };
+
+    const handleDragEnd = () => {
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+
+    };
+    const canMerge = useMemo(() => {
+
+        const activeFiles = files.filter(fil
+  ---
+  MATCH:
+return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const draggedId =
+            event.dataTransfer.getData("text/plain") ||
+            draggedFileId;
+
+        if (
+            draggedId &&
+            draggedId !== targetId
+        ) {
+            onReorderFiles(
+                draggedId,
+                targetId
+            );
+        }
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+    };
+
+    const handleDragEnd = () => {
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+
+    };
+    const canMerge = useMemo(() => {
+
+        const activeFiles = files.filter(file => !file.skipped);
+
+        if (activ
+  ---
+  MATCH:
+  event.preventDefault();
+        event.stopPropagation();
+
+        const draggedId =
+            event.dataTransfer.getData("text/plain") ||
+            draggedFileId;
+
+        if (
+            draggedId &&
+            draggedId !== targetId
+        ) {
+            onReorderFiles(
+                draggedId,
+                targetId
+            );
+        }
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+    };
+
+    const handleDragEnd = () => {
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+
+    };
+    const canMerge = useMemo(() => {
+
+        const activeFiles = files.filter(file => !file.skipped);
+
+        if (activeFiles.length < 2) {
+   
+  ---
+  MATCH:
+edId =
+            event.dataTransfer.getData("text/plain") ||
+            draggedFileId;
+
+        if (
+            draggedId &&
+            draggedId !== targetId
+        ) {
+            onReorderFiles(
+                draggedId,
+                targetId
+            );
+        }
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+    };
+
+    const handleDragEnd = () => {
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+
+    };
+    const canMerge = useMemo(() => {
+
+        const activeFiles = files.filter(file => !file.skipped);
+
+        if (activeFiles.length < 2) {
+            return false;
+        }
+
+        return activeFiles.every(
+       
+  ---
+  MATCH:
+  draggedFileId;
+
+        if (
+            draggedId &&
+            draggedId !== targetId
+        ) {
+            onReorderFiles(
+                draggedId,
+                targetId
+            );
+        }
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+    };
+
+    const handleDragEnd = () => {
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+
+    };
+    const canMerge = useMemo(() => {
+
+        const activeFiles = files.filter(file => !file.skipped);
+
+        if (activeFiles.length < 2) {
+            return false;
+        }
+
+        return activeFiles.every(
+            file => file.status === "ready" || (
+                file.status ==
+  ---
+  MATCH:
+           draggedId &&
+            draggedId !== targetId
+        ) {
+            onReorderFiles(
+                draggedId,
+                targetId
+            );
+        }
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+    };
+
+    const handleDragEnd = () => {
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+
+    };
+    const canMerge = useMemo(() => {
+
+        const activeFiles = files.filter(file => !file.skipped);
+
+        if (activeFiles.length < 2) {
+            return false;
+        }
+
+        return activeFiles.every(
+            file => file.status === "ready" || (
+                file.status === "password_required" &&
+      
+  ---
+  MATCH:
+= targetId
+        ) {
+            onReorderFiles(
+                draggedId,
+                targetId
+            );
+        }
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+    };
+
+    const handleDragEnd = () => {
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+
+    };
+    const canMerge = useMemo(() => {
+
+        const activeFiles = files.filter(file => !file.skipped);
+
+        if (activeFiles.length < 2) {
+            return false;
+        }
+
+        return activeFiles.every(
+            file => file.status === "ready" || (
+                file.status === "password_required" &&
+                Boolean(file.password?.trim())
+      
+  ---
+  MATCH:
+   onReorderFiles(
+                draggedId,
+                targetId
+            );
+        }
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+    };
+
+    const handleDragEnd = () => {
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+
+    };
+    const canMerge = useMemo(() => {
+
+        const activeFiles = files.filter(file => !file.skipped);
+
+        if (activeFiles.length < 2) {
+            return false;
+        }
+
+        return activeFiles.every(
+            file => file.status === "ready" || (
+                file.status === "password_required" &&
+                Boolean(file.password?.trim())
+            )
+        );
+
+    }, [f
+  ---
+  MATCH:
+  draggedId,
+                targetId
+            );
+        }
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+    };
+
+    const handleDragEnd = () => {
+
+        setDraggedFileId(null);
+        setDragOverFileId(null);
+
+    };
+    const canMerge = useMemo(() => {
+
+        const activeFiles = files.filter(file => !file.skipped);
+
+        if (activeFiles.length < 2) {
+            return false;
+        }
+
+        return activeFiles.every(
+            file => file.status === "ready" || (
+                file.status === "password_required" &&
+                Boolean(file.password?.trim())
+            )
+        );
+
+    }, [files]);
+
+    return (
+
+      
+  ---
+  MATCH:
+tems-center justify-between border-b border-dashed border-slate-200 pb-2">
+                <span className="text-sm font-semibold text-slate-800">PDF files</span>
+                <span className="text-xs text-slate-500">Drag &#8942;&#8942; to reorder</span>
+            </div>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto pr-1 pt-3">
+            <div className="space-y-3">
+
+                    {files.map((file, index) => (
+
+                        <div
+                            key={file.id}
+                            onDragOver={(event) =>
+                                handleDragOver(event, file.id)
+                            }
+                         
+  ---
+  MATCH:
+w-y-auto pr-1 pt-3">
+            <div className="space-y-3">
+
+                    {files.map((file, index) => (
+
+                        <div
+                            key={file.id}
+                            onDragOver={(event) =>
+                                handleDragOver(event, file.id)
+                            }
+                            onDragLeave={handleDragLeave}
+                            onDrop={(event) =>
+                                handleDrop(event, file.id)
+                            }
+                            className={`rounded-2xl border bg-white shadow-sm transition ${
+                                dragOverFileId === file.id
+            
+  ---
+  MATCH:
+
+
+                    {files.map((file, index) => (
+
+                        <div
+                            key={file.id}
+                            onDragOver={(event) =>
+                                handleDragOver(event, file.id)
+                            }
+                            onDragLeave={handleDragLeave}
+                            onDrop={(event) =>
+                                handleDrop(event, file.id)
+                            }
+                            className={`rounded-2xl border bg-white shadow-sm transition ${
+                                dragOverFileId === file.id
+                                    ? "border-blue-400 ring-2 ring-blue-
+  ---
+  MATCH:
+                            key={file.id}
+                            onDragOver={(event) =>
+                                handleDragOver(event, file.id)
+                            }
+                            onDragLeave={handleDragLeave}
+                            onDrop={(event) =>
+                                handleDrop(event, file.id)
+                            }
+                            className={`rounded-2xl border bg-white shadow-sm transition ${
+                                dragOverFileId === file.id
+                                    ? "border-blue-400 ring-2 ring-blue-100"
+                                    : ""
+                            } ${
+     
+  ---
+  MATCH:
+           key={file.id}
+                            onDragOver={(event) =>
+                                handleDragOver(event, file.id)
+                            }
+                            onDragLeave={handleDragLeave}
+                            onDrop={(event) =>
+                                handleDrop(event, file.id)
+                            }
+                            className={`rounded-2xl border bg-white shadow-sm transition ${
+                                dragOverFileId === file.id
+                                    ? "border-blue-400 ring-2 ring-blue-100"
+                                    : ""
+                            } ${
+                      
+  ---
+  MATCH:
+=>
+                                handleDrop(event, file.id)
+                            }
+                            className={`rounded-2xl border bg-white shadow-sm transition ${
+                                dragOverFileId === file.id
+                                    ? "border-blue-400 ring-2 ring-blue-100"
+                                    : ""
+                            } ${
+                                file.skipped
+                                    ? "border-gray-200 opacity-65"
+                                    : file.status === "password_required"
+                                        ? "border-yellow-200"
+                                        : file
+  ---
+  MATCH:
+ }`}
+                        >
+
+                            {/* COMPACT FILE ROW */}
+
+                            <div className="flex min-w-0 items-center gap-3 px-4 py-2.5">
+
+                                {/* DRAG HANDLE */}
+
+                                <div
+                                    draggable
+                                    onDragStart={(event) =>
+                                        handleDragStart(
+                                            event,
+                                            file.id
+                                        )
+                                    }
+                                    onDragEnd={handleDragEnd}
+       
+  ---
+  MATCH:
+                          <div className="flex min-w-0 items-center gap-3 px-4 py-2.5">
+
+                                {/* DRAG HANDLE */}
+
+                                <div
+                                    draggable
+                                    onDragStart={(event) =>
+                                        handleDragStart(
+                                            event,
+                                            file.id
+                                        )
+                                    }
+                                    onDragEnd={handleDragEnd}
+                                    role="button"
+                                    tabIndex={0}
+  ---
+  MATCH:
+n-w-0 items-center gap-3 px-4 py-2.5">
+
+                                {/* DRAG HANDLE */}
+
+                                <div
+                                    draggable
+                                    onDragStart={(event) =>
+                                        handleDragStart(
+                                            event,
+                                            file.id
+                                        )
+                                    }
+                                    onDragEnd={handleDragEnd}
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-label={
+  ---
+  MATCH:
+     {/* DRAG HANDLE */}
+
+                                <div
+                                    draggable
+                                    onDragStart={(event) =>
+                                        handleDragStart(
+                                            event,
+                                            file.id
+                                        )
+                                    }
+                                    onDragEnd={handleDragEnd}
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-label={`Drag PDF ${index + 1} to reorder`}
+                                
+  ---
+  MATCH:
+                                       event,
+                                            file.id
+                                        )
+                                    }
+                                    onDragEnd={handleDragEnd}
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-label={`Drag PDF ${index + 1} to reorder`}
+                                    title="Drag to reorder"
+                                    className={`${files.length > 1 ? "" : "invisible pointer-events-none"}flex h-10 w-10 shrink-0 cursor-grab select-none items-center justify-center rounded-lg border border-s
+  ---
+  MATCH:
+                        event,
+                                            file.id
+                                        )
+                                    }
+                                    onDragEnd={handleDragEnd}
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-label={`Drag PDF ${index + 1} to reorder`}
+                                    title="Drag to reorder"
+                                    className={`${files.length > 1 ? "" : "invisible pointer-events-none"}flex h-10 w-10 shrink-0 cursor-grab select-none items-center justify-center rounded-lg border border-slate-300 bg-sla
+  ---
+  MATCH:
+    }
+                                    onDragEnd={handleDragEnd}
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-label={`Drag PDF ${index + 1} to reorder`}
+                                    title="Drag to reorder"
+                                    className={`${files.length > 1 ? "" : "invisible pointer-events-none"}flex h-10 w-10 shrink-0 cursor-grab select-none items-center justify-center rounded-lg border border-slate-300 bg-slate-50 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 active:cursor-grab select-nonebing ${
+                                        draggedFi
+  ---
+  MATCH:
+                           role="button"
+                                    tabIndex={0}
+                                    aria-label={`Drag PDF ${index + 1} to reorder`}
+                                    title="Drag to reorder"
+                                    className={`${files.length > 1 ? "" : "invisible pointer-events-none"}flex h-10 w-10 shrink-0 cursor-grab select-none items-center justify-center rounded-lg border border-slate-300 bg-slate-50 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 active:cursor-grab select-nonebing ${
+                                        draggedFileId === file.id
+                                            ? "bg-blue-50 tex
+  ---
+  MATCH:
+items-center justify-center rounded-lg border border-slate-300 bg-slate-50 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 active:cursor-grab select-nonebing ${
+                                        draggedFileId === file.id
+                                            ? "bg-blue-50 text-blue-600"
+                                            : ""
+                                    }`}
+                                >
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                  
+  ---
+
+--- 8. CONDITIONAL RENDERING AROUND MERGEWORKSPACE ---
+
+PATTERN: \{showWorkspace\s*&&
+  MATCH:
+r justify-start">
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+		{showWorkspace && (
+ <div
+    onDragEnter={handleWorkspaceDragEnter}
+    onDragOver={handleWorkspaceDragOver}
+    onDragLeave={handleWorkspaceDragLeave}
+    onDrop={handleWorkspaceDrop}
+    className="relative w-full"
+>
+
+    {isWorkspaceDragOver && (
+        <div
+            className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center rounded-3xl border-2 border-dashed border-blue-400 bg-blue-50/90"
+        >
+            <div className="r
+  ---
+
+PATTERN: \{showWorkspace\s*\?
+  NOT FOUND
+
+PATTERN: showWorkspace\s*&&\s*\(
+  MATCH:
+ justify-start">
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+		{showWorkspace && (
+ <div
+    onDragEnter={handleWorkspaceDragEnter}
+    onDragOver={handleWorkspaceDragOver}
+    onDragLeave={handleWorkspaceDragLeave}
+    onDrop={handleWorkspaceDrop}
+    className="relative w-full"
+>
+
+    {isWorkspaceDragOver && (
+        <div
+            className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center rounded-3xl border-2 border-dashed border-blue-400 bg-blue-50/90"
+        >
+            <div className="ro
+  ---
+
+PATTERN: showWorkspace\s*\?
+  NOT FOUND
+
+==============================================================================
+9. SIMPLE STATIC INTERPRETATION
+==============================================================================
+PAGE_HAS_WORKSPACE_FILES              : True
+PAGE_HAS_SET_WORKSPACE_FILES          : True
+PAGE_HAS_PROCESS_SELECTED_FILES       : True
+PAGE_HAS_ANALYZE_MANY                 : True
+PAGE_HAS_MERGEWORKSPACE               : True
+PAGE_PASSES_WORKSPACE_FILES           : True
+PAGE_HAS_SHOW_WORKSPACE               : True
+WORKSPACE_HAS_FILES_PROP              : True
+WORKSPACE_MAPS_FILES                  : True
+WORKSPACE_HAS_ON_ADD_FILES            : True
+WORKSPACE_HAS_REORDER                 : True
+WORKSPACE_HAS_UNLOCK_MERGE            : True
+
+==============================================================================
+10. IMPORTANT MISMATCH CHECKS
+==============================================================================
+WARNING: MergeWorkspace may still depend on showWorkspace.
+PASS: showWorkspace setter/reference relationship appears present.
+PASS: MergeWorkspace appears to receive workspaceFiles.
+PASS: MergeWorkspace contains a files.map render path.
+PASS: BrowserPdfAnalyzer.analyzeMany exists in page source.
+
+==============================================================================
+11. EXACT processSelectedFiles SOURCE REGION
+==============================================================================
+const processSelectedFiles = async (
+    files: File[]
+) => {
+
+    if (files.length === 0) {
+        return;
+    }
+
+    const oversizedFile = files.find(
+        (file) => file.size > MAX_FILE_SIZE
+    );
+
+    if (oversizedFile) {
+        toast.error({
+          title: "Invalid PDF",
+          message: "File exceeds the maximum allowed size.",
+          fileName: oversizedFile.name,
+          fileSize: oversizedFile.size,
+        });
+        return;
+    }
+
+    const analyzer = new BrowserPdfAnalyzer();
+
+    const analysis =
+        await analyzer.analyzeMany(files);
+
+    const workspace = analysis.map(
+        (result, index) => ({
+
+            ...result,
+
+            // Original browser File
+            file: files[index],
+
+            // Workspace state
+            password: "",
+            showPassword: false,
+            skipped: false,
+
+        })
+    );
+
+    setWorkspaceFiles((previous) => [...previous, ...workspace]);
+
+    setShowWorkspace(true);
+
+};
+
+
+==============================================================================
+12. EXACT MERGEWORKSPACE OPENING TAG
+==============================================================================
+<MergeWorkspace
+    files={workspaceFiles}
+    onPasswordChange={handlePasswordChange}
+    onPasswordBlur={handlePasswordBlur}
+    onTogglePassword={handleTogglePassword}
+    onSkipFile={handleSkipFile}
+    onRemoveFile={handleRemoveFile}
+          onAddFiles={handleSelectFiles}
+          onReorderFiles={handleReorderFiles}
+    onUnlockMerge={handleUnlockMerge}
+/>
+
+==============================================================================
+13. FINAL RESULT
+==============================================================================
+SOURCE AUDIT: 1 POTENTIAL ISSUE(S) FOUND
+
+No source changes were made.
+No live deployment was performed.
+Report: C:\IEPDF\frontend\_regression\merge-pdf\merge-render-source-audit-v6-20260917-164321.txt
+Finished: 09/17/2026 16:43:22

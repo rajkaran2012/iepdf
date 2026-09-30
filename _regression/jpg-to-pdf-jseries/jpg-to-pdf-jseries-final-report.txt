@@ -1,0 +1,61 @@
+﻿iePDF JPG -> PDF FULL J-SERIES FINAL CERTIFICATION REPORT
+===========================================================
+Run: 20260930-144604
+
+FINAL RESULT
+------------
+PASS    : 42
+FAIL    : 2
+SKIPPED : 0
+
+RELEASE GATE
+------------
+FAIL must equal 0
+SKIPPED must equal 0
+
+DETAILED RESULTS
+----------------
+PASS     SRC-01                 Centralized toast notification system.
+PASS     SRC-02                 Canonical JPG -> PDF processor.
+PASS     SRC-03                 Authoritative client-side 15 MiB boundary gate.
+PASS     SRC-04                 No handled-error console warning/error logging.
+PASS     SRC-05                 Page does not bypass canonical validation gateway.
+PASS     SRC-06                 Processor inherits canonical base processor.
+PASS     SRC-07                 JPEG and PNG embedding supported.
+PASS     SRC-08                 One PDF page/image placement pipeline.
+PASS     SRC-09                 Output filename contract.
+PASS     SRC-10                 Controlled processor failure path.
+PASS     SRC-11                 Base processor uses canonical ValidationGateway.
+PASS     SRC-12                 Guaranteed base processor cleanup boundary.
+PASS     SEC-01                 Fail-closed canonical validation authorization.
+PASS     SEC-02                 15 MiB validation constant is authoritative.
+PASS     BUILD-TS               TypeScript compilation.
+PASS     ENV-01                 JPG -> PDF production page returned HTTP 200.
+PASS     ENV-02                 All current JPG -> PDF static assets returned HTTP 200.
+PASS     FIX-J-01               J01-single.jpg present; size=6700 bytes.
+PASS     FIX-J-02               J02-01.jpg present; size=6700 bytes.
+PASS     FIX-J-03               J03-01.jpg present; size=6700 bytes.
+PASS     FIX-J-04               J04-01.jpg present; size=6178 bytes.
+PASS     FIX-J-05               J05-landscape.jpg present; size=8838 bytes.
+PASS     FIX-J-06               J06-image.png present; size=3521 bytes.
+PASS     FIX-J-07               J07 file with spaces and unicode-टेस्ट.jpg present; size=6700 bytes.
+PASS     FIX-J08                Zero-byte fixture size=0 bytes.
+PASS     FIX-J-09               J09-fake-jpg.jpg present; size=23 bytes.
+PASS     FIX-J-10               J10-corrupt.jpg present; size=34 bytes.
+PASS     FIX-J-11               J11-under-15MB.jpg present; size=39204 bytes.
+PASS     FIX-J12                Exact 15 MiB fixture size=15728640 bytes.
+PASS     FIX-J13                Over-limit fixture size=15728641 bytes.
+FAIL     BROWSER-EXEC           Existing JPG -> PDF J-Series browser runner exit code=1.
+FAIL     BROWSER-RESULTS        Browser J-Series: 21 PASS, 4 FAIL.
+PASS     BROWSER-CONSOLE        Browser console errors=0.
+PASS     BROWSER-PAGEERROR      Browser page errors=0.
+PASS     ART-J-01               PDF signature/EOF, strict readability, page count, embedded images, positive dimensions and source-image dimensions verified
+PASS     ART-J-02               PDF signature/EOF, strict readability, page count, embedded images, positive dimensions and source-image dimensions verified
+PASS     ART-J-03               PDF signature/EOF, strict readability, page count, embedded images, positive dimensions and source-image dimensions verified
+PASS     ART-J-04               PDF signature/EOF, strict readability, page count, embedded images, positive dimensions and source-image dimensions verified
+PASS     ART-J-05               PDF signature/EOF, strict readability, page count, embedded images, positive dimensions and source-image dimensions verified
+PASS     ART-J-06               PDF signature/EOF, strict readability, page count, embedded images, positive dimensions and source-image dimensions verified
+PASS     ART-J-07               PDF signature/EOF, strict readability, page count, embedded images, positive dimensions and source-image dimensions verified
+PASS     ART-J-11               PDF signature/EOF, strict readability, page count, embedded images, positive dimensions and source-image dimensions verified
+PASS     ART-J-12               PDF signature/EOF, strict readability, page count, embedded images, positive dimensions and source-image dimensions verified
+PASS     NEG-ART                No artifacts produced for blocked negative cases.

@@ -1,15 +1,15 @@
 ﻿iePDF COMPRESS PDF REGRESSION REPORT
 =====================================
-Date/Time : 2026-09-25 10:58:00
-Elapsed   : 00:04:25
+Date/Time : 2026-10-01 09:34:28
+Elapsed   : 00:01:02
 Project   : C:\IEPDF
-Frontend  : http://127.0.0.1:3000/compress-pdf
+Frontend  : http://localhost:3000/compress-pdf
 Backend   : http://127.0.0.1:8000/compress-pdf
 
 FINAL RESULT
 ------------
-PASS    : 16
-FAIL    : 1
+PASS    : 36
+FAIL    : 0
 SKIPPED : 0
 
 RESULTS
@@ -30,4 +30,23 @@ PASS API-01 : API returned expected behavior (HTTP 200, body 2526 bytes).
 PASS API-02 : API returned expected behavior (HTTP 400, body 59 bytes).
 PASS API-03 : API returned expected behavior (HTTP 400, body 39 bytes).
 PASS API-04 : API returned expected behavior (HTTP 400, body 50 bytes).
-FAIL SUITE : UNHANDLED_REJECTION: page.waitForEvent: Timeout 15000ms exceeded while waiting for event "download"
+PASS C-01 : Valid small PDF accepted.
+PASS C-02 : Multi-page compression completed.
+PASS C-03 : Text-heavy PDF compressed successfully.
+PASS C-04 : Image-heavy PDF compressed successfully.
+PASS C-05 : Mixed page-size/orientation PDF compressed.
+PASS C-06 : Corrupt PDF failed cleanly with no download.
+PASS C-07 : Zero-byte PDF failed cleanly with no download.
+PASS C-08 : Fake PDF failed cleanly with no download.
+PASS C-09 : Under-limit PDF accepted.
+PASS C-10 : Exact 15 MiB PDF accepted by boundary gate.
+PASS C-11 : Above-limit file blocked by client boundary gate and cleared from workspace.
+PASS C-12 : Output signature=%PDF-, bytes=2526.
+PASS C-13 : Output=4009 bytes, input=1033 bytes.
+PASS C-14 : Structural PDF check: header=true, %%EOF=true, startxref=true.
+PASS C-15 : Detected approximately 6 page objects; expected at least 6.
+PASS C-16 : Input=899174, Output=38829, Saved=860345, Compression=95.68%.
+PASS C-17 : No-file state correctly hides the Compress button.
+PASS C-18 : Loading state exposed while processing.
+PASS C-19 : Success toast=true, filename=compressed.pdf.
+PASS BROWSER : Embedded Compress browser regression completed.

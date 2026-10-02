@@ -1,4 +1,4 @@
-﻿/**
+/**
  * =============================================================================
  * iePDF Processing Engine
  * =============================================================================
@@ -108,7 +108,7 @@ export class CompressPdfProcessor extends BasePdfProcessor {
 
             response =
                 await fetch(
-                    `${API_URL}/compress-pdf`,
+                    "/api/compress-pdf",
                     {
                         method: "POST",
                         body: formData

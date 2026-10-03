@@ -1,6 +1,0 @@
-V11.1 did not reach browser test.
-
-SOURCE RESTORED: YES
-NO GIT
-NO DEPLOYMENT
-NO CACHE DELETION

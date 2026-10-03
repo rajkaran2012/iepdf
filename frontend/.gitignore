@@ -41,3 +41,8 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+.env*
+
+# local regression/build artifacts
+/LOCAL-CLEAN-TEST/
+/_regression/

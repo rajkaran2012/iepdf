@@ -108,7 +108,7 @@ export class CompressPdfProcessor extends BasePdfProcessor {
 
             response =
                 await fetch(
-                    "/api/compress-pdf",
+                    `${API_URL}/compress-pdf`,
                     {
                         method: "POST",
                         body: formData

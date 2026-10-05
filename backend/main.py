@@ -29,6 +29,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://iepdf-web.vercel.app",
+        "https://iepdf-6xzrnq0wd-rajkaran-7531s-projects.vercel.app",
         "https://iepdf.vercel.app",
         "https://iepdf.com",
         "https://www.iepdf.com",

@@ -19,6 +19,17 @@ export class BrowserPdfAnalyzer {
     };
 
     try {
+      const extension =
+        file.name.substring(
+          file.name.lastIndexOf(".")
+        ).toLowerCase();
+
+      if (extension !== ".pdf") {
+        result.status = "invalid";
+        result.error = "Only PDF files are allowed.";
+        return result;
+      }
+
       const bytes = await file.arrayBuffer();
 
       const pdf = await PDFDocument.load(bytes);

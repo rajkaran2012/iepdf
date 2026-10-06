@@ -1,87 +1,77 @@
 import {
+  CheckCircle2,
+  Globe2,
   ShieldCheck,
-  Zap,
-  Globe,
-  HeartHandshake,
+  UserRoundX,
 } from "lucide-react";
 
 const features = [
   {
+    icon: UserRoundX,
+    title: "No registration",
+    description: "Open a tool and get to work without creating an account.",
+  },
+  {
     icon: ShieldCheck,
-    title: "100% Secure",
+    title: "Browser-first design",
     description:
-      "Your files are encrypted during processing and automatically deleted after completion.",
-    color: "text-green-600",
-    bg: "bg-green-100",
+      "iePDF is designed around browser-first processing, using a backend only when it provides a clear technical advantage.",
   },
   {
-    icon: Zap,
-    title: "Fast Processing",
-    description:
-      "Merge, split, compress and convert PDFs in just a few seconds.",
-    color: "text-yellow-600",
-    bg: "bg-yellow-100",
+    icon: CheckCircle2,
+    title: "Simple workflow",
+    description: "Choose a tool, add your files and download the result.",
   },
   {
-    icon: Globe,
-    title: "Works Everywhere",
+    icon: Globe2,
+    title: "Works across devices",
     description:
-      "Use iePDF on Windows, Mac, Linux, Android and iPhone directly in your browser.",
-    color: "text-blue-600",
-    bg: "bg-blue-100",
-  },
-  {
-    icon: HeartHandshake,
-    title: "Completely Free",
-    description:
-      "No software installation, no registration and no hidden charges.",
-    color: "text-red-600",
-    bg: "bg-red-100",
+      "Use iePDF from a modern browser on desktop, tablet or mobile.",
   },
 ];
 
 export default function Features() {
   return (
-    <section className="bg-white py-20">
-      <div className="mx-auto max-w-7xl px-6">
-        {/* Heading */}
-        <div className="text-center">
-          <h2 className="text-4xl font-bold text-gray-900">
-            Why Choose iePDF?
+    <section
+      aria-labelledby="why-heading"
+      className="bg-slate-50"
+    >
+      <div className="mx-auto max-w-7xl px-5 py-14 sm:px-6 lg:py-16">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#5B5CE2]">
+            Built for simplicity
+          </p>
+
+          <h2
+            id="why-heading"
+            className="mt-2 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl"
+          >
+            Why choose iePDF?
           </h2>
 
-          <div className="mx-auto mt-4 h-1 w-20 rounded-full bg-red-600" />
-
-          <p className="mx-auto mt-6 max-w-3xl text-lg text-gray-600">
-            Everything you need to work with PDF files quickly,
-            securely and completely free.
+          <p className="mt-3 text-base leading-7 text-slate-600 sm:text-lg">
+            Straightforward PDF tools without unnecessary complexity.
           </p>
         </div>
 
-        {/* Cards */}
-        <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+        <div className="mx-auto mt-10 grid max-w-6xl gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((feature) => {
             const Icon = feature.icon;
 
             return (
               <div
                 key={feature.title}
-                className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
+                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
               >
-                <div
-                  className={`mb-6 flex h-16 w-16 items-center justify-center rounded-2xl ${feature.bg}`}
-                >
-                  <Icon
-                    size={32}
-                    className={feature.color}
-                  />
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F1F1FF] text-[#5B5CE2]">
+                  <Icon size={24} aria-hidden="true" />
                 </div>
 
-                <h3 className="text-xl font-bold text-gray-900">
+                <h3 className="mt-5 text-lg font-bold text-slate-950">
                   {feature.title}
                 </h3>
 
-                <p className="mt-4 leading-7 text-gray-600">
+                <p className="mt-2 text-sm leading-6 text-slate-600">
                   {feature.description}
                 </p>
               </div>

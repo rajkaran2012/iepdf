@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { JpgToPdfProcessor } from "@/engine/processing/processors/JpgToPdfProcessor";
+import { validationGateway } from "@/engine/validation/gateway/ValidationGateway";
 
 import ToolLayout from "@/components/layout/ToolLayout";
 import useToast from "@/hooks/useToast";
@@ -303,12 +304,44 @@ export default function JpgToPdf() {
         setLoading(true);
 
         try {
+            const browserFiles = workspaceFiles.map(
+                (workspaceFile) => workspaceFile.file
+            );
+
+            const validWorkspaceFiles: typeof workspaceFiles = [];
+            const skippedFiles: typeof workspaceFiles = [];
+
+            for (const workspaceFile of workspaceFiles) {
+                const validationResult =
+                    await validationGateway.validate(
+                        browserFiles,
+                        workspaceFile.file,
+                        "jpg-to-pdf"
+                    );
+
+                if (validationResult.passed) {
+                    validWorkspaceFiles.push(workspaceFile);
+                } else {
+                    skippedFiles.push(workspaceFile);
+                }
+            }
+
+            if (validWorkspaceFiles.length === 0) {
+                toast.error({
+                    title: "No valid images",
+                    message:
+                        "None of the selected files are valid JPEG/PNG images.",
+                });
+
+                return;
+            }
+
             const processor =
                 new JpgToPdfProcessor();
 
             const result =
                 await processor.process({
-                    files: workspaceFiles,
+                    files: validWorkspaceFiles,
                     toolType: "jpg-to-pdf",
                 });
 
@@ -346,11 +379,20 @@ export default function JpgToPdf() {
 
             URL.revokeObjectURL(url);
 
-            toast.success({
-                title: "Conversion completed",
-                message:
-                    "Images converted to PDF successfully. PDF downloaded.",
-            });
+            if (skippedFiles.length > 0) {
+                toast.success({
+                    title:
+                        `${validWorkspaceFiles.length} images converted successfully.`,
+                    message:
+                        `${skippedFiles.length} files were skipped because they are not valid JPEG/PNG images.`,
+                });
+            } else {
+                toast.success({
+                    title: "Conversion completed",
+                    message:
+                        "Images converted to PDF successfully. PDF downloaded.",
+                });
+            }
 
             setWorkspaceFiles([]);
 
@@ -358,6 +400,11 @@ export default function JpgToPdf() {
                 inputRef.current.value = "";
             }
         } catch (error: unknown) {
+            console.error(
+                "JPG to PDF conversion error:",
+                error
+            );
+
             toast.error({
                 title: "Conversion failed",
                 message:

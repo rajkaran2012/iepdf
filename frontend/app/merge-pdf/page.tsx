@@ -1,9 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { BrowserPdfAnalyzer } from "@/engine/analysis/BrowserPdfAnalyzer";
-import { BrowserMergeProcessor } from "@/engine/processing/processors/BrowserMergeProcessor";
-import { BrowserPdfUnlockService } from "@/engine/unlock/BrowserPdfUnlockService";
+
+
+
 import useToast from "@/hooks/useToast";
 import { ValidationConstants } from "@/engine/validation/common/validationConstants";
 
@@ -13,13 +13,13 @@ import MergeWorkspace from "@/components/MergeWorkspace";
 export default function MergePDF() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+  
   const [workspaceFiles, setWorkspaceFiles] = useState<any[]>([]);
-  const [showWorkspace, setShowWorkspace] = useState(false);
+  const [showWorkspace, setShowWorkspace] = useState(true);
 
   const toast = useToast();
   const MAX_FILE_SIZE = ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES;
-
+  
   const handlePasswordChange = (
     id: string,
     password: string
@@ -66,6 +66,10 @@ export default function MergePDF() {
     }
 
     try {
+
+      const { BrowserPdfUnlockService } = await import(
+        "@/engine/unlock/BrowserPdfUnlockService"
+      );
 
       const unlockService =
         new BrowserPdfUnlockService();
@@ -171,6 +175,50 @@ export default function MergePDF() {
   );
 };
 
+const handleReorderFiles = (
+    draggedId: string,
+    targetId: string
+) => {
+
+    if (!draggedId || !targetId || draggedId === targetId) {
+        return;
+    }
+
+    setWorkspaceFiles((previous) => {
+
+        const draggedIndex = previous.findIndex(
+            (file) => file.id === draggedId
+        );
+
+        const targetIndex = previous.findIndex(
+            (file) => file.id === targetId
+        );
+
+        if (
+            draggedIndex === -1 ||
+            targetIndex === -1 ||
+            draggedIndex === targetIndex
+        ) {
+            return previous;
+        }
+
+        const updated = [...previous];
+
+        const [movedFile] = updated.splice(
+            draggedIndex,
+            1
+        );
+
+        updated.splice(
+            targetIndex,
+            0,
+            movedFile
+        );
+
+        return updated;
+
+    });
+};
 const handleRemoveFile = (id: string) => {
 
     setWorkspaceFiles((previous) => {
@@ -181,7 +229,7 @@ const handleRemoveFile = (id: string) => {
 
         if (updated.length === 0) {
 
-            setShowWorkspace(false);
+            setShowWorkspace(true);
 
             if (fileInputRef.current) {
 
@@ -201,10 +249,15 @@ const handleRemoveFile = (id: string) => {
     try {
 
 
+        const { BrowserMergeProcessor } = await import(
+            "@/engine/processing/processors/BrowserMergeProcessor"
+        );
+
         const processor =
             new BrowserMergeProcessor();
 
-        const result =
+        console.info("[IEPDF_FORENSIC_V3] PROCESS_START|" + performance.now().toFixed(3));
+const result =
             await processor.process({
 
                 files: workspaceFiles,
@@ -212,6 +265,7 @@ const handleRemoveFile = (id: string) => {
                 toolType: "merge",
 
             });
+console.info("[IEPDF_FORENSIC_V3] PROCESS_END|" + performance.now().toFixed(3));
 
         if (!result.success || !result.outputFile) {
 
@@ -226,8 +280,10 @@ const handleRemoveFile = (id: string) => {
 
         }
 
-        const url =
+        console.info("[IEPDF_FORENSIC_V3] BLOB_START|" + performance.now().toFixed(3));
+const url =
             URL.createObjectURL(result.outputFile);
+console.info("[IEPDF_FORENSIC_V3] BLOB_END|" + performance.now().toFixed(3));
 
         const link =
             document.createElement("a");
@@ -239,7 +295,8 @@ const handleRemoveFile = (id: string) => {
 
         document.body.appendChild(link);
 
-        link.click();
+        console.info("[IEPDF_FORENSIC_V3] DOWNLOAD_CLICK|" + performance.now().toFixed(3));
+link.click();
 
         link.remove();
 
@@ -252,7 +309,7 @@ const handleRemoveFile = (id: string) => {
 
         setWorkspaceFiles([]);
 
-        setShowWorkspace(false);
+        setShowWorkspace(true);
 
         if (fileInputRef.current) {
 
@@ -276,12 +333,86 @@ const handleRemoveFile = (id: string) => {
   const handleSelectFiles = () => {
   fileInputRef.current?.click();
 };
-
-const handleFileChange = async (
-    event: React.ChangeEvent<HTMLInputElement>
+const handleWorkspaceDragEnter = (
+    event: React.DragEvent<HTMLDivElement>
 ) => {
 
-    const files = Array.from(event.target.files ?? []);
+    event.preventDefault();
+
+    if (event.dataTransfer.types.includes("application/x-iepdf-reorder")) {
+        return;
+    }
+
+    if (event.dataTransfer.types.includes("Files")) {
+        setIsWorkspaceDragOver(true);
+    }
+
+};
+
+const handleWorkspaceDragOver = (
+    event: React.DragEvent<HTMLDivElement>
+) => {
+
+    event.preventDefault();
+
+    if (event.dataTransfer.types.includes("application/x-iepdf-reorder")) {
+        event.dataTransfer.dropEffect = "move";
+        return;
+    }
+
+    if (event.dataTransfer.types.includes("Files")) {
+        event.dataTransfer.dropEffect = "copy";
+        setIsWorkspaceDragOver(true);
+    }
+
+};
+
+const handleWorkspaceDragLeave = (
+    event: React.DragEvent<HTMLDivElement>
+) => {
+
+    if (
+        event.relatedTarget instanceof Node &&
+        event.currentTarget.contains(event.relatedTarget)
+    ) {
+        return;
+    }
+
+    setIsWorkspaceDragOver(false);
+
+};
+
+const handleWorkspaceDrop = async (
+    event: React.DragEvent<HTMLDivElement>
+) => {
+
+    event.preventDefault();
+
+    if (event.dataTransfer.types.includes("application/x-iepdf-reorder")) {
+        event.stopPropagation();
+        return;
+    }
+
+    setIsWorkspaceDragOver(false);
+
+    const files = Array.from(
+        event.dataTransfer.files ?? []
+    );
+
+    if (files.length === 0) {
+        return;
+    }
+
+    await processSelectedFiles(files);
+
+};
+
+
+const [isWorkspaceDragOver, setIsWorkspaceDragOver] =
+    useState(false);
+const processSelectedFiles = async (
+    files: File[]
+) => {
 
     if (files.length === 0) {
         return;
@@ -300,6 +431,10 @@ const handleFileChange = async (
         });
         return;
     }
+
+    const { BrowserPdfAnalyzer } = await import(
+        "@/engine/analysis/BrowserPdfAnalyzer"
+    );
 
     const analyzer = new BrowserPdfAnalyzer();
 
@@ -322,19 +457,34 @@ const handleFileChange = async (
         })
     );
 
-    setWorkspaceFiles(workspace);
+    setWorkspaceFiles((previous) => [...previous, ...workspace]);
 
     setShowWorkspace(true);
 
 };
+const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+) => {
 
+    const files = Array.from(
+        event.target.files ?? []
+    );
+
+    await processSelectedFiles(files);
+
+    if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
+
+};
   return (
     <ToolLayout
       title="Merge PDF"
       description="Combine multiple PDF files into a single PDF securely and instantly."
+      wide
     >
 
-      <div className="flex flex-col items-center justify-center py-16">
+      <div className="flex w-full flex-col items-center justify-start">
 
         <input
           ref={fileInputRef}
@@ -345,14 +495,31 @@ const handleFileChange = async (
           onChange={handleFileChange}
         />
 
-        <button
-          onClick={handleSelectFiles}
-          className="rounded-xl bg-red-600 px-8 py-4 text-lg font-semibold text-white transition hover:bg-red-700"
-        >
-          Select PDF Files
-        </button>
 		{showWorkspace && (
- <MergeWorkspace
+ <div
+    onDragEnter={handleWorkspaceDragEnter}
+    onDragOver={handleWorkspaceDragOver}
+    onDragLeave={handleWorkspaceDragLeave}
+    onDrop={handleWorkspaceDrop}
+    className="relative w-full"
+>
+
+    {isWorkspaceDragOver && (
+        <div
+            className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center rounded-3xl border-2 border-dashed border-blue-400 bg-blue-50/90"
+        >
+            <div className="rounded-2xl bg-white px-8 py-6 text-center shadow-xl">
+                <div className="text-lg font-bold text-gray-900">
+                    Drop PDFs here
+                </div>
+
+                <div className="mt-1 text-sm text-gray-500">
+                    Release to add PDFs to your merge workspace
+                </div>
+            </div>
+        </div>
+    )}
+<MergeWorkspace
     files={workspaceFiles}
     onPasswordChange={handlePasswordChange}
     onPasswordBlur={handlePasswordBlur}
@@ -361,6 +528,7 @@ const handleFileChange = async (
     onRemoveFile={handleRemoveFile}
     onUnlockMerge={handleUnlockMerge}
 />
+</div>
 )}
 
 
@@ -370,3 +538,10 @@ const handleFileChange = async (
     </ToolLayout>
   );
 }
+
+
+
+
+
+
+

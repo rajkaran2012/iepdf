@@ -1,4 +1,4 @@
-﻿/**
+/**
  * =============================================================================
  * iePDF Processing Engine
  * =============================================================================
@@ -65,6 +65,10 @@ import type {
 import {
     validationGateway
 } from "../../validation/gateway/ValidationGateway";
+
+import {
+    ValidationErrorCode
+} from "../../validation/pipeline/validationTypes";
 
 
 export abstract class BasePdfProcessor
@@ -273,18 +277,47 @@ export abstract class BasePdfProcessor
                 gatewayResult.passed !== true
             ) {
 
-                /**
-                 * Never expose internal validation diagnostics here.
-                 *
-                 * The Gateway deliberately fails closed with an empty result
-                 * collection for unexpected internal failures.
-                 */
-                const failedResult =
-                    gatewayResult.results.find(
+                const failedResults =
+                    gatewayResult.results.filter(
                         result =>
                             result.passed === false
                     );
 
+                const browserCompatibilityErrors =
+                    new Set<ValidationErrorCode>([
+                        ValidationErrorCode.INVALID_HEADER,
+                        ValidationErrorCode.INVALID_VERSION,
+                        ValidationErrorCode.INVALID_XREF,
+                        ValidationErrorCode.INVALID_TRAILER,
+                        ValidationErrorCode.INVALID_OBJECT_TREE,
+                        ValidationErrorCode.INVALID_PAGE_TREE,
+                        ValidationErrorCode.INVALID_FONT,
+                        ValidationErrorCode.INVALID_METADATA,
+                        ValidationErrorCode.INVALID_INCREMENTAL_UPDATE,
+                    ]);
+
+                const mergeCompatibilityFallback =
+                    context.toolType === "merge" &&
+                    failedResults.length > 0 &&
+                    failedResults.every(
+                        result =>
+                            browserCompatibilityErrors.has(
+                                result.errorCode
+                            )
+                    );
+
+                if (mergeCompatibilityFallback) {
+
+                    console.warn(
+                        "Browser structural validation failed. Allowing Merge processor to attempt compatibility fallback.",
+                        failedResults
+                    );
+
+                    continue;
+                }
+
+                const failedResult =
+                    failedResults[0];
 
                 if (
                     failedResult &&
@@ -296,7 +329,6 @@ export abstract class BasePdfProcessor
                     );
 
                 }
-
 
                 throw new Error(
                     `Validation failed for "${workspaceFile.filename}".`

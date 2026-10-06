@@ -1,28 +1,173 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { BrowserPdfAnalyzer } from "@/engine/analysis/BrowserPdfAnalyzer";
 import { JpgToPdfProcessor } from "@/engine/processing/processors/JpgToPdfProcessor";
 
 import ToolLayout from "@/components/layout/ToolLayout";
 import useToast from "@/hooks/useToast";
 import { ValidationConstants } from "@/engine/validation/common/validationConstants";
 
-const MAX_FILE_SIZE = ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES;
+const MAX_FILE_SIZE =
+    ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES;
+
+const ACCEPTED_EXTENSIONS = [
+    "jpg",
+    "jpeg",
+    "png",
+];
 
 export default function JpgToPdf() {
     const toast = useToast();
-    const inputRef =
-        useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     const [workspaceFiles, setWorkspaceFiles] =
         useState<any[]>([]);
 
     const [loading, setLoading] =
         useState(false);
+
+    const [dragging, setDragging] =
+        useState(false);
+
+    const [draggedIndex, setDraggedIndex] =
+        useState<number | null>(null);
+
+    const [thumbnailUrls, setThumbnailUrls] =
+        useState<Record<string, string>>({});
+
+    useEffect(() => {
+        const urls: Record<string, string> = {};
+
+        for (const workspaceFile of workspaceFiles) {
+            if (workspaceFile?.id && workspaceFile?.file instanceof File) {
+                urls[workspaceFile.id] =
+                    URL.createObjectURL(workspaceFile.file);
+            }
+        }
+
+        setThumbnailUrls(urls);
+
+        return () => {
+            Object.values(urls).forEach((url) => {
+                URL.revokeObjectURL(url);
+            });
+        };
+    }, [workspaceFiles]);
+
+    const createWorkspaceFile = (file: File) => ({
+        id:
+            typeof crypto !== "undefined" &&
+            typeof crypto.randomUUID === "function"
+                ? crypto.randomUUID()
+                : `${file.name}-${file.size}-${file.lastModified}`,
+
+        file,
+
+        filename: file.name,
+
+        extension:
+            file.name
+                .split(".")
+                .pop()
+                ?.toLowerCase() || "",
+
+        size: file.size,
+
+        pages: 0,
+
+        status: "ready",
+
+        encrypted: false,
+
+        corrupted: false,
+
+        password: "",
+
+        showPassword: false,
+
+        skipped: false,
+    });
+
     const handleSelectFiles = () => {
-        inputRef.current?.click();
+        if (!loading) {
+            inputRef.current?.click();
+        }
+    };
+
+    const addFiles = async (
+        selectedFiles: File[]
+    ) => {
+        if (selectedFiles.length === 0) {
+            return;
+        }
+
+        const invalidType =
+            selectedFiles.find(
+                (file) => {
+                    const extension =
+                        file.name
+                            .split(".")
+                            .pop()
+                            ?.toLowerCase() || "";
+
+                    return !ACCEPTED_EXTENSIONS.includes(
+                        extension
+                    );
+                }
+            );
+
+        if (invalidType) {
+            toast.error({
+                title: "Unsupported image",
+                message:
+                    `"${invalidType.name}" is not a supported image. Please use JPG, JPEG, or PNG.`,
+                fileName: invalidType.name,
+                fileSize: invalidType.size,
+            });
+
+            return;
+        }
+
+        const oversizedFile =
+            selectedFiles.find(
+                (file) =>
+                    file.size > MAX_FILE_SIZE
+            );
+
+        if (oversizedFile) {
+            toast.error({
+                title: "File too large",
+                message:
+                    `"${oversizedFile.name}" is larger than 15 MiB. The maximum allowed file size is 15 MiB per image.`,
+                fileName: oversizedFile.name,
+                fileSize: oversizedFile.size,
+            });
+
+            return;
+        }
+
+        try {
+            const analyzedFiles =
+                selectedFiles.map(
+                    createWorkspaceFile
+                );
+
+            setWorkspaceFiles(
+                (currentFiles) => [
+                    ...currentFiles,
+                    ...analyzedFiles,
+                ]
+            );
+        } catch (error: unknown) {
+            toast.error({
+                title: "Image selection failed",
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : "Unable to prepare the selected images.",
+            });
+        }
     };
 
     const handleFileChange = async (
@@ -33,88 +178,123 @@ export default function JpgToPdf() {
                 event.target.files ?? []
             );
 
-        if (selectedFiles.length === 0) {
+        await addFiles(selectedFiles);
+
+        event.target.value = "";
+    };
+
+    const handleDrop = async (
+        event: React.DragEvent<HTMLDivElement>
+    ) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        setDragging(false);
+
+        if (loading) {
             return;
         }
 
-        for (const file of selectedFiles) {
-            if (file.size > MAX_FILE_SIZE) {
-                toast.error({
-                    title: "File too large",
-                    message: `"${file.name}" is larger than 15 MB. The maximum allowed file size is 15 MB per image.`,
-                    fileName: file.name,
-                    fileSize: file.size,
-                });
+        const selectedFiles =
+            Array.from(
+                event.dataTransfer.files ?? []
+            );
 
-                event.target.value = "";
-                setWorkspaceFiles([]);
+        await addFiles(selectedFiles);
+    };
 
-                return;
+    const handleRemoveFile = (
+        id: string
+    ) => {
+        if (loading) {
+            return;
+        }
+
+        setWorkspaceFiles(
+            (currentFiles) =>
+                currentFiles.filter(
+                    (file) =>
+                        file.id !== id
+                )
+        );
+    };
+
+    const handleClearFiles = () => {
+        if (loading) {
+            return;
+        }
+
+        setWorkspaceFiles([]);
+
+        if (inputRef.current) {
+            inputRef.current.value = "";
+        }
+    };
+
+    const handleMoveFile = (
+        fromIndex: number,
+        toIndex: number
+    ) => {
+        if (
+            loading ||
+            fromIndex === toIndex ||
+            fromIndex < 0 ||
+            toIndex < 0 ||
+            fromIndex >= workspaceFiles.length ||
+            toIndex >= workspaceFiles.length
+        ) {
+            return;
+        }
+
+        setWorkspaceFiles(
+            (currentFiles) => {
+                const updated =
+                    [...currentFiles];
+
+                const [
+                    movedFile,
+                ] =
+                    updated.splice(
+                        fromIndex,
+                        1
+                    );
+
+                updated.splice(
+                    toIndex,
+                    0,
+                    movedFile
+                );
+
+                return updated;
             }
+        );
+    };
+
+    const handleDropReorder = (
+        targetIndex: number
+    ) => {
+        if (
+            draggedIndex === null ||
+            draggedIndex === targetIndex
+        ) {
+            setDraggedIndex(null);
+            return;
         }
 
-        try {
-            const analyzer =
-                new BrowserPdfAnalyzer();
+        handleMoveFile(
+            draggedIndex,
+            targetIndex
+        );
 
-            const analyzedFiles =
-                selectedFiles.map(file => ({
-                    id:
-                        typeof crypto !== "undefined" &&
-                        typeof crypto.randomUUID === "function"
-                            ? crypto.randomUUID()
-                            : `${file.name}-${file.size}-${file.lastModified}`,
-
-                    file,
-
-                    filename: file.name,
-
-                    extension:
-                        file.name
-                            .split(".")
-                            .pop()
-                            ?.toLowerCase() || "",
-
-                    size: file.size,
-
-                    pages: 0,
-
-                    status: "ready",
-
-                    encrypted: false,
-
-                    corrupted: false,
-
-                    password: "",
-
-                    showPassword: false,
-
-                    skipped: false,
-                }));
-
-            const workspace =
-                analyzedFiles.map(file => ({
-                    ...file,
-                }));
-
-            setWorkspaceFiles(workspace);
-        } catch (error: unknown) {
-
-            toast.error({
-                title: "JPG selection failed",
-                message:
-                    error instanceof Error
-                        ? error.message
-                        : "Unable to prepare the selected images.",
-            });
-        }
+        setDraggedIndex(null);
     };
 
     const handleConvert = async () => {
         if (workspaceFiles.length === 0) {
             toast.warning({
-                title: "No JPG images selected",
-                message: "Please select JPG images to convert.",
+                title: "No images selected",
+                message:
+                    "Please add JPG, JPEG, or PNG images to convert.",
             });
 
             return;
@@ -168,7 +348,8 @@ export default function JpgToPdf() {
 
             toast.success({
                 title: "Conversion completed",
-                message: "Images converted to PDF successfully. PDF downloaded.",
+                message:
+                    "Images converted to PDF successfully. PDF downloaded.",
             });
 
             setWorkspaceFiles([]);
@@ -177,7 +358,6 @@ export default function JpgToPdf() {
                 inputRef.current.value = "";
             }
         } catch (error: unknown) {
-
             toast.error({
                 title: "Conversion failed",
                 message:
@@ -190,12 +370,29 @@ export default function JpgToPdf() {
         }
     };
 
+    const totalSize =
+        workspaceFiles.reduce(
+            (total, file) =>
+                total + (file.size || 0),
+            0
+        );
+
+    const totalSizeText =
+        totalSize > 0
+            ? `${(
+                  totalSize /
+                  1024 /
+                  1024
+              ).toFixed(2)} MB`
+            : "";
+
     return (
         <ToolLayout
             title="JPG to PDF"
-            description="Convert JPG images into a single PDF securely and instantly."
+            description="Convert images into a single PDF securely and instantly."
+            wide
         >
-            <div className="flex flex-col items-center justify-center py-16">
+            <div className="mx-auto w-full max-w-4xl">
                 <input
                     ref={inputRef}
                     type="file"
@@ -205,50 +402,451 @@ export default function JpgToPdf() {
                     onChange={handleFileChange}
                 />
 
-                <button
-                    type="button"
-                    onClick={handleSelectFiles}
-                    disabled={loading}
-                    className="rounded-xl bg-orange-600 px-8 py-4 text-lg font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                    Select JPG Images
-                </button>
+                {/* Tool identity */}
+                <div className="mb-6 flex flex-col items-center text-center">
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 shadow-sm">
+                            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-50 text-[10px] font-bold text-blue-600">
+                                JPG
+                            </span>
 
-                {workspaceFiles.length > 0 && (
-                    <div className="mt-8 w-full max-w-xl rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                        <h3 className="mb-3 text-lg font-semibold">
-                            Selected Images
-                        </h3>
-
-                        <div className="mb-6 space-y-2">
-                            {workspaceFiles.map(
-                                (workspaceFile, index) => (
-                                    <div
-                                        key={
-                                            workspaceFile.id ||
-                                            index
-                                        }
-                                        className="rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-700"
-                                    >
-                                        {workspaceFile.filename}
-                                    </div>
-                                )
-                            )}
+                            <span className="text-sm font-medium text-gray-800">
+                                JPG
+                            </span>
                         </div>
 
-                        <button
-                            type="button"
-                            onClick={handleConvert}
-                            disabled={loading}
-                            className="w-full rounded-xl bg-orange-600 px-6 py-3 font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        <svg
+                            className="h-5 w-5 text-gray-400"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            aria-hidden="true"
                         >
-                            {loading
-                                ? "Converting..."
-                                : "Convert to PDF"}
-                        </button>
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M5 12h14m-5-5 5 5-5 5"
+                            />
+                        </svg>
+
+                        <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 shadow-sm">
+                            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-red-50 text-[10px] font-bold text-red-600">
+                                PDF
+                            </span>
+
+                            <span className="text-sm font-medium text-gray-800">
+                                PDF
+                            </span>
+                        </div>
+                    </div>
+
+                    <p className="mt-3 max-w-xl text-sm text-gray-500">
+                        Combine JPG, JPEG, or PNG images into one PDF.
+                    </p>
+                </div>
+
+                {workspaceFiles.length === 0 ? (
+                    <>
+                        {/* Add file action */}
+                        <div className="mb-3 flex justify-center">
+                            <button
+                                type="button"
+                                onClick={handleSelectFiles}
+                                disabled={loading}
+                                className="inline-flex items-center gap-2 rounded-xl bg-primary px-7 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-primary-dark hover:shadow-md active:translate-y-px focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                <svg
+                                    className="h-5 w-5"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    aria-hidden="true"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M12 5v14M5 12h14"
+                                    />
+                                </svg>
+
+                                Add Image Files
+                            </button>
+                        </div>
+
+                        <p className="mb-3 text-center text-sm text-gray-500">
+                            or drag and drop your images below
+                        </p>
+
+                        {/* Drop zone */}
+                        <div
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Drop JPG, JPEG, or PNG images here or press Enter to browse"
+                            onKeyDown={(event) => {
+                                if (
+                                    event.key === "Enter" ||
+                                    event.key === " "
+                                ) {
+                                    event.preventDefault();
+                                    handleSelectFiles();
+                                }
+                            }}
+                            onDragEnter={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+
+                                if (!loading) {
+                                    setDragging(true);
+                                }
+                            }}
+                            onDragOver={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+
+                                if (!loading) {
+                                    setDragging(true);
+                                }
+                            }}
+                            onDragLeave={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+
+                                if (
+                                    event.currentTarget ===
+                                    event.target
+                                ) {
+                                    setDragging(false);
+                                }
+                            }}
+                            onDrop={handleDrop}
+                            onClick={(event) => {
+                                if (
+                                    event.target ===
+                                    event.currentTarget
+                                ) {
+                                    handleSelectFiles();
+                                }
+                            }}
+                            className={[
+                                "flex min-h-[300px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-10 text-center outline-none transition-all",
+                                "focus:ring-2 focus:ring-purple-500 focus:ring-offset-2",
+                                dragging
+                                    ? "border-purple-500 bg-purple-50"
+                                    : "border-gray-300 bg-white hover:border-gray-400",
+                            ].join(" ")}
+                        >
+                            <div
+                                className={[
+                                    "mb-5 flex h-16 w-16 items-center justify-center rounded-2xl",
+                                    dragging
+                                        ? "bg-purple-100"
+                                        : "bg-gray-100",
+                                ].join(" ")}
+                            >
+                                <svg
+                                    className={[
+                                        "h-9 w-9",
+                                        dragging
+                                            ? "text-purple-600"
+                                            : "text-gray-600",
+                                    ].join(" ")}
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.7"
+                                    aria-hidden="true"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M4 16.5A4.5 4.5 0 018.5 12H9a5 5 0 0110 1 3.5 3.5 0 010 7H8a4 4 0 01-4-3.5Z"
+                                    />
+
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M12 9v7m0-7-3 3m3-3 3 3"
+                                    />
+                                </svg>
+                            </div>
+
+                            <h2 className="text-xl font-semibold text-gray-900">
+                                Drop your images here
+                            </h2>
+
+                            <p className="mt-2 text-sm text-gray-500">
+                                JPG, JPEG, or PNG
+                            </p>
+
+                            <p className="mt-5 text-xs text-gray-400">
+                                Maximum 15 MiB per image
+                            </p>
+                        </div>
+                    </>
+                ) : (
+                    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                        {/* Image workspace header */}
+                        <div className="flex flex-col gap-4 border-b border-gray-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                    Images
+                                </p>
+
+                                <p className="mt-1 text-sm font-medium text-gray-900">
+                                    {workspaceFiles.length}{" "}
+                                    {workspaceFiles.length === 1
+                                        ? "image"
+                                        : "images"}
+                                    {totalSizeText
+                                        ? ` � ${totalSizeText}`
+                                        : ""}
+                                </p>
+                            </div>
+
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={handleSelectFiles}
+                                    disabled={loading}
+                                    className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    <span
+                                        className="text-base leading-none"
+                                        aria-hidden="true"
+                                    >
+                                        +
+                                    </span>
+                                    Add Images
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={handleClearFiles}
+                                    disabled={loading}
+                                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Image list */}
+                        <div className="p-6">
+                            <p className="mb-3 text-xs text-gray-500">
+                                Drag images to change their order.
+                                The order becomes the PDF page order.
+                            </p>
+
+                            <div className="space-y-2">
+                                {workspaceFiles.map(
+                                    (
+                                        workspaceFile,
+                                        index
+                                    ) => (
+                                        <div
+                                            key={
+                                                workspaceFile.id ||
+                                                index
+                                            }
+                                            draggable={!loading}
+                                            onDragStart={() => {
+                                                if (!loading) {
+                                                    setDraggedIndex(
+                                                        index
+                                                    );
+                                                }
+                                            }}
+                                            onDragOver={(
+                                                event
+                                            ) => {
+                                                event.preventDefault();
+                                            }}
+                                            onDrop={() =>
+                                                handleDropReorder(
+                                                    index
+                                                )
+                                            }
+                                            onDragEnd={() =>
+                                                setDraggedIndex(
+                                                    null
+                                                )
+                                            }
+                                            className={[
+                                                "flex items-center gap-3 rounded-xl border bg-white px-3 py-3 transition",
+                                                draggedIndex ===
+                                                index
+                                                    ? "border-purple-400 bg-purple-50 opacity-60"
+                                                    : "border-gray-200 hover:border-gray-300",
+                                            ].join(" ")}
+                                        >
+                                            <div
+                                                className="flex h-8 w-8 shrink-0 cursor-grab items-center justify-center text-gray-400 active:cursor-grabbing"
+                                                title="Drag to reorder"
+                                                aria-hidden="true"
+                                            >
+                                                <svg
+                                                    className="h-5 w-5"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth="1.8"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        d="M8 7h.01M8 12h.01M8 17h.01M16 7h.01M16 12h.01M16 17h.01"
+                                                    />
+                                                </svg>
+                                            </div>
+
+                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-100">
+                                                {thumbnailUrls[workspaceFile.id] ? (
+                                                    <img
+                                                        src={thumbnailUrls[workspaceFile.id]}
+                                                        alt={workspaceFile.filename}
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <span className="text-xs font-semibold text-gray-500">
+                                                        JPG
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate text-sm font-medium text-gray-900">
+                                                    {workspaceFile.filename}
+                                                </p>
+
+                                                <p className="mt-1 text-xs text-gray-500">
+                                                    {workspaceFile.extension.toUpperCase()}{" "}
+                                                    �{" "}
+                                                    {(
+                                                        workspaceFile.size /
+                                                        1024 /
+                                                        1024
+                                                    ).toFixed(
+                                                        2
+                                                    )}{" "}
+                                                    MB
+                                                </p>
+                                            </div>
+
+                                            <div className="text-xs font-medium text-gray-400">
+                                                {index + 1}
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    handleRemoveFile(
+                                                        workspaceFile.id
+                                                    )
+                                                }
+                                                disabled={loading}
+                                                aria-label={`Remove ${workspaceFile.filename}`}
+                                                className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    )
+                                )}
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={handleSelectFiles}
+                                disabled={loading}
+                                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 px-4 py-3 text-sm font-medium text-gray-600 transition hover:border-gray-400 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                <span
+                                    className="text-lg leading-none"
+                                    aria-hidden="true"
+                                >
+                                    +
+                                </span>
+                                Add More Images
+                            </button>
+                        </div>
+
+                        {/* Output information */}
+                        <div className="border-t border-gray-100 bg-gray-50/70 px-6 py-5">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                        Output
+                                    </p>
+
+                                    <p className="mt-1 text-sm font-medium text-gray-900">
+                                        Single PDF � {workspaceFiles.length}{" "}
+                                        {workspaceFiles.length === 1
+                                            ? "page"
+                                            : "pages"}
+                                    </p>
+                                </div>
+
+                                <div className="inline-flex w-fit items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700">
+                                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-red-50 text-[9px] font-bold text-red-600">
+                                        PDF
+                                    </span>
+
+                                    PDF
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Primary action */}
+                        <div className="p-6">
+                            <button
+                                type="button"
+                                onClick={handleConvert}
+                                disabled={
+                                    loading ||
+                                    workspaceFiles.length === 0
+                                }
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-primary-dark hover:shadow-md active:translate-y-px focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {loading ? (
+                                    <>
+                                        <svg
+                                            className="h-4 w-4 animate-spin"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            aria-hidden="true"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            />
+
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                            />
+                                        </svg>
+
+                                        Converting...
+                                    </>
+                                ) : (
+                                    "Convert to PDF"
+                                )}
+                            </button>
+
+                            <p className="mt-3 text-center text-xs text-gray-400">
+                                Images will become PDF pages in the order shown above.
+                            </p>
+                        </div>
                     </div>
                 )}
             </div>
         </ToolLayout>
     );
 }
+

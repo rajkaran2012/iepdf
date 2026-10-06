@@ -526,6 +526,8 @@ const handleFileChange = async (
     onTogglePassword={handleTogglePassword}
     onSkipFile={handleSkipFile}
     onRemoveFile={handleRemoveFile}
+          onAddFiles={handleSelectFiles}
+          onReorderFiles={handleReorderFiles}
     onUnlockMerge={handleUnlockMerge}
 />
 </div>

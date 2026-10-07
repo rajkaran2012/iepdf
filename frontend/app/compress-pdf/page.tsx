@@ -573,7 +573,7 @@ export default function CompressPDF() {
 
                 <p className="mt-1 text-sm font-semibold text-slate-900">
                   {loading
-                    ? "Compressing?"
+                    ? "Compressing…"
                     : passwordRequired
                       ? "Password required"
                       : workspaceFile

@@ -8,6 +8,7 @@ import type { ProcessingContext } from "@/engine/processing/ProcessingContext";
 import type { WorkspaceFile } from "@/engine/processing/WorkspaceFile";
 import useToast from "@/hooks/useToast";
 import { ValidationConstants } from "@/engine/validation/common/validationConstants";
+import { BrowserPdfAnalyzer } from "@/engine/analysis/BrowserPdfAnalyzer";
 
 export default function CompressPDF() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -22,6 +23,15 @@ export default function CompressPDF() {
     useState(false);
 
   const [isDragActive, setIsDragActive] =
+    useState(false);
+
+  const [passwordRequired, setPasswordRequired] =
+    useState(false);
+
+  const [password, setPassword] =
+    useState("");
+
+  const [unlocking, setUnlocking] =
     useState(false);
 
   const MAX_FILE_SIZE =
@@ -53,7 +63,7 @@ export default function CompressPDF() {
     }
   };
 
-  const handleFile = (selectedFile: File) => {
+  const handleFile = async (selectedFile: File) => {
     if (selectedFile.size > MAX_FILE_SIZE) {
       rejectFile();
 
@@ -67,22 +77,58 @@ export default function CompressPDF() {
       return;
     }
 
+    const analyzer = new BrowserPdfAnalyzer();
+    const analysis = await analyzer.analyze(selectedFile);
+
+    if (analysis.status === "invalid") {
+      rejectFile();
+
+      toast.error({
+        title: "Invalid PDF",
+        message: analysis.error || "Only PDF files are allowed.",
+        fileName: selectedFile.name,
+        fileSize: selectedFile.size,
+      });
+
+      return;
+    }
+
+    if (analysis.status === "corrupted") {
+      rejectFile();
+
+      toast.error({
+        title: "Invalid PDF",
+        message: "The selected file could not be opened as a valid PDF.",
+        fileName: selectedFile.name,
+        fileSize: selectedFile.size,
+      });
+
+      return;
+    }
+
+    const requiresPassword =
+      analysis.status === "password_required";
+
     const workspace: WorkspaceFile = {
       id: crypto.randomUUID(),
       file: selectedFile,
       filename: selectedFile.name,
       extension: ".pdf",
       size: selectedFile.size,
-      pages: 0,
-      status: "ready",
-      encrypted: false,
-      corrupted: false,
+      pages: analysis.pages,
+      status: requiresPassword
+        ? "password_required"
+        : "ready",
+      encrypted: analysis.encrypted,
+      corrupted: analysis.corrupted,
       password: "",
-      showPassword: false,
+      showPassword: requiresPassword,
       skipped: false,
     };
 
     setWorkspaceFile(workspace);
+    setPassword("");
+    setPasswordRequired(requiresPassword);
   };
 
   const handleFileChange = (
@@ -167,8 +213,92 @@ export default function CompressPDF() {
     handleFile(files[0]);
   };
 
-  const handleCompress = async () => {
-    if (!workspaceFile) {
+  const handleUnlock = async () => {
+    if (!workspaceFile || !password.trim()) {
+      toast.warning({
+        title: "Password required",
+        message: "Enter the PDF password to continue.",
+      });
+
+      return;
+    }
+
+    setUnlocking(true);
+
+    try {
+      const { BrowserPdfUnlockService } = await import(
+        "@/engine/unlock/BrowserPdfUnlockService"
+      );
+
+      const unlockService =
+        new BrowserPdfUnlockService();
+
+      const result =
+        await unlockService.unlock(
+          workspaceFile.file,
+          password.trim()
+        );
+
+      const unlockedFile =
+        new File(
+          [result.bytes],
+          workspaceFile.filename,
+          {
+            type: "application/pdf",
+          }
+        );
+
+      setWorkspaceFile((previous) =>
+        previous
+          ? {
+              ...previous,
+              file: unlockedFile,
+              size: unlockedFile.size,
+              status: "ready",
+              encrypted: result.encrypted,
+              corrupted: false,
+              password: "",
+              showPassword: false,
+            }
+          : previous
+      );
+
+      setPassword("");
+      setPasswordRequired(false);
+
+      await handleCompress({
+        ...workspaceFile,
+        file: unlockedFile,
+        size: unlockedFile.size,
+        status: "ready",
+        encrypted: result.encrypted,
+        corrupted: false,
+        password: "",
+        showPassword: false,
+      });
+    } catch (error: unknown) {
+      toast.error({
+        title: "Password verification failed",
+        message:
+          error instanceof Error &&
+          error.message.length > 0
+            ? error.message
+            : "Unable to unlock PDF. Check the password and try again.",
+      });
+
+      setPasswordRequired(true);
+    } finally {
+      setUnlocking(false);
+    }
+  };
+
+  const handleCompress = async (
+    fileOverride?: WorkspaceFile
+  ) => {
+    const fileToCompress =
+      fileOverride ?? workspaceFile;
+
+    if (!fileToCompress) {
       toast.warning({
         title: "No PDF selected",
         message: "Please add a PDF to compress.",
@@ -181,7 +311,7 @@ export default function CompressPDF() {
 
     try {
       const context: ProcessingContext = {
-        files: [workspaceFile],
+        files: [fileToCompress],
         toolType: "compress",
       };
 
@@ -369,7 +499,10 @@ export default function CompressPDF() {
                       {fileSizeMb
                         ? `${fileSizeMb} MB`
                         : "PDF file"}{" "}
-                      · Ready
+                      ·{" "}
+                      {passwordRequired
+                        ? "Password required"
+                        : "Ready"}
                     </p>
                   </div>
 
@@ -408,9 +541,11 @@ export default function CompressPDF() {
               </p>
 
               <h2 className="mt-1 text-base font-bold text-slate-950">
-                {workspaceFile
-                  ? "Ready to compress"
-                  : "Waiting for a PDF"}
+                {passwordRequired
+                  ? "Password required"
+                  : workspaceFile
+                    ? "Ready to compress"
+                    : "Waiting for a PDF"}
               </h2>
 
               <p className="mt-2 text-sm leading-5 text-slate-600">
@@ -438,24 +573,72 @@ export default function CompressPDF() {
 
                 <p className="mt-1 text-sm font-semibold text-slate-900">
                   {loading
-                    ? "Compressing…"
-                    : workspaceFile
-                      ? "Ready"
-                      : "Waiting"}
+                    ? "Compressing?"
+                    : passwordRequired
+                      ? "Password required"
+                      : workspaceFile
+                        ? "Ready"
+                        : "Waiting"}
                 </p>
               </div>
             </div>
 
             <div className="mt-auto pt-4">
-              {workspaceFile && (
-                <button
-                  type="button"
-                  onClick={handleCompress}
-                  disabled={loading}
-                  className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
-                >
-                  {loading ? "Compressing…" : "Compress PDF"}
-                </button>
+              {workspaceFile && passwordRequired ? (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                  <p className="text-sm font-semibold text-amber-900">
+                    Password required
+                  </p>
+
+                  <p className="mt-1 text-xs leading-4 text-amber-800">
+                    Enter the password to unlock this PDF before compression.
+                  </p>
+
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(event) =>
+                      setPassword(event.target.value)
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        void handleUnlock();
+                      }
+                    }}
+                    disabled={unlocking || loading}
+                    placeholder="PDF password"
+                    autoComplete="off"
+                    className="mt-3 w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-primary"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleUnlock}
+                    disabled={
+                      unlocking ||
+                      loading ||
+                      password.trim().length === 0
+                    }
+                    className="mt-2 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+                  >
+                    {unlocking
+                      ? "Unlocking…"
+                      : "Unlock & Compress"}
+                  </button>
+                </div>
+              ) : (
+                workspaceFile && (
+                  <button
+                    type="button"
+                    onClick={() => void handleCompress()}
+                    disabled={loading || unlocking}
+                    className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+                  >
+                    {loading
+                      ? "Compressing…"
+                      : "Compress PDF"}
+                  </button>
+                )
               )}
 
               <div className="mt-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs leading-4 text-slate-600">

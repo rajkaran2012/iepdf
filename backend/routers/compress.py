@@ -1,4 +1,4 @@
-﻿import os
+import os
 import shutil
 import subprocess
 import tempfile
@@ -45,12 +45,17 @@ def validate_pdf_input(path: str) -> None:
         reader = PdfReader(path)
 
         if reader.is_encrypted:
-            raise HTTPException(
-                status_code=400,
-                detail="The supplied PDF is password protected. Please unlock it before compression."
-            )
+            try:
+                page_count = len(reader.pages)
+            except FileNotDecryptedError:
+                raise HTTPException(
+                    status_code=400,
+                    detail="The supplied PDF is password protected. Please unlock it before compression."
+                )
+        else:
+            page_count = len(reader.pages)
 
-        if len(reader.pages) == 0:
+        if page_count == 0:
             raise HTTPException(
                 status_code=400,
                 detail="The supplied PDF contains no pages."

@@ -1,2 +1,13 @@
 .vercel
 .env*
+
+# iePDF security and generated files
+*.pem
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.sqlite
+*.sqlite3
+*.db

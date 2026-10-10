@@ -1,0 +1,16 @@
+﻿# Backend secrets
+.env
+.env.*
+!.env.example
+
+# Runtime files; keep source code tracked
+/uploads/*
+/outputs/*
+/temp/*
+/logs/*
+__pycache__/
+*.py[cod]
+# Local configuration and safety backups; never commit
+*.bak
+*.backup
+*.before-*

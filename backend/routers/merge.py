@@ -119,6 +119,21 @@ async def merge_pdf(
                     detail="PDF merging did not produce a valid output.",
                 )
 
+        try:
+            output_reader = PdfReader(output_path, strict=True)
+            if len(output_reader.pages) == 0:
+                raise HTTPException(
+                    status_code=500,
+                    detail="PDF merging did not produce a valid output.",
+                )
+        except HTTPException:
+            raise
+        except (PdfReadError, FileNotDecryptedError, OSError, ValueError):
+            raise HTTPException(
+                status_code=500,
+                detail="PDF merging did not produce a valid output.",
+            ) from None
+
         response = FileResponse(
             path=output_path,
             filename="merged.pdf",

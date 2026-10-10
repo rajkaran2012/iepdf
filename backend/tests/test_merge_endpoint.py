@@ -143,5 +143,39 @@ class MergeEndpointTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(self.temp_names(), before)
+
+    def test_invalid_generated_output_is_rejected_and_deleted(self):
+        from unittest.mock import patch
+        import routers.merge as merge_router
+
+        output_folder = Path(merge_router.OUTPUT_FOLDER)
+        output_folder.mkdir(parents=True, exist_ok=True)
+        before = {p.name for p in output_folder.iterdir() if p.is_file()}
+
+        real_writer = merge_router.PdfWriter
+
+        class InvalidOutputWriter:
+            def __init__(self):
+                self._writer = real_writer()
+
+            def add_page(self, page):
+                self._writer.add_page(page)
+
+            def write(self, output_file):
+                output_file.write(b"%PDF-1.4\n%%EOF")
+
+        with PDF_A.open("rb") as a, PDF_B.open("rb") as b:
+            with patch.object(merge_router, "PdfWriter", InvalidOutputWriter):
+                response = self.client.post(
+                    "/merge-pdf",
+                    files=[
+                        ("files", ("test-merge-A.pdf", a, "application/pdf")),
+                        ("files", ("test-merge-B.pdf", b, "application/pdf")),
+                    ],
+                )
+
+        self.assertEqual(response.status_code, 500, response.text[:500])
+        after = {p.name for p in output_folder.iterdir() if p.is_file()}
+        self.assertEqual(after, before)
 if __name__ == "__main__":
     unittest.main()

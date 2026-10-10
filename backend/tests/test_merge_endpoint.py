@@ -94,5 +94,54 @@ class MergeEndpointTests(unittest.TestCase):
         self.assertEqual(self.temp_names(), before)
 
 
+    def test_empty_pdf_is_rejected(self):
+        with PDF_B.open("rb") as b:
+            response = self.client.post(
+                "/merge-pdf",
+                files=[
+                    ("files", ("empty.pdf", io.BytesIO(b""), "application/pdf")),
+                    ("files", ("test-merge-B.pdf", b, "application/pdf")),
+                ],
+            )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("empty", response.json()["detail"].lower())
+
+    def test_encrypted_pdf_is_rejected(self):
+        from pypdf import PdfWriter
+
+        writer = PdfWriter()
+        writer.add_blank_page(width=72, height=72)
+        writer.encrypt("test-password")
+        encrypted = io.BytesIO()
+        writer.write(encrypted)
+        encrypted.seek(0)
+
+        with PDF_B.open("rb") as b:
+            response = self.client.post(
+                "/merge-pdf",
+                files=[
+                    ("files", ("encrypted.pdf", encrypted, "application/pdf")),
+                    ("files", ("test-merge-B.pdf", b, "application/pdf")),
+                ],
+            )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("password", response.json()["detail"].lower())
+
+    def test_corrupted_pdf_returns_error_and_cleans_temp_files(self):
+        before = self.temp_names()
+
+        with PDF_B.open("rb") as b:
+            response = self.client.post(
+                "/merge-pdf",
+                files=[
+                    ("files", ("corrupted.pdf", io.BytesIO(b"%PDF-1.4\n%%EOF"), "application/pdf")),
+                    ("files", ("test-merge-B.pdf", b, "application/pdf")),
+                ],
+            )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(self.temp_names(), before)
 if __name__ == "__main__":
     unittest.main()

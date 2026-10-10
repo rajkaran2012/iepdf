@@ -5,7 +5,7 @@ from fastapi import APIRouter, File, UploadFile, BackgroundTasks
 from fastapi.responses import FileResponse
 from pypdf import PdfReader, PdfWriter
 
-from config import TEMP_FOLDER, OUTPUT_FOLDER
+from config import TEMP_FOLDER, OUTPUT_FOLDER, MAX_FILE_SIZE
 from utils import (
     validate_upload,
     save_upload_file,
@@ -29,7 +29,7 @@ async def split_pdf(
     temp_name = unique_filename(file.filename)
     pdf_path = os.path.join(TEMP_FOLDER, temp_name)
 
-    save_upload_file(file, pdf_path)
+    save_upload_file(file, pdf_path, max_bytes=MAX_FILE_SIZE)
 
     reader = PdfReader(pdf_path)
 

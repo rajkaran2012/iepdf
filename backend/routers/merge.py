@@ -93,7 +93,11 @@ async def merge_pdf(
             temp_path = os.path.join(TEMP_FOLDER, temp_name)
 
             temp_files.append(temp_path)
-            save_upload_file(file, temp_path)
+            save_upload_file(
+                file,
+                temp_path,
+                max_bytes=MERGE_UPLOAD_LIMITS.max_file_size_bytes,
+            )
 
             reader = validate_pdf_input(temp_path)
 

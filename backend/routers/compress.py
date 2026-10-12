@@ -8,8 +8,8 @@ from fastapi.responses import FileResponse
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError, FileNotDecryptedError
 
-from utils import validate_upload
-from config import GHOSTSCRIPT_PATH, TEMP_FOLDER
+from utils import validate_upload, save_upload_file
+from config import GHOSTSCRIPT_PATH, TEMP_FOLDER, MAX_FILE_SIZE
 
 
 router = APIRouter()
@@ -127,8 +127,7 @@ async def compress_pdf(
     output_pdf = os.path.join(workspace, "compressed.pdf")
 
     try:
-        with open(input_pdf, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        save_upload_file(file, input_pdf, max_bytes=MAX_FILE_SIZE)
 
         validate_pdf_input(input_pdf)
 

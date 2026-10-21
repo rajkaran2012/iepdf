@@ -1,5 +1,8 @@
 "use client";
 
+import { reserveBrowserTask } from "@/lib/taskReservation";
+import { getAccountPlan } from "@/lib/auth";
+import { API_URL } from "@/lib/api";
 import { useRef, useState } from "react";
 
 import { BrowserPdfAnalyzer } from "@/engine/analysis/BrowserPdfAnalyzer";
@@ -29,18 +32,22 @@ export default function PdfToJpg() {
     };
 
     const processSelectedFile = async (selectedFile: File) => {
-        if (
-            selectedFile.size >
-            MAX_FILE_SIZE
-        ) {
+        let accountPlan;
+        try {
+            accountPlan = await getAccountPlan(API_URL);
+        } catch {
+            setWorkspaceFile(null);
+            toast.error({ title: "Account limits unavailable", message: "Unable to verify your plan. Please sign in again and retry." });
+            return;
+        }
+        const maxFileSize = accountPlan.tools["pdf-to-jpg"].max_file_size_bytes;
+        if (selectedFile.size > maxFileSize) {
             toast.error({
                 title: "File too large",
-                message:
-                    `"${selectedFile.name}" is larger than 15 MiB. The maximum allowed file size is 15 MiB per PDF.`,
+                message: `"${selectedFile.name}" exceeds your plan limit of ${(maxFileSize / (1024 * 1024)).toFixed(0)} MiB per PDF.`,
                 fileName: selectedFile.name,
                 fileSize: selectedFile.size,
             });
-
             setWorkspaceFile(null);
             return;
         }
@@ -147,8 +154,10 @@ export default function PdfToJpg() {
         setLoading(true);
 
         try {
-            const processor = new PdfToJpgProcessor();
+            const accountPlan = await getAccountPlan(API_URL);
+            const processor = new PdfToJpgProcessor(accountPlan.watermark_enabled);
 
+            await reserveBrowserTask("pdf-to-jpg");
             const result = await processor.process({
                 files: [workspaceFile],
                 toolType: "pdf-to-jpg",
@@ -531,4 +540,3 @@ export default function PdfToJpg() {
         </ToolLayout>
     );
 }
-

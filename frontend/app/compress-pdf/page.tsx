@@ -1,5 +1,9 @@
 "use client";
 
+import { reserveBrowserTask } from "@/lib/taskReservation";
+import { getAccountPlan } from "@/lib/auth";
+import { API_URL } from "@/lib/api";
+import { watermarkPdfFile } from "@/lib/pdfWatermark";
 import { useRef, useState } from "react";
 import { FileText, ShieldCheck, UploadCloud, X } from "lucide-react";
 
@@ -64,16 +68,23 @@ export default function CompressPDF() {
   };
 
   const handleFile = async (selectedFile: File) => {
-    if (selectedFile.size > MAX_FILE_SIZE) {
+    let accountPlan;
+    try {
+      accountPlan = await getAccountPlan(API_URL);
+    } catch {
       rejectFile();
-
+      toast.error({ title: "Account limits unavailable", message: "Unable to verify your plan. Please sign in again and retry." });
+      return;
+    }
+    const maxFileSize = accountPlan.tools.compress.max_file_size_bytes;
+    if (selectedFile.size > maxFileSize) {
+      rejectFile();
       toast.error({
         title: "File too large",
-        message: `"${selectedFile.name}" is larger than ${(MAX_FILE_SIZE / (1024 * 1024)).toFixed(0)} MB. The maximum allowed file size is ${(MAX_FILE_SIZE / (1024 * 1024)).toFixed(0)} MB per PDF.`,
+        message: `"${selectedFile.name}" exceeds your plan limit of ${(maxFileSize / (1024 * 1024)).toFixed(0)} MiB per PDF.`,
         fileName: selectedFile.name,
         fileSize: selectedFile.size,
       });
-
       return;
     }
 
@@ -318,6 +329,8 @@ export default function CompressPDF() {
       const processor =
         new CompressPdfProcessor();
 
+      const accountPlan = await getAccountPlan(API_URL);
+      await reserveBrowserTask("compress");
       const result =
         await processor.process(context);
 
@@ -335,9 +348,13 @@ export default function CompressPDF() {
         return;
       }
 
+      const outputFile = accountPlan.watermark_enabled
+        ? await watermarkPdfFile(result.outputFile)
+        : result.outputFile;
+
       const url =
         window.URL.createObjectURL(
-          result.outputFile
+          outputFile
         );
 
       const link =
@@ -345,7 +362,7 @@ export default function CompressPDF() {
 
       link.href = url;
       link.download =
-        result.outputFile.name ||
+        outputFile.name ||
         "compressed.pdf";
 
       document.body.appendChild(link);
@@ -662,4 +679,3 @@ export default function CompressPDF() {
     </main>
   );
 }
-

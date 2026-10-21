@@ -20,7 +20,7 @@ LOG_FOLDER = os.path.join(BASE_DIR, "logs")
 # FILE SIZE LIMIT
 # ==========================================
 
-MAX_FILE_SIZE = 15 * 1024 * 1024  # 15 MB
+MAX_FILE_SIZE = 500 * 1024 * 1024  # 500 MiB technical ceiling; plan limits are enforced separately
 
 # ==========================================
 # POPPLER

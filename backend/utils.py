@@ -52,13 +52,39 @@ def unique_filename(original_name: str) -> str:
 # SAVE UPLOADED FILE
 # ==========================================
 
-def save_upload_file(upload_file: UploadFile, destination: str):
-    """
-    Save UploadFile to disk.
-    """
+def save_upload_file(
+    upload_file: UploadFile,
+    destination: str,
+    max_bytes: int = MAX_FILE_SIZE,
+):
+    """Save an upload in bounded chunks, enforcing a byte limit."""
+    if max_bytes < 1:
+        raise ValueError("max_bytes must be positive")
 
-    with open(destination, "wb") as buffer:
-        shutil.copyfileobj(upload_file.file, buffer)
+    bytes_written = 0
+
+    try:
+        with open(destination, "wb") as buffer:
+            while True:
+                chunk = upload_file.file.read(1024 * 1024)
+                if not chunk:
+                    break
+
+                if bytes_written + len(chunk) > max_bytes:
+                    raise HTTPException(
+                        status_code=413,
+                        detail="An uploaded file exceeds the maximum allowed file size.",
+                    )
+
+                buffer.write(chunk)
+                bytes_written += len(chunk)
+
+    except Exception:
+        try:
+            os.remove(destination)
+        except OSError:
+            pass
+        raise
 
 
 # ==========================================

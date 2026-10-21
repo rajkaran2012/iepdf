@@ -1,5 +1,9 @@
 "use client";
 
+import { reserveBrowserTask } from "@/lib/taskReservation";
+import { getAccountPlan } from "@/lib/auth";
+import { API_URL } from "@/lib/api";
+import { watermarkPdfFile } from "@/lib/pdfWatermark";
 import { useEffect, useRef, useState } from "react";
 
 import { JpgToPdfProcessor } from "@/engine/processing/processors/JpgToPdfProcessor";
@@ -130,21 +134,27 @@ export default function JpgToPdf() {
             return;
         }
 
-        const oversizedFile =
-            selectedFiles.find(
-                (file) =>
-                    file.size > MAX_FILE_SIZE
-            );
-
+        let accountPlan;
+        try {
+            accountPlan = await getAccountPlan(API_URL);
+        } catch {
+            toast.error({ title: "Account limits unavailable", message: "Unable to verify your plan. Please sign in again and retry." });
+            return;
+        }
+        const limits = accountPlan.tools["jpg-to-pdf"];
+        const oversizedFile = selectedFiles.find((file) => file.size > limits.max_file_size_bytes);
         if (oversizedFile) {
-            toast.error({
-                title: "File too large",
-                message:
-                    `"${oversizedFile.name}" is larger than 15 MiB. The maximum allowed file size is 15 MiB per image.`,
-                fileName: oversizedFile.name,
-                fileSize: oversizedFile.size,
-            });
-
+            toast.error({ title: "File too large", message: `"${oversizedFile.name}" exceeds your plan limit of ${(limits.max_file_size_bytes / (1024 * 1024)).toFixed(0)} MiB per image.`, fileName: oversizedFile.name, fileSize: oversizedFile.size });
+            return;
+        }
+        if (workspaceFiles.length + selectedFiles.length > limits.max_files) {
+            toast.error({ title: "Image limit reached", message: `Your plan allows up to ${limits.max_files} images per task.` });
+            return;
+        }
+        const existingBytes = workspaceFiles.reduce((sum, item) => sum + Number(item.file?.size ?? item.size ?? 0), 0);
+        const incomingBytes = selectedFiles.reduce((sum, file) => sum + file.size, 0);
+        if (existingBytes + incomingBytes > limits.max_total_size_bytes) {
+            toast.error({ title: "Total image size exceeded", message: `Your plan allows ${(limits.max_total_size_bytes / (1024 * 1024)).toFixed(0)} MiB combined per task.` });
             return;
         }
 
@@ -339,6 +349,8 @@ export default function JpgToPdf() {
             const processor =
                 new JpgToPdfProcessor();
 
+            const accountPlan = await getAccountPlan(API_URL);
+            await reserveBrowserTask("jpg-to-pdf");
             const result =
                 await processor.process({
                     files: validWorkspaceFiles,
@@ -359,9 +371,13 @@ export default function JpgToPdf() {
                 return;
             }
 
+            const outputFile = accountPlan.watermark_enabled
+                ? await watermarkPdfFile(result.outputFile)
+                : result.outputFile;
+
             const url =
                 URL.createObjectURL(
-                    result.outputFile
+                    outputFile
                 );
 
             const link =
@@ -369,7 +385,7 @@ export default function JpgToPdf() {
 
             link.href = url;
             link.download =
-                result.outputFile.name;
+                outputFile.name;
 
             document.body.appendChild(link);
 
@@ -896,4 +912,3 @@ export default function JpgToPdf() {
         </ToolLayout>
     );
 }
-

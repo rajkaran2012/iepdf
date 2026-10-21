@@ -1,7 +1,9 @@
 import os
 from typing import List
 
-from fastapi import APIRouter, File, UploadFile, BackgroundTasks
+from fastapi import APIRouter, File, UploadFile, BackgroundTasks, Depends
+from security.account_access import AccountContext, require_account, enforce_tool_access
+from config import MAX_FILE_SIZE
 from fastapi.responses import FileResponse
 from pypdf import PdfReader, PdfWriter
 
@@ -19,8 +21,10 @@ router = APIRouter()
 @router.post("/merge-pdf")
 async def merge_pdf(
     background_tasks: BackgroundTasks,
-    files: List[UploadFile] = File(...)
+    files: List[UploadFile] = File(...),
+    account: AccountContext = Depends(require_account),
 ):
+    await enforce_tool_access(account, "merge", files)
 
     writer = PdfWriter()
     temp_files = []
@@ -32,7 +36,7 @@ async def merge_pdf(
         temp_name = unique_filename(file.filename)
         temp_path = os.path.join(TEMP_FOLDER, temp_name)
 
-        save_upload_file(file, temp_path)
+        save_upload_file(file, temp_path, max_bytes=MAX_FILE_SIZE)
 
         reader = PdfReader(temp_path)
 

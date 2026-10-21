@@ -5,3 +5,12 @@ pdf2image
 Pillow
 python-multipart
 python-dotenv
+# PostgreSQL database integration
+SQLAlchemy>=2.0,<3.0
+psycopg[binary]>=3.2,<4.0
+alembic>=1.14,<2.0
+
+pwdlib[argon2]>=0.2.1,<1.0
+
+# Transactional email delivery
+resend>=2.49.1,<3.0

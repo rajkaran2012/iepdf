@@ -3,7 +3,9 @@ import shutil
 import subprocess
 import tempfile
 
-from fastapi import APIRouter, UploadFile, File, BackgroundTasks, HTTPException
+from fastapi import APIRouter, UploadFile, File, BackgroundTasks, HTTPException, Depends
+from security.account_access import AccountContext, require_account, enforce_tool_access
+from config import MAX_FILE_SIZE
 from fastapi.responses import FileResponse
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError, FileNotDecryptedError
@@ -108,8 +110,10 @@ def cleanup_workspace(path: str) -> None:
 @router.post("/compress-pdf")
 async def compress_pdf(
     background_tasks: BackgroundTasks,
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    account: AccountContext = Depends(require_account),
 ):
+    await enforce_tool_access(account, "compress", [file])
     await validate_upload(file)
 
     if not os.path.isfile(GHOSTSCRIPT_PATH):
@@ -127,8 +131,8 @@ async def compress_pdf(
     output_pdf = os.path.join(workspace, "compressed.pdf")
 
     try:
-        with open(input_pdf, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        from utils import save_upload_file
+        save_upload_file(file, input_pdf, max_bytes=MAX_FILE_SIZE)
 
         validate_pdf_input(input_pdf)
 

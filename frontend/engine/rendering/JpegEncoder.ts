@@ -1,11 +1,12 @@
-﻿"use client";
+"use client";
 
 import type { RenderedPdfPage } from "./PdfiumPageRenderer";
 
 export class JpegEncoder {
     public async encode(
         page: RenderedPdfPage,
-        quality = 0.9
+        quality = 0.9,
+        watermark = false
     ): Promise<Blob> {
         if (
             page.width <= 0 ||
@@ -89,6 +90,19 @@ export class JpegEncoder {
             0,
             0
         );
+
+        if (watermark) {
+            context.save();
+            context.translate(page.width / 2, page.height / 2);
+            context.rotate(-Math.PI / 6);
+            context.globalAlpha = 0.22;
+            context.fillStyle = "#777777";
+            context.textAlign = "center";
+            context.textBaseline = "middle";
+            context.font = `bold ${Math.max(20, Math.round(page.width / 18))}px sans-serif`;
+            context.fillText("iePDF Free", 0, 0);
+            context.restore();
+        }
 
         const normalizedQuality = Math.min(
             1,

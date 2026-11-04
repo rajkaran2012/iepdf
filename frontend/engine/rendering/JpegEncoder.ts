@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { RenderedPdfPage } from "./PdfiumPageRenderer";
 
@@ -7,7 +7,8 @@ export class JpegEncoder {
 
     public async encode(
         page: RenderedPdfPage,
-        quality = 0.9
+        quality = 0.9,
+        watermark = false
     ): Promise<Blob> {
         if (
             page.width <= 0 ||
@@ -92,7 +93,7 @@ export class JpegEncoder {
             0
         );
 
-        if (this.watermarkEnabled) {
+        if (watermark || this.watermarkEnabled) {
             context.save();
             context.globalAlpha = 0.22;
             context.fillStyle = "#737373";

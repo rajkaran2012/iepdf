@@ -1,4 +1,4 @@
-﻿import { zipSync } from "fflate";
+import { zipSync } from "fflate";
 
 import { PdfiumPageRenderer } from "@/engine/rendering/PdfiumPageRenderer";
 import { JpegEncoder } from "@/engine/rendering/JpegEncoder";
@@ -9,14 +9,11 @@ import type { ProcessingContext } from "../ProcessingContext";
 import type { ProcessingResult } from "../results/ProcessingResult";
 
 export class PdfToJpgProcessor extends BasePdfProcessor {
-    private readonly renderer =
-        new PdfiumPageRenderer();
-
+    private readonly renderer = new PdfiumPageRenderer();
     private readonly encoder: JpegEncoder;
-
-    constructor(watermarkEnabled = false) {
+    public constructor(private readonly watermark = false) {
         super();
-        this.encoder = new JpegEncoder(watermarkEnabled);
+        this.encoder = new JpegEncoder(watermark);
     }
 
     protected override async processCore(
@@ -70,7 +67,8 @@ export class PdfToJpgProcessor extends BasePdfProcessor {
                 const jpegBlob =
                     await this.encoder.encode(
                         renderedPage,
-                        0.9
+                        0.9,
+                        this.watermark
                     );
 
                 const jpegBytes =

@@ -3,6 +3,8 @@
 import type { RenderedPdfPage } from "./PdfiumPageRenderer";
 
 export class JpegEncoder {
+    constructor(private readonly watermarkEnabled = false) {}
+
     public async encode(
         page: RenderedPdfPage,
         quality = 0.9
@@ -89,6 +91,18 @@ export class JpegEncoder {
             0,
             0
         );
+
+        if (this.watermarkEnabled) {
+            context.save();
+            context.globalAlpha = 0.22;
+            context.fillStyle = "#737373";
+            context.font = "34px Helvetica, Arial, sans-serif";
+            context.textBaseline = "middle";
+            context.translate(page.width * 0.12, page.height * 0.52);
+            context.rotate(-35 * Math.PI / 180);
+            context.fillText("iePDF Free", 0, 0);
+            context.restore();
+        }
 
         const normalizedQuality = Math.min(
             1,

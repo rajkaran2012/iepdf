@@ -12,7 +12,16 @@ class ModelMetadataTests(unittest.TestCase):
     def test_expected_tables_exist(self):
         self.assertEqual(
             set(Base.metadata.tables),
-            {"users", "subscriptions", "usage_records", "payments", "entitlements"},
+            {
+                "users",
+                "subscriptions",
+                "usage_records",
+                "payments",
+                "entitlements",
+                "email_verification_tokens",
+                "admin_plan_audits",
+                "account_rate_limits",
+            },
         )
 
     def test_usage_count_allows_zero_but_rejects_negative_values(self):

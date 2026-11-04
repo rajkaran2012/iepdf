@@ -1,5 +1,9 @@
 "use client";
 
+import { reserveBrowserTask } from "@/lib/taskReservation";
+import { getAccountPlan } from "@/lib/auth";
+import { API_URL } from "@/lib/api";
+import { watermarkPdfFile } from "@/lib/pdfWatermark";
 import { useRef, useState } from "react";
 
 
@@ -256,8 +260,10 @@ const handleRemoveFile = (id: string) => {
         const processor =
             new BrowserMergeProcessor();
 
+        const accountPlan = await getAccountPlan(API_URL);
         console.info("[IEPDF_FORENSIC_V3] PROCESS_START|" + performance.now().toFixed(3));
-const result =
+        await reserveBrowserTask("merge");
+        const result =
             await processor.process({
 
                 files: workspaceFiles,
@@ -280,9 +286,12 @@ console.info("[IEPDF_FORENSIC_V3] PROCESS_END|" + performance.now().toFixed(3));
 
         }
 
+        const outputFile = accountPlan.watermark_enabled
+            ? await watermarkPdfFile(result.outputFile)
+            : result.outputFile;
         console.info("[IEPDF_FORENSIC_V3] BLOB_START|" + performance.now().toFixed(3));
 const url =
-            URL.createObjectURL(result.outputFile);
+            URL.createObjectURL(outputFile);
 console.info("[IEPDF_FORENSIC_V3] BLOB_END|" + performance.now().toFixed(3));
 
         const link =
@@ -291,7 +300,7 @@ console.info("[IEPDF_FORENSIC_V3] BLOB_END|" + performance.now().toFixed(3));
         link.href = url;
 
         link.download =
-            result.outputFile.name;
+            outputFile.name;
 
         document.body.appendChild(link);
 
@@ -418,21 +427,31 @@ const processSelectedFiles = async (
         return;
     }
 
-    const oversizedFile = files.find(
-        (file) => file.size > MAX_FILE_SIZE
-    );
-
-    if (oversizedFile) {
-        toast.error({
-          title: "Invalid PDF",
-          message: "File exceeds the maximum allowed size.",
-          fileName: oversizedFile.name,
-          fileSize: oversizedFile.size,
-        });
+    let accountPlan;
+    try {
+        accountPlan = await getAccountPlan(API_URL);
+    } catch {
+        toast.error({ title: "Account limits unavailable", message: "Unable to verify your plan. Please sign in again and retry." });
         return;
     }
-
-    const { BrowserPdfAnalyzer } = await import(
+    const limits = accountPlan.tools.merge;
+    const oversizedFile = files.find((file) => file.size > limits.max_file_size_bytes);
+    if (oversizedFile) {
+        toast.error({ title: "File too large", message: `Your plan allows ${(limits.max_file_size_bytes / (1024 * 1024)).toFixed(0)} MiB per file.`, fileName: oversizedFile.name, fileSize: oversizedFile.size });
+        return;
+    }
+    const combinedCount = workspaceFiles.length + files.length;
+    if (combinedCount > limits.max_files) {
+        toast.error({ title: "File limit reached", message: `Your plan allows up to ${limits.max_files} files per merge task.` });
+        return;
+    }
+    const existingBytes = workspaceFiles.reduce((sum, item) => sum + Number(item.file?.size ?? 0), 0);
+    const incomingBytes = files.reduce((sum, file) => sum + file.size, 0);
+    if (existingBytes + incomingBytes > limits.max_total_size_bytes) {
+        toast.error({ title: "Total size exceeded", message: `Your plan allows ${(limits.max_total_size_bytes / (1024 * 1024)).toFixed(0)} MiB combined per merge task.` });
+        return;
+    }
+        const { BrowserPdfAnalyzer } = await import(
         "@/engine/analysis/BrowserPdfAnalyzer"
     );
 

@@ -1,5 +1,9 @@
 "use client";
 
+import { reserveBrowserTask } from "@/lib/taskReservation";
+import { getAccountPlan } from "@/lib/auth";
+import { API_URL } from "@/lib/api";
+import { watermarkPdfFile } from "@/lib/pdfWatermark";
 import { useRef, useState } from "react";
 import { FileText, ShieldCheck, UploadCloud, X } from "lucide-react";
 
@@ -47,16 +51,18 @@ export default function SplitPDF() {
       }
     };
 
-    if (
-      selectedFile.size >
-      ValidationConstants.BOUNDARY_VALIDATION.MAX_FILE_SIZE_BYTES
-    ) {
+    let accountPlan;
+    try {
+      accountPlan = await getAccountPlan(API_URL);
+    } catch {
       rejectFile();
-
-      toast.error({
-        title: "File too large",
-        message: "The selected PDF exceeds the 15 MB limit.",
-      });
+      toast.error({ title: "Account limits unavailable", message: "Unable to verify your plan. Please sign in again and retry." });
+      return;
+    }
+    const maxFileSize = accountPlan.tools.split.max_file_size_bytes;
+    if (selectedFile.size > maxFileSize) {
+      rejectFile();
+      toast.error({ title: "File too large", message: `The selected PDF exceeds your plan limit of ${(maxFileSize / (1024 * 1024)).toFixed(0)} MiB.` });
       return;
     }
 
@@ -228,6 +234,8 @@ export default function SplitPDF() {
     try {
       const processor = new SplitPdfProcessor();
 
+      const accountPlan = await getAccountPlan(API_URL);
+      await reserveBrowserTask("split");
       const result = await processor.process({
         files: [workspaceFile],
         toolType: "split",
@@ -241,11 +249,15 @@ export default function SplitPDF() {
         return;
       }
 
-      const url = URL.createObjectURL(result.outputFile);
+      const outputFile = accountPlan.watermark_enabled
+        ? await watermarkPdfFile(result.outputFile)
+        : result.outputFile;
+
+      const url = URL.createObjectURL(outputFile);
       const link = document.createElement("a");
 
       link.href = url;
-      link.download = result.outputFile.name;
+      link.download = outputFile.name;
 
       document.body.appendChild(link);
       link.click();

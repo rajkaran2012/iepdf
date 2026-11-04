@@ -12,8 +12,12 @@ export class PdfToJpgProcessor extends BasePdfProcessor {
     private readonly renderer =
         new PdfiumPageRenderer();
 
-    private readonly encoder =
-        new JpegEncoder();
+    private readonly encoder: JpegEncoder;
+
+    constructor(watermarkEnabled = false) {
+        super();
+        this.encoder = new JpegEncoder(watermarkEnabled);
+    }
 
     protected override async processCore(
         context: ProcessingContext

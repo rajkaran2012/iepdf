@@ -153,3 +153,81 @@ class Entitlement(Base):
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     user: Mapped["User"] = relationship(back_populates="entitlements")
+
+class EmailVerificationToken(Base):
+    """Single-use email verification token metadata; never store raw tokens."""
+
+    __tablename__ = "email_verification_tokens"
+    __table_args__ = (
+        UniqueConstraint("token_hash", name="uq_email_verification_token_hash"),
+        Index("ix_email_verification_user_expiry", "user_id", "expires_at"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class AdminPlanAudit(Base):
+    """Durable record of a successful administrator plan assignment."""
+
+    __tablename__ = "admin_plan_audits"
+    __table_args__ = (
+        CheckConstraint(
+            "previous_plan IN ('free', 'paid')",
+            name="ck_admin_plan_audit_previous_plan",
+        ),
+        CheckConstraint(
+            "assigned_plan IN ('free', 'paid')",
+            name="ck_admin_plan_audit_assigned_plan",
+        ),
+        Index(
+            "ix_admin_plan_audits_target_created",
+            "target_user_id",
+            "created_at",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    admin_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
+    )
+    target_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
+    )
+    previous_plan: Mapped[str] = mapped_column(String(20), nullable=False)
+    assigned_plan: Mapped[str] = mapped_column(String(20), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+class AccountRateLimit(Base):
+    """Persistent request counters for account endpoint rate limits."""
+
+    __tablename__ = "account_rate_limits"
+    __table_args__ = (
+        CheckConstraint(
+            "request_count >= 0",
+            name="ck_account_rate_limits_request_count_nonnegative",
+        ),
+    )
+
+    bucket_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    window_start: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    request_count: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )

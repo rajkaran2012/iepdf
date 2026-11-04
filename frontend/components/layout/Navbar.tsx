@@ -1,10 +1,11 @@
-﻿"use client";
+"use client";
 
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
 import { TOOL_REGISTRY } from "@/config/toolRegistry";
 import BrandLogo from "@/components/layout/BrandLogo";
+import Link from "next/link";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -29,6 +30,9 @@ export default function Navbar() {
               {tool.shortTitle}
             </a>
           ))}
+          <Link href="/account" className="whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#5B5CE2]">Account</Link>
+          <Link href="/login" className="whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold text-[#5B5CE2] hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B5CE2]">Sign in</Link>
+          <Link href="/register" className="whitespace-nowrap rounded-md bg-[#5B5CE2] px-3 py-2 text-sm font-semibold text-white hover:bg-[#494ACB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B5CE2]">Create account</Link>
         </nav>
 
         <button
@@ -60,6 +64,9 @@ export default function Navbar() {
                 {tool.title}
               </a>
             ))}
+            <Link href="/account" className="whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#5B5CE2]">Account</Link>
+          <Link href="/login" onClick={() => setOpen(false)} className="rounded-lg px-4 py-3 text-base font-semibold text-[#5B5CE2] hover:bg-slate-50">Sign in</Link>
+            <Link href="/register" onClick={() => setOpen(false)} className="rounded-lg px-4 py-3 text-base font-semibold text-white bg-[#5B5CE2] hover:bg-[#494ACB]">Create account</Link>
           </div>
         </nav>
       )}

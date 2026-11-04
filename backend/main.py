@@ -8,6 +8,7 @@ from routers.split import router as split_router
 from routers.pdf_to_jpg import router as pdf_to_jpg_router
 from routers.jpg_to_pdf import router as jpg_to_pdf_router
 from routers.compress import router as compress_router
+from routers.accounts import router as accounts_router
 
 # ==========================================
 # CREATE FASTAPI APP
@@ -49,6 +50,7 @@ app.include_router(split_router)
 app.include_router(pdf_to_jpg_router)
 app.include_router(jpg_to_pdf_router)
 app.include_router(compress_router)
+app.include_router(accounts_router)
 
 # ==========================================
 # ROOT

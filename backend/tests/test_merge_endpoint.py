@@ -1,24 +1,45 @@
 import io
 import unittest
+import tempfile
 from pathlib import Path
 
 from fastapi.testclient import TestClient
-from pypdf import PdfReader
+from pypdf import PdfReader, PdfWriter
 
 from config import TEMP_FOLDER
 from main import app
 
 
-ROOT = Path(r"C:\IEPDF")
-PDF_A = ROOT / "test-merge-A.pdf"
-PDF_B = ROOT / "test-merge-B.pdf"
-MAX_FILE_SIZE = 15 * 1024 * 1024
+PDF_A = None
+PDF_B = None
+MAX_FILE_SIZE = 50 * 1024 * 1024
 
 
 class MergeEndpointTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        global PDF_A, PDF_B
         cls.client = TestClient(app)
+        cls.fixture_dir = tempfile.TemporaryDirectory(prefix="iepdf-merge-tests-")
+        fixture_root = Path(cls.fixture_dir.name)
+
+        PDF_A = fixture_root / "test-merge-A.pdf"
+        PDF_B = fixture_root / "test-merge-B.pdf"
+
+        writer_a = PdfWriter()
+        writer_a.add_blank_page(width=72, height=72)
+        with PDF_A.open("wb") as output:
+            writer_a.write(output)
+
+        writer_b = PdfWriter()
+        writer_b.add_blank_page(width=72, height=72)
+        writer_b.add_blank_page(width=72, height=72)
+        with PDF_B.open("wb") as output:
+            writer_b.write(output)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.fixture_dir.cleanup()
 
     def temp_names(self):
         folder = Path(TEMP_FOLDER)
@@ -84,7 +105,7 @@ class MergeEndpointTests(unittest.TestCase):
             response = self.client.post(
                 "/merge-pdf",
                 files=[
-                    ("malformed.pdf", ("malformed.pdf", io.BytesIO(b"not a PDF"), "application/pdf")),
+                    ("files", ("malformed.pdf", io.BytesIO(b"not a PDF"), "application/pdf")),
                     ("files", ("test-merge-B.pdf", b, "application/pdf")),
                 ],
             )

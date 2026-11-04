@@ -1,28 +1,34 @@
 import os
 from typing import List
 
-from fastapi import APIRouter, File, UploadFile, BackgroundTasks, HTTPException
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    HTTPException,
+    UploadFile,
+)
 from fastapi.responses import FileResponse
 from pypdf import PdfReader, PdfWriter
 from pypdf.errors import FileNotDecryptedError, PdfReadError
 
-from config import TEMP_FOLDER, OUTPUT_FOLDER, MAX_FILE_SIZE
+from config import MAX_FILE_SIZE, TEMP_FOLDER, OUTPUT_FOLDER
+from security.account_access import (
+    AccountContext,
+    enforce_tool_access,
+    require_account,
+)
 from security.plan_policy import MB, ToolLimit
 from security.upload_validation import validate_upload_batch
-from utils import (
-    save_upload_file,
-    safe_delete,
-    unique_filename,
-)
+from utils import save_upload_file, safe_delete, unique_filename
 
 router = APIRouter()
 
-# Conservative limits for the existing unauthenticated endpoint.
-# These do not grant paid-plan or special-merge authorization.
 MERGE_UPLOAD_LIMITS = ToolLimit(
     min_files=2,
     max_files=5,
-    max_file_size_bytes=MAX_FILE_SIZE,
+    max_file_size_bytes=50 * MB,
     max_total_size_bytes=50 * MB,
 )
 
@@ -79,8 +85,13 @@ def validate_pdf_input(path: str) -> PdfReader:
 async def merge_pdf(
     background_tasks: BackgroundTasks,
     files: List[UploadFile] = File(...),
+    account: AccountContext = Depends(require_account),
 ):
+    await enforce_tool_access(account, "merge", files)
     await validate_upload_batch(files, MERGE_UPLOAD_LIMITS)
+
+    os.makedirs(TEMP_FOLDER, exist_ok=True)
+    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
     writer = PdfWriter()
     temp_files = []
@@ -91,8 +102,8 @@ async def merge_pdf(
         for file in files:
             temp_name = unique_filename(file.filename or "upload.pdf")
             temp_path = os.path.join(TEMP_FOLDER, temp_name)
-
             temp_files.append(temp_path)
+
             save_upload_file(
                 file,
                 temp_path,
@@ -138,13 +149,14 @@ async def merge_pdf(
                 detail="PDF merging did not produce a valid output.",
             ) from None
 
+        background_tasks.add_task(safe_delete, output_path)
+
         response = FileResponse(
             path=output_path,
             filename="merged.pdf",
             media_type="application/pdf",
             background=background_tasks,
         )
-        background_tasks.add_task(safe_delete, output_path)
         response_created = True
         return response
 

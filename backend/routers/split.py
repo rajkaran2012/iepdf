@@ -1,7 +1,8 @@
 import os
 import zipfile
 
-from fastapi import APIRouter, File, UploadFile, BackgroundTasks
+from fastapi import APIRouter, File, UploadFile, BackgroundTasks, Depends
+from security.account_access import AccountContext, require_account, enforce_tool_access
 from fastapi.responses import FileResponse
 from pypdf import PdfReader, PdfWriter
 
@@ -28,7 +29,9 @@ def _cleanup_split_file(path: str) -> None:
 async def split_pdf(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
+    account: AccountContext = Depends(require_account),
 ):
+    await enforce_tool_access(account, "split", [file])
     await validate_upload(file)
 
     temp_name = unique_filename(file.filename)

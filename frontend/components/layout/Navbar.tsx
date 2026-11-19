@@ -1,14 +1,33 @@
 "use client";
 
 import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
 
 import { TOOL_REGISTRY } from "@/config/toolRegistry";
 import BrandLogo from "@/components/layout/BrandLogo";
 import Link from "next/link";
+import {
+  clearAccessToken,
+  isAuthenticated,
+  subscribeToAuth,
+} from "@/lib/auth";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
+
+  const signedIn = useSyncExternalStore(
+    subscribeToAuth,
+    isAuthenticated,
+    () => false
+  );
+
+  function handleSignOut() {
+    clearAccessToken();
+    setOpen(false);
+    router.push("/");
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
@@ -30,9 +49,38 @@ export default function Navbar() {
               {tool.shortTitle}
             </a>
           ))}
-          <Link href="/account" className="whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#5B5CE2]">Account</Link>
-          <Link href="/login" className="whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold text-[#5B5CE2] hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B5CE2]">Sign in</Link>
-          <Link href="/register" className="whitespace-nowrap rounded-md bg-[#5B5CE2] px-3 py-2 text-sm font-semibold text-white hover:bg-[#494ACB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B5CE2]">Create account</Link>
+
+          <Link
+            href="/account"
+            className="whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#5B5CE2]"
+          >
+            Account
+          </Link>
+
+          {signedIn ? (
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold text-[#5B5CE2] hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B5CE2]"
+            >
+              Sign out
+            </button>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold text-[#5B5CE2] hover:bg-slate-50"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/register"
+                className="whitespace-nowrap rounded-md bg-[#5B5CE2] px-3 py-2 text-sm font-semibold text-white hover:bg-[#494ACB]"
+              >
+                Create account
+              </Link>
+            </>
+          )}
         </nav>
 
         <button
@@ -59,14 +107,46 @@ export default function Navbar() {
                 key={tool.href}
                 href={tool.href}
                 onClick={() => setOpen(false)}
-                className="rounded-lg px-4 py-3 text-base font-medium text-slate-700 hover:bg-slate-50 hover:text-[#5B5CE2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B5CE2]"
+                className="rounded-lg px-4 py-3 text-base font-medium text-slate-700 hover:bg-slate-50 hover:text-[#5B5CE2]"
               >
                 {tool.title}
               </a>
             ))}
-            <Link href="/account" className="whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:text-[#5B5CE2]">Account</Link>
-          <Link href="/login" onClick={() => setOpen(false)} className="rounded-lg px-4 py-3 text-base font-semibold text-[#5B5CE2] hover:bg-slate-50">Sign in</Link>
-            <Link href="/register" onClick={() => setOpen(false)} className="rounded-lg px-4 py-3 text-base font-semibold text-white bg-[#5B5CE2] hover:bg-[#494ACB]">Create account</Link>
+
+            <Link
+              href="/account"
+              onClick={() => setOpen(false)}
+              className="rounded-lg px-4 py-3 text-base font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Account
+            </Link>
+
+            {signedIn ? (
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="rounded-lg px-4 py-3 text-left text-base font-semibold text-[#5B5CE2] hover:bg-slate-50"
+              >
+                Sign out
+              </button>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  onClick={() => setOpen(false)}
+                  className="rounded-lg px-4 py-3 text-base font-semibold text-[#5B5CE2] hover:bg-slate-50"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={() => setOpen(false)}
+                  className="rounded-lg px-4 py-3 text-base font-semibold text-white bg-[#5B5CE2] hover:bg-[#494ACB]"
+                >
+                  Create account
+                </Link>
+              </>
+            )}
           </div>
         </nav>
       )}

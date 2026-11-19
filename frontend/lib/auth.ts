@@ -1,6 +1,5 @@
 /**
  * In-memory authentication state for iePDF.
- *
  * Access tokens are intentionally not persisted to browser storage.
  */
 
@@ -10,6 +9,20 @@ type AuthSession = {
 };
 
 let session: AuthSession | null = null;
+const authListeners = new Set<() => void>();
+
+function notifyAuthChange(): void {
+  authListeners.forEach((listener) => listener());
+}
+
+export function subscribeToAuth(listener: () => void): () => void {
+  authListeners.add(listener);
+  return () => authListeners.delete(listener);
+}
+
+export function isAuthenticated(): boolean {
+  return session !== null && Date.now() < session.expiresAt;
+}
 
 export function setAccessToken(
   accessToken: string,
@@ -19,10 +32,7 @@ export function setAccessToken(
     throw new Error("An access token is required.");
   }
 
-  if (
-    !Number.isFinite(expiresInSeconds) ||
-    expiresInSeconds <= 0
-  ) {
+  if (!Number.isFinite(expiresInSeconds) || expiresInSeconds <= 0) {
     throw new Error("A valid token lifetime is required.");
   }
 
@@ -30,15 +40,16 @@ export function setAccessToken(
     accessToken,
     expiresAt: Date.now() + expiresInSeconds * 1000,
   };
+
+  notifyAuthChange();
 }
 
 export function getAccessToken(): string | null {
-  if (!session) {
-    return null;
-  }
+  if (!session) return null;
 
   if (Date.now() >= session.expiresAt) {
     session = null;
+    notifyAuthChange();
     return null;
   }
 
@@ -46,8 +57,12 @@ export function getAccessToken(): string | null {
 }
 
 export function clearAccessToken(): void {
+  const hadSession = session !== null;
   session = null;
+
+  if (hadSession) notifyAuthChange();
 }
+
 export type AccountToolLimit = {
   min_files: number;
   max_files: number;
@@ -67,6 +82,7 @@ export type AccountPlan = {
 
 export async function getAccountPlan(apiUrl: string): Promise<AccountPlan> {
   const token = getAccessToken();
+
   if (!token) {
     throw new Error("Sign in with a verified iePDF account to view plan details.");
   }

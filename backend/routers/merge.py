@@ -16,21 +16,13 @@ from pypdf.errors import FileNotDecryptedError, PdfReadError
 from config import MAX_FILE_SIZE, TEMP_FOLDER, OUTPUT_FOLDER
 from security.account_access import (
     AccountContext,
+    effective_tool_limit,
     enforce_tool_access,
     require_account,
 )
-from security.plan_policy import MB, ToolLimit
-from security.upload_validation import validate_upload_batch
 from utils import save_upload_file, safe_delete, unique_filename
 
 router = APIRouter()
-
-MERGE_UPLOAD_LIMITS = ToolLimit(
-    min_files=2,
-    max_files=5,
-    max_file_size_bytes=50 * MB,
-    max_total_size_bytes=50 * MB,
-)
 
 
 def validate_pdf_input(path: str) -> PdfReader:
@@ -87,8 +79,8 @@ async def merge_pdf(
     files: List[UploadFile] = File(...),
     account: AccountContext = Depends(require_account),
 ):
+    limits = effective_tool_limit(account, "merge")
     await enforce_tool_access(account, "merge", files)
-    await validate_upload_batch(files, MERGE_UPLOAD_LIMITS)
 
     os.makedirs(TEMP_FOLDER, exist_ok=True)
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
@@ -107,7 +99,7 @@ async def merge_pdf(
             save_upload_file(
                 file,
                 temp_path,
-                max_bytes=MERGE_UPLOAD_LIMITS.max_file_size_bytes,
+                max_bytes=limits.max_file_size_bytes,
             )
 
             reader = validate_pdf_input(temp_path)

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { API_URL } from "@/lib/api";
-import { setAccessToken } from "@/lib/auth";
+import { clearAccessToken, getAccountPlan, setAccessToken } from "@/lib/auth";
 
 type LoginState = "idle" | "submitting" | "error";
 
@@ -26,6 +26,7 @@ export default function LoginPage() {
     event.preventDefault();
     setMessage("");
     setState("submitting");
+    let loginTokenSet = false;
 
     try {
       const response = await fetch(`${API_URL}/accounts/login`, {
@@ -65,10 +66,25 @@ export default function LoginPage() {
       }
 
       setAccessToken(data.access_token, data.expires_in);
+      loginTokenSet = true;
+
+      // Confirm the backend-resolved entitlement before completing login.
+      const accountPlan = await getAccountPlan(API_URL);
+      if (accountPlan.plan_id !== "paid") {
+        clearAccessToken();
+        setState("error");
+        setMessage(
+          "Your account is verified, but Paid access has not been activated. Please contact support."
+        );
+        return;
+      }
 
       setPassword("");
       router.push("/");
     } catch {
+      if (loginTokenSet) {
+        clearAccessToken();
+      }
       setState("error");
       setMessage(
         "We could not connect to the sign-in service. Please try again later."

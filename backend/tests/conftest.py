@@ -39,10 +39,17 @@ def legacy_pdf_test_account(request):
     )
 
     app.dependency_overrides[require_account] = lambda: account
+    request.node.merge_test_account = account
+
+    routers_to_patch = PDF_ROUTERS
+    if request.module.__name__.split(".")[-1] == "test_merge_endpoint":
+        routers_to_patch = tuple(
+            router for router in PDF_ROUTERS if router != "routers.merge"
+        )
 
     patches = [
         patch(f"{router}.enforce_tool_access", new_callable=AsyncMock)
-        for router in PDF_ROUTERS
+        for router in routers_to_patch
     ]
 
     for active_patch in patches:

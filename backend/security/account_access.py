@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 from datetime import datetime, timezone
 from typing import Generator, Sequence
 
@@ -91,7 +92,15 @@ def require_account(
     return AccountContext(
         user=user,
         session=session,
-        plan_id="paid" if paid_active else "free",
+        plan_id=(
+            "paid"
+            if (
+                os.environ.get("AUTO_GRANT_PAID_TO_VERIFIED_USERS", "").strip().lower()
+                == "true"
+                or paid_active
+            )
+            else "free"
+        ),
         special_merge_authorized=special_merge,
         special_merge_max_files=(
             entitlement.max_files if special_merge and entitlement is not None

@@ -89,6 +89,33 @@ class SubscriptionPlanResolutionTests(unittest.TestCase):
         result = self.resolve([])
         self.assertEqual(result.plan_id, "free")
 
+    def test_existing_verified_account_gets_paid_without_subscription(self):
+        with patch.dict("os.environ", {"AUTO_GRANT_PAID_TO_VERIFIED_USERS": "true"}):
+            result = self.resolve([])
+        self.assertEqual(result.plan_id, "paid")
+
+    def test_newly_verified_account_gets_paid_without_subscription(self):
+        # Email verification activates the account; no subscription row is required.
+        self.user.status = "active"
+        with patch.dict("os.environ", {"AUTO_GRANT_PAID_TO_VERIFIED_USERS": "true"}):
+            result = self.resolve([])
+        self.assertEqual(result.plan_id, "paid")
+
+    def test_unverified_account_is_rejected_when_auto_paid_is_enabled(self):
+        self.user.status = "pending"
+        with patch.dict("os.environ", {"AUTO_GRANT_PAID_TO_VERIFIED_USERS": "true"}):
+            with patch(
+                "security.account_access.decode_access_token",
+                return_value=7,
+            ):
+                with self.assertRaises(HTTPException) as raised:
+                    require_account(
+                        credentials=self.credentials,
+                        session=self.session,
+                    )
+        self.assertEqual(raised.exception.status_code, 403)
+        self.assertEqual(self.session.execute.call_count, 1)
+
     def test_inactive_account_is_rejected(self):
         self.user.status = "pending"
         with patch(

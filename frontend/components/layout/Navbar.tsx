@@ -41,13 +41,13 @@ export default function Navbar() {
           className="hidden items-center gap-5 lg:flex"
         >
           {TOOL_REGISTRY.map((tool) => (
-            <a
+            <Link
               key={tool.href}
               href={tool.href}
               className="whitespace-nowrap rounded-md px-1 py-2 text-sm font-medium text-slate-700 transition-colors hover:text-[#5B5CE2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B5CE2] focus-visible:ring-offset-2"
             >
               {tool.shortTitle}
-            </a>
+            </Link>
           ))}
 
           <Link
@@ -103,14 +103,14 @@ export default function Navbar() {
         >
           <div className="mx-auto grid max-w-7xl gap-1 sm:grid-cols-2">
             {TOOL_REGISTRY.map((tool) => (
-              <a
+              <Link
                 key={tool.href}
                 href={tool.href}
                 onClick={() => setOpen(false)}
                 className="rounded-lg px-4 py-3 text-base font-medium text-slate-700 hover:bg-slate-50 hover:text-[#5B5CE2]"
               >
                 {tool.title}
-              </a>
+              </Link>
             ))}
 
             <Link

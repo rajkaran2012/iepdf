@@ -161,6 +161,7 @@ export default function PdfToJpg() {
             const result = await processor.process({
                 files: [workspaceFile],
                 toolType: "pdf-to-jpg",
+                maxFileSizeBytes: accountPlan.tools["pdf-to-jpg"].max_file_size_bytes,
             });
 
             if (

@@ -314,6 +314,9 @@ export default function JpgToPdf() {
         setLoading(true);
 
         try {
+            const accountPlan = await getAccountPlan(API_URL);
+            const maxFileSizeBytes = accountPlan.tools["jpg-to-pdf"].max_file_size_bytes;
+
             const browserFiles = workspaceFiles.map(
                 (workspaceFile) => workspaceFile.file
             );
@@ -326,7 +329,8 @@ export default function JpgToPdf() {
                     await validationGateway.validate(
                         browserFiles,
                         workspaceFile.file,
-                        "jpg-to-pdf"
+                        "jpg-to-pdf",
+                        maxFileSizeBytes
                     );
 
                 if (validationResult.passed) {
@@ -349,12 +353,12 @@ export default function JpgToPdf() {
             const processor =
                 new JpgToPdfProcessor();
 
-            const accountPlan = await getAccountPlan(API_URL);
             await reserveBrowserTask("jpg-to-pdf");
             const result =
                 await processor.process({
                     files: validWorkspaceFiles,
                     toolType: "jpg-to-pdf",
+                    maxFileSizeBytes,
                 });
 
             if (

@@ -27,7 +27,8 @@ export class ValidationContextFactory {
     public static create(
         files: ReadonlyArray<File>,
         file: File,
-        toolType: ToolType
+        toolType: ToolType,
+        maxFileSizeBytes: number
     ): ValidationContext {
 
         const extension =
@@ -44,6 +45,8 @@ export class ValidationContextFactory {
     fileCount: files.length,
 
     toolType,
+
+    maxFileSizeBytes,
 
     file,
 

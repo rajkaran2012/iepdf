@@ -57,6 +57,9 @@ export interface ValidationContext {
      */
     readonly toolType: ToolType;
 
+    /** Maximum permitted size for each file, supplied by the account plan. */
+    readonly maxFileSizeBytes: number;
+
     /**
      * Current file being validated.
      */

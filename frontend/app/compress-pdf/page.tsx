@@ -321,15 +321,16 @@ export default function CompressPDF() {
     setLoading(true);
 
     try {
+      const accountPlan = await getAccountPlan(API_URL);
       const context: ProcessingContext = {
         files: [fileToCompress],
         toolType: "compress",
+        maxFileSizeBytes: accountPlan.tools.compress.max_file_size_bytes,
       };
 
       const processor =
         new CompressPdfProcessor();
 
-      const accountPlan = await getAccountPlan(API_URL);
       await reserveBrowserTask("compress");
       const result =
         await processor.process(context);

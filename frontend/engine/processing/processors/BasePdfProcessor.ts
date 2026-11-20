@@ -236,7 +236,8 @@ export abstract class BasePdfProcessor
                     await validationGateway.validate(
                         browserFiles,
                         workspaceFile.file,
-                        context.toolType
+                        context.toolType,
+                        context.maxFileSizeBytes
                     );
 
             }

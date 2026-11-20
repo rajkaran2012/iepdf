@@ -69,8 +69,7 @@ export class FileSizeValidator extends BaseValidator {
 
         const fileSize = context.file.size;
 
-        const maxFileSize =
-            boundary.MAX_FILE_SIZE_BYTES;
+        const maxFileSize = context.maxFileSizeBytes;
 
         ValidationLogger.debug(
             this.name,

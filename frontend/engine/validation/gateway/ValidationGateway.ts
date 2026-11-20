@@ -157,7 +157,8 @@ export class ValidationGateway
     public async validate(
         files: ReadonlyArray<File>,
         file: File,
-        toolType: ToolType
+        toolType: ToolType,
+        maxFileSizeBytes: number
     ): Promise<ValidationGatewayResult> {
 
         const correlationId =
@@ -182,7 +183,8 @@ export class ValidationGateway
             this.validateInput(
                 files,
                 file,
-                toolType
+                toolType,
+                maxFileSizeBytes
             );
 
 
@@ -213,7 +215,8 @@ export class ValidationGateway
                 await this.pipeline.execute(
                     files,
                     file,
-                    toolType
+                    toolType,
+                    maxFileSizeBytes
                 );
 
 
@@ -337,7 +340,8 @@ export class ValidationGateway
     private validateInput(
         files: ReadonlyArray<File>,
         file: File,
-        toolType: ToolType
+        toolType: ToolType,
+        maxFileSizeBytes: number
     ): void {
 
         /**
@@ -409,6 +413,15 @@ export class ValidationGateway
          * Tool type
          * ---------------------------------------------------------------
          */
+        if (
+            !Number.isSafeInteger(maxFileSizeBytes) ||
+            maxFileSizeBytes <= 0
+        ) {
+            throw new ValidationEngineException({
+                message: "A valid maximum file size is required.",
+            });
+        }
+
         if (
             !toolType ||
             typeof toolType !== "string"

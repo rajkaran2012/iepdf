@@ -84,14 +84,16 @@ export class ValidationPipeline {
     public async execute(
         files: ReadonlyArray<File>,
         file: File,
-        toolType: ToolType
+        toolType: ToolType,
+        maxFileSizeBytes: number
     ): Promise<readonly ValidationResult[]> {
 
         const context =
             ValidationContextFactory.create(
                 files,
                 file,
-                toolType
+                toolType,
+                maxFileSizeBytes
             );
 
         ValidationLogger.group(

@@ -39,7 +39,8 @@ export async function validateFiles(
          const results = await pipeline.execute(
           files,
           file,
-          toolType
+          toolType,
+          rule.maxFileSize
         );
 
         const failed =

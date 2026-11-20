@@ -239,6 +239,7 @@ export default function SplitPDF() {
       const result = await processor.process({
         files: [workspaceFile],
         toolType: "split",
+        maxFileSizeBytes: accountPlan.tools.split.max_file_size_bytes,
       });
 
       if (!result.success || !result.outputFile) {

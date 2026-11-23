@@ -85,7 +85,8 @@ export class ValidationPipeline {
         files: ReadonlyArray<File>,
         file: File,
         toolType: ToolType,
-        maxFileSizeBytes: number
+        maxFileSizeBytes: number,
+        maxFiles?: number
     ): Promise<readonly ValidationResult[]> {
 
         const context =
@@ -93,7 +94,8 @@ export class ValidationPipeline {
                 files,
                 file,
                 toolType,
-                maxFileSizeBytes
+                maxFileSizeBytes,
+                maxFiles
             );
 
         ValidationLogger.group(

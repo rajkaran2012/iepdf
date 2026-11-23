@@ -237,7 +237,8 @@ export abstract class BasePdfProcessor
                         browserFiles,
                         workspaceFile.file,
                         context.toolType,
-                        context.maxFileSizeBytes
+                        context.maxFileSizeBytes,
+                        context.maxFiles
                     );
 
             }

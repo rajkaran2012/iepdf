@@ -158,7 +158,8 @@ export class ValidationGateway
         files: ReadonlyArray<File>,
         file: File,
         toolType: ToolType,
-        maxFileSizeBytes: number
+        maxFileSizeBytes: number,
+        maxFiles?: number
     ): Promise<ValidationGatewayResult> {
 
         const correlationId =
@@ -184,7 +185,8 @@ export class ValidationGateway
                 files,
                 file,
                 toolType,
-                maxFileSizeBytes
+                maxFileSizeBytes,
+                maxFiles
             );
 
 
@@ -216,7 +218,8 @@ export class ValidationGateway
                     files,
                     file,
                     toolType,
-                    maxFileSizeBytes
+                    maxFileSizeBytes,
+                    maxFiles
                 );
 
 
@@ -341,7 +344,8 @@ export class ValidationGateway
         files: ReadonlyArray<File>,
         file: File,
         toolType: ToolType,
-        maxFileSizeBytes: number
+        maxFileSizeBytes: number,
+        maxFiles?: number
     ): void {
 
         /**
@@ -435,7 +439,15 @@ export class ValidationGateway
             });
 
         }
-
+        // Merge must always receive its account-plan file limit.
+        if (
+            toolType === "merge" &&
+            (!Number.isSafeInteger(maxFiles) || maxFiles! <= 0)
+        ) {
+            throw new ValidationEngineException({
+                message: "A valid account-plan maximum file count is required for Merge.",
+            });
+        }
 
         /**
          * ---------------------------------------------------------------

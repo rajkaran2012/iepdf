@@ -103,7 +103,8 @@ export interface IValidationGateway {
         files: ReadonlyArray<File>,
         file: File,
         toolType: ToolType,
-        maxFileSizeBytes: number
+        maxFileSizeBytes: number,
+        maxFiles?: number
     ): Promise<ValidationGatewayResult>;
 
 }

@@ -270,6 +270,7 @@ const handleRemoveFile = (id: string) => {
 
                 toolType: "merge",
                 maxFileSizeBytes: accountPlan.tools.merge.max_file_size_bytes,
+                maxFiles: accountPlan.tools.merge.max_files,
 
             });
 console.info("[IEPDF_FORENSIC_V3] PROCESS_END|" + performance.now().toFixed(3));

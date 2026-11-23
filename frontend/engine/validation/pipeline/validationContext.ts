@@ -60,6 +60,9 @@ export interface ValidationContext {
     /** Maximum permitted size for each file, supplied by the account plan. */
     readonly maxFileSizeBytes: number;
 
+    /** Account-plan maximum file count; required for Merge. */
+    readonly maxFiles?: number;
+
     /**
      * Current file being validated.
      */

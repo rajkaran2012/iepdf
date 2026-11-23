@@ -72,13 +72,16 @@ export class FileCountValidator extends BaseValidator {
     const fileCount =
         context.fileCount;
 
+    const maxFiles =
+        context.maxFiles ?? rules.maxFiles;
+
     ValidationLogger.debug(
         this.name,
         `Checking file count (${fileCount}).`,
         {
             fileCount,
             minFiles: rules.minFiles,
-            maxFiles: rules.maxFiles,
+            maxFiles,
             toolType: context.toolType,
         }
     );
@@ -100,7 +103,7 @@ export class FileCountValidator extends BaseValidator {
 
     }
 
-    if (fileCount > rules.maxFiles) {
+    if (fileCount > maxFiles) {
 
         return this.createResult({
             startedAt,
@@ -112,7 +115,7 @@ export class FileCountValidator extends BaseValidator {
             message:
                 messages.INVALID_FILE_COUNT,
             details:
-                `Maximum=${rules.maxFiles}; Actual=${fileCount}`,
+                `Maximum=${maxFiles}; Actual=${fileCount}`,
         });
 
     }
